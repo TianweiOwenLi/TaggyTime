@@ -17,7 +17,7 @@ const MINUTE_UPPERBOUND: i64 = 0x7fffffff;
 const MINUTE_LOWERBOUND: i64 = 0;
 
 // minute since unix epoch
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct MinInstant(u32);
 
 // TODO still contains magic number
