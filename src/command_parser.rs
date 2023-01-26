@@ -9,6 +9,10 @@ pub enum Command {
 impl Command {
 
     /// parses a string into a command structure
+    /// 
+    /// [warning] Does not work when Atomic string literals contain paired 
+    /// round parenthesis, as this will cause Atomic strings to be interpreted 
+    /// as a Tag instead.
     pub fn parse(s: String) -> Option<Self> {
         let n = s.len();
         let mut s_chr = s.chars();

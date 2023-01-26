@@ -30,33 +30,32 @@ impl Tasks {
             }, 
 
             // parsing tasks that contains a string
-            // Some(Command::Tag(s, v)) => {
-            //     if v.len() == 1 {
-            //         let cmd_in_v = 
-            //         v.get(0).expect("v[0] should be accessible");
+            Some(Command::Tag(s, v)) => {
+                if v.len() == 1 {
+                    let cmd_in_v = 
+                    v.get(0).expect("v[0] should be accessible");
                     
-            //         let contained_string = match cmd_in_v {
-            //             Command::
-            //         }
+                    let contained_string = match cmd_in_v {
+                        Command::Atomic(s) => s.clone(),
+                        _ => {
+                            println!("[taggytime] user command string literals 
+                            shall not comtain round parenthesis!");
+                            return None
+                        }
+                    };
 
-            //          match s.as_str() {
-            //             "Projects" => Some(Self::Projects(contained_string)),
-            //             "Classwork" => Some(Self::Classwork(v
-            //                 .get(0)
-            //                 .expect("v should have len=1")
-            //             )),
-            //             "Logistic" => Some(Self::Logistic(v
-            //                 .get(0)
-            //                 .expect("v should have len=1")
-            //             )),
-            //             _ => None,
+                     match s.as_str() {
+                        "Projects" => Some(Self::Projects(contained_string)),
+                        "Classwork" => Some(Self::Classwork(contained_string)),
+                        "Logistic" => Some(Self::Logistic(contained_string)),
+                        _ => None,
 
-            //         }
-            //     } else {
-            //         None
-            //     } // mismatched arity
+                    }
+                } else {
+                    None
+                } // mismatched arity
                 
-            // },
+            },
 
             // command parser failed to parse
             _ => None,
