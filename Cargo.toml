@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 datetime = "0.5.2"
+serde = "1.0.152"

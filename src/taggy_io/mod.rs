@@ -2,7 +2,8 @@
 use crate::MinInstant;
 use crate::Tasks;
 
-struct record {
+
+pub struct record {
     content: Vec<datapoint>, 
     todo: std::collections::BTreeSet<Tasks>,
 }
@@ -19,7 +20,17 @@ impl datapoint {
 
 }
 
-impl record {
+impl record { // TODO add past statistics method
+
+    /// create a new empty record
+    pub fn empty() -> Self {
+        record { content: vec![], todo: std::collections::BTreeSet::new() }
+    }
+
+    /// read an existing record from file
+    pub fn read_from_file() -> Self {
+        todo!()
+    }
 
     /// returns a cloned datapoint from record 
     pub fn top_datapoint(&self) -> Option<datapoint> {
@@ -27,11 +38,11 @@ impl record {
     }
 
     /// pushes a datapoint
-    pub fn push_datapoint(&mut self, offset: i32, t: Tasks) {
+    pub fn log_datapoint(&mut self, offset: i32, t: Tasks) {
         self.content.push(datapoint::now(offset, t));
     }
 
-    /// add items from todos
+    /// add items into todo list
     pub fn add_todo(&mut self, t: Tasks) {
         let x = match t { 
             Tasks::Classwork(_) => t,
@@ -41,6 +52,11 @@ impl record {
         };
 
         self.todo.insert(x);
+    }
+
+    /// remove items from todo list
+    pub fn remove_todo(&mut self, t: Tasks) {
+        self.todo.remove(&t);
     }
     
 }
