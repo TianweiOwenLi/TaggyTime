@@ -1,3 +1,5 @@
+use std::fs;
+
 
 
 
@@ -14,12 +16,17 @@ impl Command {
     /// round parenthesis, as this will cause Atomic strings to be interpreted 
     /// as a Tag instead.
     pub fn parse(s: String) -> Option<Self> {
+
+        let s = s.trim().to_string(); // prevent white spaces from messing with parsing
+
         let n = s.len();
         let mut s_chr = s.chars();
 
         let fst_idx: Option<usize> = s_chr.position(|c| c == '(');
         let lst_idx: Option<usize> = 
             if s_chr.last() == Some(')') {Some(n)} else {None};
+
+        let mut s_chr = s.chars();
 
         match (fst_idx, lst_idx) {
             (Some(i), Some(j)) => {

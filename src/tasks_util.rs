@@ -1,7 +1,7 @@
 use std::ops::Index;
 use crate::command_parser::Command;
 
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub enum Tasks {            // SPECIAL is totally not an allusion to Fallout
     Sleep,                  // naps do count
     Projects(String),       // extracurriculars + learning
@@ -61,4 +61,28 @@ impl Tasks {
             _ => None,
         }
     }
+}
+
+
+mod test {
+    use super::*;
+
+    #[test]
+    fn test_sleep() {
+        assert_eq!(Some(Tasks::Sleep), Tasks::from_str(String::from("Sleep")));
+    }
+
+    #[test]
+    fn test_proj() {
+        assert_eq!(
+            Some(Tasks::Projects(String::from("project_name?"))),
+            Tasks::from_str(String::from("Projects(project_name?)"))
+        );
+
+        assert_eq!(
+            Some(Tasks::Projects(String::from("pjn"))),
+            Tasks::from_str(String::from("Projects(pjn)"))
+        );
+    }
+
 }

@@ -16,7 +16,7 @@ use crate::taggy_io::{record};
 /// handles user-input command.
 fn handle_user_command<'a>(rc: &'a mut record, cmd: &String) -> Result<(), &'a str> { // TODO fg/bg
     if cmd.starts_with("log ") {
-        println!("[taggytime] logged msg {}", &cmd[4..]);
+        println!("[taggytime] logged msg {:?}", Tasks::from_str(cmd[4..].to_string()).unwrap());
         Ok(())
     } else if cmd.starts_with("top") {
         println!("[taggytime] accessed top");
@@ -60,18 +60,12 @@ fn main() {
             loop { // TODO prettify input ui
 
                 let mut buf = String::new();
-                match x.read_line(&mut buf) {
-                    Ok(_) => {
-                        match handle_user_command(&mut rc, &buf) {
-                            Ok(_) => println!("[taggytime] handled"),
-                            Err(emsg) => println!("[taggytime] Error: {}", emsg),
-                        };
-                        continue;
-                    },
-                    Err(read_err) => {
-                        print!("[taggytime] Failed to read line: {read_err}");
-                        continue;
-                    },
+
+                if let Err(read_err) = x.read_line(&mut buf) {
+                    print!("[taggytime] Failed to read line: {read_err}");
+                } else if let Err(emsg) = 
+                    handle_user_command(&mut rc, &buf) {
+                    println!("[taggytime] Error: {}", emsg)
                 }
             }
         }
