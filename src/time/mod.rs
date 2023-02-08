@@ -16,9 +16,17 @@ const SEC_IN_MIN: i64 = 60;
 const MINUTE_UPPERBOUND: i64 = 0x7fffffff;
 const MINUTE_LOWERBOUND: i64 = 0;
 
-// minute since unix epoch
+/// minutes since unix epoch
 #[derive(Debug, Clone, Copy)]
 pub struct MinInstant(u32);
+
+
+/// An [inslusive, exclusive) time interval, with its `start` and `end` marked 
+/// by `MinInstant`. 
+pub struct MinInterval {
+  start: MinInstant,
+  end: MinInstant,
+}
 
 // TODO still contains magic number
 // TODO improve human interaction
@@ -37,6 +45,13 @@ impl MinInstant {
 
   pub fn raw(self) -> u32 {
     self.0
+  }
+}
+
+
+impl std::fmt::Display for MinInstant {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      write!(f, "{}", Date::from_min_instant(*self).to_string())
   }
 }
 

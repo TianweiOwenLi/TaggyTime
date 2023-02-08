@@ -1,20 +1,23 @@
 
 mod tasks_util;
 mod time;
-mod taggy_io;
 mod command_parser;
+
+mod todo;
+
+mod percent;
 
 use tasks_util::Tasks;
 use time::MinInstant;
 
-use std::mem::size_of;
 
 use crate::time::Date;
-use crate::taggy_io::{record};
 // use crate::taggy_io::datapoint;
 
+
+
 /// handles user-input command.
-fn handle_user_command<'a>(rc: &'a mut record, cmd: &String) -> Result<(), &'a str> { // TODO fg/bg
+fn handle_user_command<'a>(cmd: &String) -> Result<(), &'a str> { // TODO fg/bg
   if cmd.starts_with("log ") {
     println!("[taggytime] logged msg {:?}", Tasks::from_str(cmd[4..].to_string()).unwrap());
     Ok(())
@@ -36,13 +39,10 @@ fn main() {
 
   let ag: Vec<String> = std::env::args().collect();
   
-  // initialize
-  let mut rc: record = record::empty();
-
   // cli mode
   match ag.get(1) {
     Some(s) => // cli mode
-    match handle_user_command(&mut rc, s) {
+    match handle_user_command(s) {
       Ok(_) => {
         println!("[taggytime] handled");
         std::process::exit(0)
@@ -62,7 +62,7 @@ fn main() {
         if let Err(read_err) = x.read_line(&mut buf) {
           print!("[taggytime] Failed to read line: {read_err}");
         } else if let Err(emsg) = 
-          handle_user_command(&mut rc, &buf) {
+          handle_user_command(&buf) {
           println!("[taggytime] Error: {}", emsg)
         }
       }
