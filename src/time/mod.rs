@@ -10,15 +10,25 @@ use month::Month;
 
 mod fact;
 
-use self::{year::NextableYear, fact::*};
+mod timezone;
+
+use self::{year::NextableYear, fact::*, timezone::ZoneOffset};
 
 const SEC_IN_MIN: i64 = 60;
 const MINUTE_UPPERBOUND: i64 = 0x7fffffff;
 const MINUTE_LOWERBOUND: i64 = 0;
 
-/// minutes since unix epoch
+/// minutes since Unix Epoch. This can be casted to a different timezone 
+/// by incrementing both raw and offset at the same time, without changing 
+/// the actual time instant being represented.
 #[derive(Debug, Clone, Copy)]
-pub struct MinInstant(u32);
+pub struct MinInstant{
+  raw: u32, 
+  offset: ZoneOffset,
+}
+
+
+/// minutes since start of the day. TODO.
 
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked 
@@ -31,20 +41,30 @@ pub struct MinInterval {
 // TODO still contains magic number
 // TODO improve human interaction
 impl MinInstant {
-  pub fn now(offset_minute: i32) -> Self {
+
+  /// Constructs a MinInstant using current system time. Sets to UTC zone 
+  /// by default.
+  pub fn now() -> Self {
     let t: i64 = Instant::now().seconds() / SEC_IN_MIN;
 
     if t > MINUTE_UPPERBOUND {panic!("datetime seconds overflowed")};
     if t < MINUTE_LOWERBOUND {panic!("datetime seconds negative")};
-    if offset_minute > 240 || offset_minute < -240 {
-      panic!("offset too significant")
-    }
     
-    Self(t as u32)
+    Self{raw: t as u32, offset: ZoneOffset::utc() }
   }
 
+
+  /// Adjust by an input offset. This merely changes the timezone 
+  /// representation, and does not shift the represented time instance.
+  pub fn set_offset_to(&mut self, tgt_offset: ZoneOffset) {
+    self.offset = tgt_offset;
+  }
+
+
+  /// Returns the raw value of such a MinInstant, ie. a `u32` representing the 
+  /// number of minutes since Unix Epoch.
   pub fn raw(self) -> u32 {
-    self.0
+    self.raw
   }
 }
 
@@ -122,14 +142,18 @@ impl std::fmt::Display for Date {
   }
 }
 
+#[allow(unused_imports)]
 mod test {
+  use crate::time::timezone::ZoneOffset;
+
   use super::{Date, MinInstant};
 
   #[test]
   fn test_instant_to_date() {
+    let mi = MinInstant {raw: 27905591, offset: ZoneOffset::utc() };
     assert_eq!(
       "2023/Jan/21 21:11", 
-      format!("{}", Date::from_min_instant(MinInstant(27905591)))
+      format!("{}", Date::from_min_instant(mi))
     );
   }
 }

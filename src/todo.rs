@@ -22,13 +22,24 @@ use crate::percent::Percent;
 /// ```
 pub struct Workload(u32);
 
+
+/// Describes when shall some recurring events happen.
+/// 
+/// [todo] Implement custom executable pure functions.
+pub enum Recurrence {
+  Once(MinInstant), 
+  Weekly(),
+  Custom()
+}
+
+
 /// A struct that represents some task to be done. 
 /// 
 /// This struct contains the following fields: 
 /// 
 /// `name`: a `String` representing the name of the task.
 /// 
-/// `due`: the due date of such a task, represented as a `MinInstant`.
+/// `due`: the due date of such a task, represented as a `Recurrence`.
 /// 
 /// `length`: number of minutes needed to complete such a task from scratch.
 /// 
@@ -122,6 +133,12 @@ impl Todo {
   pub fn get_remaining_workload(&self) -> Workload {
     self.length.multiply_percent(self.completion.one_minus())
   }
+
+
+  /// Sets progress to `tgt_progress`.
+  pub fn set_progress(&mut self, tgt_progress: Percent) {
+    self.completion = tgt_progress;
+  }
 }
 
 
@@ -139,7 +156,7 @@ mod test {
   fn nada() {
     let td = Todo {
       name: "Name".to_string(),
-      due: MinInstant::now(0),
+      due: MinInstant::now(),
       length: Workload::from_num_min(60).unwrap(),
       completion: Percent::from_u8(0).unwrap(),
       impact: Percent::from_u8(2).unwrap(),
