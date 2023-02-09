@@ -1,7 +1,7 @@
 
 
-const UTC_LB: i32 = -720;
-const UTC_UB: i32 = 840;
+pub const UTC_LB: i32 = -720;
+pub const UTC_UB: i32 = 840;
 
 /// A representation of a timezone offset, in terms of difference in minutes 
 /// as compared to UTC.
@@ -24,5 +24,21 @@ impl ZoneOffset {
     }
   }
 
+
   pub fn utc() -> Self { ZoneOffset(0) }
+
+
+  /// Returns the raw offset data.
+  pub fn raw(&self) -> i32 {self.0 }
+}
+
+#[allow(unused_imports)]
+mod test {
+
+  use super::*;
+
+  #[test]
+  fn construction_constraint() {
+    assert!(ZoneOffset::new(-23333).is_err())
+  }
 }

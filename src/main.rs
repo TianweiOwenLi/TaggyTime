@@ -7,6 +7,8 @@ mod todo;
 
 mod percent;
 
+mod ics_parser;
+
 use tasks_util::Tasks;
 use time::MinInstant;
 

@@ -153,14 +153,4 @@ impl TodoList {
 mod test {
   use super::*;
 
-  fn nada() {
-    let td = Todo {
-      name: "Name".to_string(),
-      due: MinInstant::now(),
-      length: Workload::from_num_min(60).unwrap(),
-      completion: Percent::from_u8(0).unwrap(),
-      impact: Percent::from_u8(2).unwrap(),
-    };
-
-  }
 }

@@ -15,8 +15,10 @@ mod timezone;
 use self::{year::NextableYear, fact::*, timezone::ZoneOffset};
 
 const SEC_IN_MIN: i64 = 60;
-const MINUTE_UPPERBOUND: i64 = 0x7fffffff;
-const MINUTE_LOWERBOUND: i64 = 0;
+
+// these bounds prevent overflow during timezone adjustments.
+const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 + timezone::UTC_UB as i64;
+const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 + timezone::UTC_LB as i64;
 
 /// minutes since Unix Epoch. This can be casted to a different timezone 
 /// by incrementing both raw and offset at the same time, without changing 
@@ -56,8 +58,22 @@ impl MinInstant {
 
   /// Adjust by an input offset. This merely changes the timezone 
   /// representation, and does not shift the represented time instance.
-  pub fn set_offset_to(&mut self, tgt_offset: ZoneOffset) {
+  /// 
+  /// Note that overflows are not possible due to how the types `MinInstant` 
+  /// and `ZoneOffset` are constructed.
+  pub fn set_offset(&mut self, tgt_offset: ZoneOffset) {
+
+    let diff = tgt_offset.raw() - self.offset.raw();
+
+    // adjust timezone
     self.offset = tgt_offset;
+
+    // adjust time in the same amount as timezone
+    if diff >= 0 {
+      self.raw += diff as u32;
+    } else {
+      self.raw -= (-diff) as u32;
+    }
   }
 
 
@@ -90,7 +106,10 @@ pub struct Date {
 // todo fix timezone type defn
 impl Date {
 
-  /// given a MinInstant, convert it to human-readable calendar form.
+  /// Given a MinInstant, convert it to human-readable calendar form.
+  /// 
+  /// Note that such a conversion takes into account the timezone offset of 
+  /// the provided MinInstant.
   pub fn from_min_instant(mi: MinInstant) -> Self {
     let (mut curr_year, mut curr_month) 
       = (UnixYear::new(0), Month::Jan);
@@ -149,11 +168,29 @@ mod test {
   use super::{Date, MinInstant};
 
   #[test]
-  fn test_instant_to_date() {
+  fn instant_to_date() {
     let mi = MinInstant {raw: 27905591, offset: ZoneOffset::utc() };
     assert_eq!(
       "2023/Jan/21 21:11", 
       format!("{}", Date::from_min_instant(mi))
     );
+  }
+
+
+  #[test]
+  #[should_panic]
+  fn mininstant_construction_contraint() {
+    todo!() // shall be implemented when 
+    // MinInstant has a user-input constructor.
+  }
+
+
+  #[test]
+  fn set_offset_overflow() {
+    let mut mi = 
+      MinInstant {raw: 27905591, offset: ZoneOffset::utc() };
+    
+    mi.set_offset(ZoneOffset::new(-300).unwrap());
+    assert_eq!(mi.raw(), 27905591 - 300);
   }
 }

@@ -65,7 +65,7 @@ mod test {
   use super::*;
 
   #[test]
-  fn test_leading_zero_in_str() {
+  fn leading_zero_in_str() {
     assert_eq!(Ok(Percent(3)), Percent::from_str("03"));
   }
 }
