@@ -3,7 +3,7 @@ mod tasks_util;
 mod time;
 mod command_parser;
 
-mod todo;
+mod calendar;
 
 mod percent;
 

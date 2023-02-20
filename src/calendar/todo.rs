@@ -23,13 +23,44 @@ use crate::percent::Percent;
 pub struct Workload(u32);
 
 
+/// Indicators representing subsets of days in a week.
+pub struct WeekdayBitset {
+  mon: bool,
+  tue: bool,
+  wed: bool,
+  thu: bool,
+  fri: bool,
+  sat: bool,
+  sun: bool,
+}
+
+impl WeekdayBitset {
+
+  /// Unset all days of the week.
+  pub fn clear(&mut self) {
+    self.mon = false;
+    self.tue = false;
+    self.wed = false;
+    self.thu = false;
+    self.fri = false;
+    self.sat = false;
+    self.sun = false;
+  }
+
+  /// Checks whether none of the says in a week is selected. 
+  pub fn is_empty(&self) -> bool {
+    self.mon && self.tue && self.wed && self.thu 
+      && self.fri && self.sat && self.sun
+  }
+}
+
+
 /// Describes when shall some recurring events happen.
 /// 
-/// [todo] Implement custom executable pure functions.
+/// [todo] Implement custom executable functions that describes a recurrence.
 pub enum Recurrence {
   Once(MinInstant), 
-  Weekly(),
-  Custom()
+  Weekly(MinInstant, WeekdayBitset, MinInterval),
 }
 
 
@@ -153,4 +184,14 @@ impl TodoList {
 mod test {
   use super::*;
 
+  fn nada() {
+    let td = Todo {
+      name: "Name".to_string(),
+      due: MinInstant::now(),
+      length: Workload::from_num_min(60).unwrap(),
+      completion: Percent::from_u8(0).unwrap(),
+      impact: Percent::from_u8(2).unwrap(),
+    };
+
+  }
 }
