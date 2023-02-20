@@ -1,5 +1,15 @@
+//! a module encapsulating the `Percent` type.
+//! 
+//! Author: Owen Li <tianwei2@andrew.cmu.edu>
 
-#[derive(PartialEq, Eq, Debug)]
+
+#[derive(Debug)]
+pub enum Error {
+  CreationOutOfBound(u16),
+  ComplementOutOfBound(u16),
+  ArithmeticOutOfBound(u16, String, u16),
+}
+
 
 /// A wrapper around u8, which represents a percentage (in integer), ranging 
 /// from 0 percent to 100 percent, inclusive.
@@ -7,55 +17,83 @@
 /// # Example
 /// ```
 /// let p: Percent = Percent::from_u8(56);
-/// let p = p.one_minus();
+/// let q = Percent::from_u8(44);
 /// 
-/// let q = Percent::from_str("44");
-/// 
-/// assert_eq!(p, q);
+/// assert_eq!(p.one_minus(), q);
 /// ```
-pub struct Percent(u8);
+#[derive(PartialEq, Eq, PartialOrd, Debug)]
+pub struct Percent (u16);
 
 impl Percent{
 
-  /// Takes in a &str, trims it, and attempts to parse it 
-  /// as a percentage, ie. an integer from 0 to 100 inclusive.
-  /// Returns `Err()` if parsing fails.
-  pub fn from_str(s: &str) -> Result<Self, String> {
-    let ps: Result<u8, _> = s.trim().parse::<u8>();
-    if let Ok(n) = s.parse() {
-      Self::from_u8(n)
-    } else {
-      Err("Unable to parse percentage as u8".to_string())
+  /// Constructs an instance of `Percent` from some `u16` argument.
+  pub fn new(n: u16) -> Self {
+    Percent(n)
+  }
+
+  /// Returns a `Percent` instance that represents 100% minus oneself. If 
+  /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
+  pub fn complement(&self) -> Result<Self, Error> {
+    match self.0 {
+      0..=100 => Ok(Percent(100 - self.0)),
+     _ => Err(Error::ComplementOutOfBound(self.0))
     }
   }
 
-
-  /// Constructs an instance of `Percent` from some `u8` argument. 
-  /// If such argument is not between 0 an 100 (inclusive), returns 
-  /// an `Err()`.
-  pub fn from_u8(n: u8) -> Result<Self, String> {
-    if n <= 100 {
-      Ok(Percent(n))
-    } else {
-      Err("Percentage cannot exceed 100".to_string())
-    }
+  /// Gets the raw `u16` value of self.
+  pub fn raw(&self) -> u16 { 
+    self.0
   }
 
-
-  /// Returns a `Percent` instance that represents 100% minus oneself.
-  pub fn one_minus(&self) -> Self {
-    Percent(100 - self.0)
+  /// A precentage representing `0%`
+  pub fn zero() -> Self {
+    Percent(0)
   }
 
-  /// Gets the raw `u8` value of self, which ranges between 0 an 100 inclusive.
-  pub fn raw(&self) -> u8 { self.0 }
+  /// A precentage representing `100%`
+  pub fn one() -> Self {
+    Percent(100)
+  }
+
+  /// Checks whether this percent value is beyond `100%`.
+  pub fn is_overflow(&self) -> bool {
+    self.0 > 100
+  }
+
+}
+
+
+impl std::ops::Sub for Percent {
+  type Output = Result<Percent, Error>;
+
+  fn sub(self, rhs: Self) -> Self::Output {
+      if self.0 >= rhs.0 {
+        Ok(Percent(self.0 - rhs.0))
+      } else {
+        Err(Error::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
+      }
+  }
 
 }
 
 
 impl std::fmt::Display for Percent {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(f, "{}%", self.0)
+      write!(f, "{}%", self.raw())
+  }
+}
+
+
+impl std::fmt::Display for Error {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+      match self {
+          Self::CreationOutOfBound(n) => write!(f, "Cannot create a \
+          percentage greater than 100%: value used is {}.", n),
+          Self::ComplementOutOfBound(n) => write!(f, "Cannot take the 
+          complement of `{}`, which is an overflow variant of `Percent`.", n),
+          Self::ArithmeticOutOfBound(lhs, msg, rhs) => 
+          write!(f, "Percent arithmetic out of bound: {} {} {}.", lhs, msg, rhs)
+      }
   }
 }
 
@@ -65,7 +103,30 @@ mod test {
   use super::*;
 
   #[test]
-  fn leading_zero_in_str() {
-    assert_eq!(Ok(Percent(3)), Percent::from_str("03"));
+  fn instantiate_variant() {
+    assert_eq!(Percent::new(3), Percent(3));
+    assert_eq!(Percent::new(15251), Percent(15251));
+    assert!(Percent(15251).is_overflow());
+    assert!(!Percent(3).is_overflow());
   }
+
+  #[test]
+  fn cmp() {
+    assert!(Percent(3) < Percent(5));
+    assert!(Percent(101) >= Percent(6));
+    assert_eq!(Percent(4), Percent(4));
+    assert_eq!(Percent(233), Percent(233));
+  }
+
+  #[test]
+  fn errors() {
+    assert!(Percent::new(100).complement().is_ok());
+    assert!(Percent::new(101).complement().is_err());
+  }
+
+  #[test]
+  fn raw() {
+    assert_eq!(Percent::new(15411).raw(), 15411 as u16);
+  }
+
 }
