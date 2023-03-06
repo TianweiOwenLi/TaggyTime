@@ -1,33 +1,30 @@
-
-use crate::time::*;
-use crate::percent::Percent;
 use crate::calendar::cal_event::{Recurrence, Workload};
+use crate::percent::Percent;
+use crate::time::*;
 
-
-
-/// A struct that represents some task to be done. 
-/// 
-/// This struct contains the following fields: 
-/// 
+/// A struct that represents some task to be done.
+///
+/// This struct contains the following fields:
+///
 /// `name`: a `String` representing the name of the task.
-/// 
+///
 /// `due`: the due date of such a task, represented as a `Recurrence`.
-/// 
+///
 /// `length`: number of minutes needed to complete such a task from scratch.
-/// 
+///
 /// `completion`: the progress of such a task, in percentage.
-/// 
+///
 /// `repeat`: the recurrence pattern of this task.
-/// 
-/// `cached_impact`: the ratio of completion time, relative to available time 
-/// before deadline. Can only be updated with an external schedule. This shall 
+///
+/// `cached_impact`: the ratio of completion time, relative to available time
+/// before deadline. Can only be updated with an external schedule. This shall
 /// be cached, and only refreshed if needed.
-/// 
+///
 /// [todo] Finish example code
-/// 
+///
 /// # Examples
 /// ```
-/// 
+///
 /// ```
 pub struct Todo {
   name: String,
@@ -38,42 +35,34 @@ pub struct Todo {
   cached_impact: Option<Percent>,
 }
 
-
 pub struct TodoList {
-  content: Vec<Todo>, 
+  content: Vec<Todo>,
 }
 
-
-
-
 impl Todo {
-
-  /// Computes the remaining workload of this `Todo` item, considering its 
+  /// Computes the remaining workload of this `Todo` item, considering its
   /// `length` and `completion` fields.
   pub fn get_remaining_workload(&self) -> Workload {
-    self.length.multiply_percent(self.completion.complement()
-      .expect("progress complement cannot overflow"))
+    self.length.multiply_percent(
+      self
+        .completion
+        .complement()
+        .expect("progress complement cannot overflow"),
+    )
   }
 
-
-  /// Sets progress to `tgt_progress`, which is automatically constrained down 
+  /// Sets progress to `tgt_progress`, which is automatically constrained down
   /// to <= 100.
   pub fn set_progress(&mut self, tgt_progress: Percent) {
     self.completion = if tgt_progress <= Percent::one() {
-      tgt_progress 
+      tgt_progress
     } else {
       Percent::new(100)
     };
   }
 }
 
-
-impl TodoList {
-
-  
-
-}
-
+impl TodoList {}
 
 #[allow(unused_imports)]
 mod test {
@@ -88,6 +77,5 @@ mod test {
       repeat: Recurrence::Once(MinInstant::now()),
       cached_impact: None,
     };
-
   }
 }

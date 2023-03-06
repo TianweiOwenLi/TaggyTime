@@ -1,7 +1,6 @@
 //! a module encapsulating the `Percent` type.
-//! 
+//!
 //! Author: Owen Li <tianwei2@andrew.cmu.edu>
-
 
 #[derive(Debug)]
 pub enum Error {
@@ -10,38 +9,36 @@ pub enum Error {
   ArithmeticOutOfBound(u16, String, u16),
 }
 
-
-/// A wrapper around u8, which represents a percentage (in integer), ranging 
+/// A wrapper around u8, which represents a percentage (in integer), ranging
 /// from 0 percent to 100 percent, inclusive.
-/// 
+///
 /// # Example
 /// ```
 /// let p: Percent = Percent::from_u8(56);
 /// let q = Percent::from_u8(44);
-/// 
+///
 /// assert_eq!(p.one_minus(), q);
 /// ```
 #[derive(PartialEq, Eq, PartialOrd, Debug)]
-pub struct Percent (u16);
+pub struct Percent(u16);
 
-impl Percent{
-
+impl Percent {
   /// Constructs an instance of `Percent` from some `u16` argument.
   pub fn new(n: u16) -> Self {
     Percent(n)
   }
 
-  /// Returns a `Percent` instance that represents 100% minus oneself. If 
+  /// Returns a `Percent` instance that represents 100% minus oneself. If
   /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
   pub fn complement(&self) -> Result<Self, Error> {
     match self.0 {
       0..=100 => Ok(Percent(100 - self.0)),
-     _ => Err(Error::ComplementOutOfBound(self.0))
+      _ => Err(Error::ComplementOutOfBound(self.0)),
     }
   }
 
   /// Gets the raw `u16` value of self.
-  pub fn raw(&self) -> u16 { 
+  pub fn raw(&self) -> u16 {
     self.0
   }
 
@@ -59,44 +56,49 @@ impl Percent{
   pub fn is_overflow(&self) -> bool {
     self.0 > 100
   }
-
 }
-
 
 impl std::ops::Sub for Percent {
   type Output = Result<Percent, Error>;
 
   fn sub(self, rhs: Self) -> Self::Output {
-      if self.0 >= rhs.0 {
-        Ok(Percent(self.0 - rhs.0))
-      } else {
-        Err(Error::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
-      }
+    if self.0 >= rhs.0 {
+      Ok(Percent(self.0 - rhs.0))
+    } else {
+      Err(Error::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
+    }
   }
-
 }
-
 
 impl std::fmt::Display for Percent {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      write!(f, "{}%", self.raw())
+    write!(f, "{}%", self.raw())
   }
 }
-
 
 impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-      match self {
-          Self::CreationOutOfBound(n) => write!(f, "Cannot create a \
-          percentage greater than 100%: value used is {}.", n),
-          Self::ComplementOutOfBound(n) => write!(f, "Cannot take the 
-          complement of `{}`, which is an overflow variant of `Percent`.", n),
-          Self::ArithmeticOutOfBound(lhs, msg, rhs) => 
-          write!(f, "Percent arithmetic out of bound: {} {} {}.", lhs, msg, rhs)
-      }
+    match self {
+      Self::CreationOutOfBound(n) => write!(
+        f,
+        "Cannot create a \
+          percentage greater than 100%: value used is {}.",
+        n
+      ),
+      Self::ComplementOutOfBound(n) => write!(
+        f,
+        "Cannot take the 
+          complement of `{}`, which is an overflow variant of `Percent`.",
+        n
+      ),
+      Self::ArithmeticOutOfBound(lhs, msg, rhs) => write!(
+        f,
+        "Percent arithmetic out of bound: {} {} {}.",
+        lhs, msg, rhs
+      ),
+    }
   }
 }
-
 
 #[allow(unused_imports)]
 mod test {
@@ -129,4 +131,10 @@ mod test {
     assert_eq!(Percent::new(15411).raw(), 15411 as u16);
   }
 
+  #[test]
+  fn sub() {
+    let p = Percent(666) - Percent(233);
+    assert_eq!(p.unwrap(), Percent(433));
+    assert!((Percent(0) - Percent(1)).is_err());
+  }
 }

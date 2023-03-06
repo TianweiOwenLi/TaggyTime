@@ -1,18 +1,18 @@
 use crate::command_parser::Command;
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub enum Tasks {      // SPECIAL is totally not an allusion to Fallout
-  Sleep,              // naps do count
-  Projects,   // extracurriculars + learning
-  Exercise,           // physical exercise
-  Classwork,  // only the mandatory ones
-  Interaction,        // interactions with humans
-  Activity,           // fun!
-  Logistic,   // anything else + meta
+pub enum Tasks {
+  // SPECIAL is totally not an allusion to Fallout
+  Sleep,       // naps do count
+  Projects,    // extracurriculars + learning
+  Exercise,    // physical exercise
+  Classwork,   // only the mandatory ones
+  Interaction, // interactions with humans
+  Activity,    // fun!
+  Logistic,    // anything else + meta
 }
 
 // fn starts_ends_with()
-
 
 impl Tasks {
   pub fn from_str(task_str: String) -> Option<Self> {
@@ -30,13 +30,12 @@ impl Tasks {
           println!("[taggytime] command \'{}\' does not exist! ", dne);
           None
         }
-      }, 
+      },
       // command parser failed to parse
       _ => None,
     }
   }
 }
-
 
 mod test {
   use super::*;

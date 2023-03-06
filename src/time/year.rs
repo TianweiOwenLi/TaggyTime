@@ -1,4 +1,3 @@
-
 use super::fact::*;
 
 pub enum YearLength {
@@ -7,7 +6,6 @@ pub enum YearLength {
 }
 
 pub trait Year {
-
   /// converts a Year to a CeYear
   fn to_ce(&self) -> CeYear;
 
@@ -24,7 +22,7 @@ pub trait Year {
     }
   }
 
-  /// get the number of days in a year, either 366 for a Leap year or 
+  /// get the number of days in a year, either 366 for a Leap year or
   /// 365 for a Common year.
   fn days_in_year(&self) -> u32 {
     match self.get_year_length() {
@@ -38,7 +36,6 @@ pub trait Year {
   fn num_min(&self) -> u32 {
     self.days_in_year() * MIN_IN_DAY
   }
-
 }
 
 /// A trait for various types of years, where a next_year function shall exist.
@@ -71,9 +68,7 @@ impl CeYear {
   }
 }
 
-
 impl Year for UnixYear {
-
   fn to_ce(&self) -> CeYear {
     CeYear(self.0 + 1970)
   }
@@ -81,11 +76,9 @@ impl Year for UnixYear {
   fn to_unix(&self) -> UnixYear {
     UnixYear(self.0)
   }
-
 }
 
 impl Year for CeYear {
-
   fn to_ce(&self) -> CeYear {
     CeYear(self.0)
   }
@@ -93,7 +86,6 @@ impl Year for CeYear {
   fn to_unix(&self) -> UnixYear {
     UnixYear(self.0 - 1970)
   }
-
 }
 
 impl NextableYear for UnixYear {

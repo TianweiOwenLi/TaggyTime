@@ -1,4 +1,3 @@
-
 pub enum Token {
   // structures
   BEGIN,
@@ -8,10 +7,7 @@ pub enum Token {
   // times
   DTSTART,
   DTEND,
-  
-
 
   // ignored keywords
   Kw(String),
-
 }
