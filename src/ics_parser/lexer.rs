@@ -1,14 +1,13 @@
-
 use std::iter::Peekable;
 use std::str::Chars;
 
 const CHAR_AFTER_KEYWORD: [char; 3] = [';', ':', '='];
 
-/// Error during lexing stage, which can either be end of file, or some 
+/// Error during lexing stage, which can either be end of file, or some
 /// custom error.
 pub enum LexerError {
   EOF,
-  Other(String)
+  Other(String),
 }
 
 #[derive(Debug)]
@@ -48,11 +47,10 @@ pub struct IcsLexer<'a> {
 }
 
 impl<'a> IcsLexer<'a> {
-
-  // Creates an ics lexer from some string. 
+  // Creates an ics lexer from some string.
   pub fn new(content: &'a str) -> IcsLexer<'a> {
-    IcsLexer{
-      stream: content.chars().peekable()
+    IcsLexer {
+      stream: content.chars().peekable(),
     }
   }
 
@@ -64,7 +62,7 @@ impl<'a> IcsLexer<'a> {
     }
   }
 
-  /// Fetches the current character while advancing the lexer stream. 
+  /// Fetches the current character while advancing the lexer stream.
   pub fn next(&mut self) -> Result<char, LexerError> {
     match self.stream.next() {
       Some(c) => Ok(c),
@@ -78,9 +76,9 @@ impl<'a> IcsLexer<'a> {
   }
 
   /// Skips while some condition is true.
-  pub fn skip_while<F>(&mut self, pred: F) -> Result<(), LexerError> 
+  pub fn skip_while<F>(&mut self, pred: F) -> Result<(), LexerError>
   where
-    F: Fn(char) -> bool
+    F: Fn(char) -> bool,
   {
     let mut c = self.current()?;
     while pred(c) {
@@ -94,10 +92,10 @@ impl<'a> IcsLexer<'a> {
     Ok(())
   }
 
-  /// Takes while some condition is true. 
-  pub fn take_while<F>(&mut self, pred: F) -> Result<String, LexerError> 
+  /// Takes while some condition is true.
+  pub fn take_while<F>(&mut self, pred: F) -> Result<String, LexerError>
   where
-    F: Fn(char) -> bool
+    F: Fn(char) -> bool,
   {
     let mut ret = String::new();
     while let Some(&c) = self.stream.peek() {
@@ -114,10 +112,10 @@ impl<'a> IcsLexer<'a> {
   pub fn possible_keyword(&mut self) -> Result<Token, LexerError> {
     let ident_str = self.take_while(|c| c.is_uppercase())?;
 
-    // handles the case where something looks like a keyword appears as 
+    // handles the case where something looks like a keyword appears as
     // part of normal ident
     if let Some(c) = self.stream.peek() {
-      if ! CHAR_AFTER_KEYWORD.contains(c) {
+      if !CHAR_AFTER_KEYWORD.contains(c) {
         return Ok(Token::Other(ident_str));
       }
     }
@@ -157,12 +155,11 @@ impl<'a> IcsLexer<'a> {
   }
 }
 
-
 impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Token::Other(_) => write!(f, "Other(..)"),
-      tok => write!(f, "{:?}", tok)
+      tok => write!(f, "{:?}", tok),
     }
   }
 }

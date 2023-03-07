@@ -1,9 +1,7 @@
 use std::env;
 
-
 pub enum Mode {
   Interactive,
-  Test(String),
   Cli(Vec<String>),
 }
 
@@ -30,29 +28,12 @@ pub fn parse_args() -> Result<Mode, CommandLineError> {
     "-i" => {
       if n > 2 {
         Err(CommandLineError(
-          "Redundant argument after interaction mode".to_string()
+          "Redundant argument after interaction mode".to_string(),
         ))
       } else {
         Ok(Mode::Interactive)
       }
     }
-    "-t" => {
-      match args.get(2) {
-        Some(s) => {
-          if n > 3 {
-            Err(CommandLineError(
-              "Redundant argument after test mode".to_string()
-            ))
-          } else {
-            Ok(Mode::Test(s.clone()))
-          }
-        }
-        None => Err(CommandLineError("Please specify test mode".to_string()))
-      }
-    }
-    _ => {
-      Ok(Mode::Cli(args[1..].to_vec()))
-    }
+    _ => Ok(Mode::Cli(args[1..].to_vec())),
   }
-  
 }

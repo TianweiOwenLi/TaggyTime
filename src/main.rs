@@ -10,6 +10,8 @@ mod ics_parser;
 
 mod args;
 
+use std::io::BufRead;
+
 use crate::args::*;
 
 use tasks_util::Tasks;
@@ -43,12 +45,16 @@ fn handle_user_command<'a>(cmd: &String) -> Result<(), &'a str> {
 }
 
 fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
-  println!("{:?}", cmd);
-  Ok(())
+  let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
+  match cmd[..] {
+    ["test", "lexer", ics_filename] => {
+      ics_parser::test_lexer(ics_filename.to_string())
+    }
+    _ => Err("Invalid command".to_string())
+  }
 }
 
 fn main() {
-  
   let mode = parse_args().unwrap_or_else(|e| {
     eprintln!("Parse argument failed! \n{:?}", e);
     std::process::exit(1)
@@ -57,15 +63,23 @@ fn main() {
   let run_result = match mode {
     Mode::Interactive => loop {
       let mut buf = String::new();
-      break Err("Interactive mode is unimplemented! ".to_string())
-    }
-    Mode::Cli(v) => {
-      handle_command_vec(v)
-    }
-    Mode::Test(s) => {
-      println!("Testing {}", s);
-      Ok(())
-    }
+      let stdin_agent = std::io::stdin();
+
+      // read line
+      {
+        let mut stdin_handle = stdin_agent.lock();
+        if let Err(e) = stdin_handle.read_line(&mut buf) {
+          break Err(format!("Failed to read line: {}", e));
+        }
+      }
+
+      // interpret
+      let v: Vec<String> = buf.split(' ').map(|s| s.trim().to_string()).collect();
+      if let Err(e) = handle_command_vec(v) {
+        eprintln!("[taggytime] Command error: {}", e)
+      }
+    },
+    Mode::Cli(v) => handle_command_vec(v),
   };
 
   if let Err(e) = run_result {
