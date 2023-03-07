@@ -2,7 +2,7 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-use std::vec::IntoIter;
+const CHAR_AFTER_KEYWORD: [char; 3] = [';', ':', '='];
 
 /// Error during lexing stage, which can either be end of file, or some 
 /// custom error.
@@ -11,6 +11,7 @@ pub enum LexerError {
   Other(String)
 }
 
+#[derive(Debug)]
 pub enum Token {
   // structures
   BEGIN,
@@ -112,6 +113,15 @@ impl<'a> IcsLexer<'a> {
   /// Parses some possibly-keyword identifier
   pub fn possible_keyword(&mut self) -> Result<Token, LexerError> {
     let ident_str = self.take_while(|c| c.is_uppercase())?;
+
+    // handles the case where something looks like a keyword appears as 
+    // part of normal ident
+    if let Some(c) = self.stream.peek() {
+      if ! CHAR_AFTER_KEYWORD.contains(c) {
+        return Ok(Token::Other(ident_str));
+      }
+    }
+
     match ident_str.as_str() {
       "BEGIN" => Ok(Token::BEGIN),
       "END" => Ok(Token::END),
@@ -123,7 +133,7 @@ impl<'a> IcsLexer<'a> {
       "LOCATION" => Ok(Token::LOCATION),
       "RRULE" => Ok(Token::RRULE),
       "SUMMARY" => Ok(Token::SUMMARY),
-      s => Ok(Token::Other(s.to_string())),
+      s => Ok(Token::Other(ident_str)),
     }
   }
 
@@ -145,7 +155,14 @@ impl<'a> IcsLexer<'a> {
       }
     }
   }
-
-
 }
 
+
+impl std::fmt::Display for Token {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Token::Other(_) => write!(f, "Other(..)"),
+      tok => write!(f, "{:?}", tok)
+    }
+  }
+}
