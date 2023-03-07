@@ -1,7 +1,9 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
-const CHAR_AFTER_KEYWORD: [char; 3] = [';', ':', '='];
+pub fn char_after_keyword(c: char) -> bool {
+  c.is_whitespace() || [';', ':', '='].contains(&c)
+}
 
 /// Error during lexing stage, which can either be end of file, or some
 /// custom error.
@@ -17,6 +19,7 @@ pub enum Token {
   COLON,
   SEMICOLON,
   END,
+  PERIOD,
   EQ,
   SLASH,
   UNDERSCORE,
@@ -40,6 +43,12 @@ pub enum Token {
 
   // other info
   SUMMARY,
+
+  // format
+  NEXTLINE,
+
+  // numeral
+  Number(String),
 }
 
 pub struct IcsLexer<'a> {
@@ -52,6 +61,12 @@ impl<'a> IcsLexer<'a> {
     IcsLexer {
       stream: content.chars().peekable(),
     }
+  }
+
+  /// Advances the lexer and returns a particular token.
+  pub fn single(&mut self, tok: Token) -> Result<Token, LexerError> {
+    self.skip();
+    Ok(tok)
   }
 
   /// Fetches the current character without advancing the lexer stream.
@@ -110,12 +125,13 @@ impl<'a> IcsLexer<'a> {
 
   /// Parses some possibly-keyword identifier
   pub fn possible_keyword(&mut self) -> Result<Token, LexerError> {
-    let ident_str = self.take_while(|c| c.is_uppercase())?;
+    let ident_str = self.take_while(|c| c.is_alphabetic())?;
+    println!("{}", ident_str);
 
     // handles the case where something looks like a keyword appears as
     // part of normal ident
     if let Some(c) = self.stream.peek() {
-      if !CHAR_AFTER_KEYWORD.contains(c) {
+      if !char_after_keyword(*c) {
         return Ok(Token::Other(ident_str));
       }
     }
@@ -135,6 +151,12 @@ impl<'a> IcsLexer<'a> {
     }
   }
 
+  /// Parses some sequence of number.
+  pub fn number(&mut self) -> Result<Token, LexerError> {
+    let num_str = self.take_while(|c| c.is_digit(10))?;
+    Ok(Token::Number(num_str))
+  }
+
   pub fn token(&mut self) -> Result<Token, LexerError> {
     let curr_char = self.current()?;
     if curr_char.is_whitespace() {
@@ -142,14 +164,17 @@ impl<'a> IcsLexer<'a> {
       self.token()
     } else {
       match curr_char {
-        ':' => Ok(Token::COLON),
-        ';' => Ok(Token::SEMICOLON),
-        '=' => Ok(Token::EQ),
-        '/' => Ok(Token::SLASH),
-        '_' => Ok(Token::UNDERSCORE),
-        '-' => Ok(Token::DASH),
-        'A'..='Z' => self.possible_keyword(),
-        _ => Ok(Token::Other(self.take_while(|c| c != '\n')?)),
+        ':' => self.single(Token::COLON),
+        ';' => self.single(Token::SEMICOLON),
+        '=' => self.single(Token::EQ),
+        '/' => self.single(Token::SLASH),
+        '_' => self.single(Token::UNDERSCORE),
+        '-' => self.single(Token::DASH),
+        '\n' => self.single(Token::NEXTLINE),
+        '.' => self.single(Token::PERIOD),
+        'A'..='Z' | 'a'..='z' => self.possible_keyword(),
+        '0'..='9' => self.number(),
+        c => self.single(Token::Other(c.to_string())),
       }
     }
   }
@@ -158,7 +183,7 @@ impl<'a> IcsLexer<'a> {
 impl std::fmt::Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Token::Other(_) => write!(f, "Other(..)"),
+      Token::Other(s) => write!(f, "Other({})", s),
       tok => write!(f, "{:?}", tok),
     }
   }

@@ -48,7 +48,7 @@ fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
-      ics_parser::test_lexer(ics_filename.to_string())
+      ics_parser::test_lexer(ics_filename)
     }
     _ => Err("Invalid command".to_string())
   }
