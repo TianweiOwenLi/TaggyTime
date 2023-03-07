@@ -8,6 +8,10 @@ mod percent;
 
 mod ics_parser;
 
+mod args;
+
+use crate::args::*;
+
 use tasks_util::Tasks;
 use time::MinInstant;
 
@@ -38,40 +42,33 @@ fn handle_user_command<'a>(cmd: &String) -> Result<(), &'a str> {
   }
 }
 
+fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
+  println!("{:?}", cmd);
+  Ok(())
+}
+
 fn main() {
-  let ag: Vec<String> = std::env::args().collect();
+  
+  let mode = parse_args().unwrap_or_else(|e| {
+    eprintln!("Parse argument failed! \n{:?}", e);
+    std::process::exit(1)
+  });
 
-  // cli mode
-  match ag.get(1) {
-    Some(s) =>
-    // cli mode
-    {
-      match handle_user_command(s) {
-        Ok(_) => {
-          println!("[taggytime] handled");
-          std::process::exit(0)
-        }
-        Err(emsg) => {
-          println!("[taggytime] Error: {}", emsg);
-          std::process::exit(1)
-        }
-      }
+  let run_result = match mode {
+    Mode::Interactive => loop {
+      let mut buf = String::new();
+      break Err("Interactive mode is unimplemented! ".to_string())
     }
-
-    None =>
-    // interactive mode
-    {
-      let x = std::io::stdin();
-      loop {
-        // TODO prettify input ui
-        let mut buf = String::new();
-
-        if let Err(read_err) = x.read_line(&mut buf) {
-          print!("[taggytime] Failed to read line: {read_err}");
-        } else if let Err(emsg) = handle_user_command(&buf) {
-          println!("[taggytime] Error: {}", emsg)
-        }
-      }
+    Mode::Cli(v) => {
+      handle_command_vec(v)
     }
+    Mode::Test(s) => {
+      println!("Testing {}", s);
+      Ok(())
+    }
+  };
+
+  if let Err(e) = run_result {
+    eprintln!("App encountered error: \n{}", e)
   }
 }
