@@ -11,6 +11,8 @@ mod fact;
 
 mod timezone;
 
+use crate::calendar::cal_event::Workload;
+
 use self::{fact::*, timezone::ZoneOffset, year::NextableYear};
 
 const SEC_IN_MIN: i64 = 60;
@@ -84,9 +86,28 @@ impl MinInstant {
   }
 }
 
+impl MinInterval {
+  pub fn from_instance_and_minute_duration(
+    mi: MinInstant, 
+    duration_minute: u32
+  ) -> MinInterval{
+    let offset = mi.offset;
+    MinInterval { start: mi, end: MinInstant { 
+      raw: mi.raw + duration_minute, 
+      offset 
+    } }
+  }
+}
+
 impl std::fmt::Display for MinInstant {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "{}", Date::from_min_instant(*self).to_string())
+  }
+}
+
+impl std::fmt::Display for MinInterval {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "({} - {})", self.start, self.end)
   }
 }
 

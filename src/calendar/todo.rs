@@ -74,7 +74,8 @@ mod test {
       due: MinInstant::now(),
       length: Workload::from_num_min(60).unwrap(),
       completion: Percent::new(0),
-      repeat: Recurrence::Once(MinInstant::now()),
+      repeat: Recurrence::Once(MinInterval::from_instance_and_minute_duration(
+        MinInstant::now(), 30)),
       cached_impact: None,
     };
   }

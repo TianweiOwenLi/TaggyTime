@@ -1,54 +1,30 @@
 mod command_parser;
 mod tasks_util;
 mod time;
-
 mod calendar;
-
 mod percent;
-
 mod ics_parser;
-
 mod args;
+mod error;
 
 use std::io::BufRead;
 
 use crate::args::*;
 
-use tasks_util::Tasks;
-use time::MinInstant;
-
-use crate::time::Date;
-// use crate::taggy_io::datapoint;
-
-/// handles user-input command.
-fn handle_user_command<'a>(cmd: &String) -> Result<(), &'a str> {
-  // TODO fg/bg
-  if cmd.starts_with("log ") {
-    println!(
-      "[taggytime] logged msg {:?}",
-      Tasks::from_str(cmd[4..].to_string()).unwrap()
-    );
-    Ok(())
-  } else if cmd.starts_with("top") {
-    println!("[taggytime] accessed top");
-    Ok(())
-  } else if cmd.starts_with("add-todo") {
-    println!("[taggytime] added todo with msg {}", &cmd[8..]);
-    Ok(())
-  } else if cmd.starts_with("remove-todo") {
-    // TODO fuzzy remove
-    println!("[taggytime] removed todo with msg {}", &cmd[11..]);
-    Ok(())
-  } else {
-    Err("Command not found")
-  }
-}
-
 fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
-      ics_parser::test_lexer(ics_filename)
+      match ics_parser::test_lexer(ics_filename) {
+        Ok(()) => Ok(()),
+        Err(e) => Err(e.to_string()),
+      }
+    }
+    ["test", "parser", ics_filename] => {
+      match ics_parser::test_parser(ics_filename) {
+        Ok(()) => Ok(()),
+        Err(e) => Err(e.to_string()),
+      }
     }
     _ => Err("Invalid command".to_string())
   }

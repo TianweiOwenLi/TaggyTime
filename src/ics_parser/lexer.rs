@@ -1,15 +1,9 @@
 use std::iter::Peekable;
 use std::str::Chars;
+use crate::error::ICSProcessError;
 
 pub fn char_after_keyword(c: char) -> bool {
   c.is_whitespace() || [';', ':', '='].contains(&c)
-}
-
-/// Error during lexing stage, which can either be end of file, or some
-/// custom error.
-pub enum LexerError {
-  EOF,
-  Other(String),
 }
 
 #[derive(Debug)]
@@ -64,24 +58,24 @@ impl<'a> IcsLexer<'a> {
   }
 
   /// Advances the lexer and returns a particular token.
-  pub fn single(&mut self, tok: Token) -> Result<Token, LexerError> {
+  pub fn single(&mut self, tok: Token) -> Result<Token, ICSProcessError> {
     self.skip();
     Ok(tok)
   }
 
   /// Fetches the current character without advancing the lexer stream.
-  pub fn current(&mut self) -> Result<char, LexerError> {
+  pub fn current(&mut self) -> Result<char, ICSProcessError> {
     match self.stream.peek() {
       Some(c) => Ok(*c),
-      None => Err(LexerError::EOF),
+      None => Err(ICSProcessError::EOF),
     }
   }
 
   /// Fetches the current character while advancing the lexer stream.
-  pub fn next(&mut self) -> Result<char, LexerError> {
+  pub fn next(&mut self) -> Result<char, ICSProcessError> {
     match self.stream.next() {
       Some(c) => Ok(c),
-      None => Err(LexerError::EOF),
+      None => Err(ICSProcessError::EOF),
     }
   }
 
@@ -91,7 +85,7 @@ impl<'a> IcsLexer<'a> {
   }
 
   /// Skips while some condition is true.
-  pub fn skip_while<F>(&mut self, pred: F) -> Result<(), LexerError>
+  pub fn skip_while<F>(&mut self, pred: F) -> Result<(), ICSProcessError>
   where
     F: Fn(char) -> bool,
   {
@@ -108,7 +102,7 @@ impl<'a> IcsLexer<'a> {
   }
 
   /// Takes while some condition is true.
-  pub fn take_while<F>(&mut self, pred: F) -> Result<String, LexerError>
+  pub fn take_while<F>(&mut self, pred: F) -> Result<String, ICSProcessError>
   where
     F: Fn(char) -> bool,
   {
@@ -124,7 +118,7 @@ impl<'a> IcsLexer<'a> {
   }
 
   /// Parses some possibly-keyword identifier
-  pub fn possible_keyword(&mut self) -> Result<Token, LexerError> {
+  pub fn possible_keyword(&mut self) -> Result<Token, ICSProcessError> {
     let ident_str = self.take_while(|c| c.is_alphabetic())?;
     println!("{}", ident_str);
 
@@ -147,17 +141,17 @@ impl<'a> IcsLexer<'a> {
       "LOCATION" => Ok(Token::LOCATION),
       "RRULE" => Ok(Token::RRULE),
       "SUMMARY" => Ok(Token::SUMMARY),
-      s => Ok(Token::Other(ident_str)),
+      _ => Ok(Token::Other(ident_str)),
     }
   }
 
   /// Parses some sequence of number.
-  pub fn number(&mut self) -> Result<Token, LexerError> {
+  pub fn number(&mut self) -> Result<Token, ICSProcessError> {
     let num_str = self.take_while(|c| c.is_digit(10))?;
     Ok(Token::Number(num_str))
   }
 
-  pub fn token(&mut self) -> Result<Token, LexerError> {
+  pub fn token(&mut self) -> Result<Token, ICSProcessError> {
     let curr_char = self.current()?;
     if curr_char.is_whitespace() {
       self.skip_while(|c| c.is_whitespace())?;

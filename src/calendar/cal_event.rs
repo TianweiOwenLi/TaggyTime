@@ -30,11 +30,18 @@ impl WeekdayBitset {
   }
 }
 
+pub struct WeekdayRecurrence {
+  start: MinInstant,
+  end: MinInstant,
+  repeat: WeekdayBitset,
+  interval: MinInterval,
+}
+
 /// Describes when shall some recurring events happen.
 ///
 /// [todo] Implement custom executable functions that describes a recurrence.
 pub enum Recurrence {
-  Once(MinInstant),
+  Once(MinInterval),
   Weekly(MinInstant, WeekdayBitset, MinInterval),
 }
 
@@ -97,5 +104,18 @@ impl Workload {
   /// Returns the duration, in number of minutes, of such a workload.
   pub fn get_duration(&self) -> u32 {
     self.0
+  }
+}
+
+impl std::fmt::Display for Recurrence {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Recurrence::Once(miv) => {
+        write!(f, "Once {}", miv)
+      }
+      Recurrence::Weekly(start, repeat, miv) => {
+        write!(f, "Repeat: ")
+      }
+    }
   }
 }
