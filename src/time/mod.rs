@@ -18,8 +18,8 @@ use self::{fact::*, timezone::ZoneOffset, year::NextableYear};
 const SEC_IN_MIN: i64 = 60;
 
 // these bounds prevent overflow during timezone adjustments.
-const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 + timezone::UTC_UB as i64;
-const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 + timezone::UTC_LB as i64;
+const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
+const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
 
 /// minutes since Unix Epoch. This can be casted to a different timezone
 /// by incrementing both raw and offset at the same time, without changing
