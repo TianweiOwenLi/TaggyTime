@@ -30,10 +30,16 @@ pub struct MinInstant {
   offset: ZoneOffset,
 }
 
+impl PartialEq for MinInstant {
+  fn eq(&self, other: &Self) -> bool {
+    unimplemented!()
+  }
+}
+
 /// minutes since start of the day. TODO.
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked
-/// by `MinInstant`.
+/// by `MinInstant`. This interval must be non-negative. 
 pub struct MinInterval {
   start: MinInstant,
   end: MinInstant,
@@ -87,6 +93,17 @@ impl MinInstant {
 }
 
 impl MinInterval {
+
+  /// Constructs a `MinInterval` via a pair of `MinInstant`, which represents 
+  /// the start and end time. This constructor ensures non-negativity.
+  pub fn new(start: MinInstant, end: MinInstant) -> MinInterval {
+    MinInterval { start, end }
+  }
+  
+
+  /// Constructs a `MinInterval` via a `MinInstant`, which represents its 
+  /// starting time, and some `u32`, which represents the duration in minutes 
+  /// of such interval.
   pub fn from_instance_and_minute_duration(
     mi: MinInstant, 
     duration_minute: u32

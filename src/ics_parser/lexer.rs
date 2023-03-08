@@ -6,7 +6,7 @@ pub fn char_after_keyword(c: char) -> bool {
   c.is_whitespace() || [';', ':', '='].contains(&c)
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
   // structures
   BEGIN,
