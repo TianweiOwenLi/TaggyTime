@@ -9,11 +9,11 @@ use month::Month;
 
 mod fact;
 
-mod timezone;
+pub mod timezone;
 
 use crate::calendar::cal_event::Workload;
 
-use self::{fact::*, timezone::ZoneOffset, year::NextableYear};
+use self::{fact::*, timezone::ZoneOffset, year::{CeYear}};
 
 const SEC_IN_MIN: i64 = 60;
 
@@ -90,6 +90,15 @@ impl MinInstant {
   pub fn raw(self) -> u32 {
     self.raw
   }
+
+  /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
+  pub fn from_date(date: Date) -> Self {
+    let mut ret = MinInstant {raw: 0, offset: ZoneOffset::utc()};
+    // ret.raw += date.get_yr().num_min();
+    // ret.raw += date.get_mon().num_min(&date.get_yr());
+    unimplemented!()
+
+  }
 }
 
 impl MinInterval {
@@ -130,11 +139,16 @@ impl std::fmt::Display for MinInterval {
 
 #[derive(Debug)]
 pub struct Date {
-  yr: u16,
+  yr: CeYear,
   mon: Month,
   day: u32,
   hr: u32,
   min: u32,
+}
+
+#[derive(Debug)]
+pub enum DateError {
+
 }
 
 // todo check overflow bounds
@@ -145,15 +159,20 @@ impl Date {
   /// Note that such a conversion takes into account the timezone offset of
   /// the provided MinInstant.
   pub fn from_min_instant(mi: MinInstant) -> Self {
-    let (mut curr_year, mut curr_month) = (UnixYear::new(0), Month::Jan);
+    let (mut curr_year, mut curr_month) = (
+      UnixYear::new(0).expect("Should be able to construct unix year 0"), 
+      Month::Jan
+    );
     let mut t = mi.raw();
-    println!("{}", t);
 
+    // strip year from t
     loop {
-      // strip year from t
       let x = curr_year.num_min();
       if t >= x {
-        (curr_year, t) = (curr_year.next_year(), t - x)
+        (curr_year, t) = (
+          curr_year.next().expect("Year should not run out before MinInstant"), 
+          t - x
+        )
       } else {
         break;
       }
@@ -170,12 +189,20 @@ impl Date {
     }
 
     Date {
-      yr: curr_year.to_ce().raw(),
+      yr: curr_year.to_ce(),
       mon: Month::Jan,
       day: 1 + t / MIN_IN_DAY,
       hr: (t % MIN_IN_DAY) / MIN_IN_HR,
       min: t % MIN_IN_HR,
     }
+  }
+
+  pub fn get_yr(&self) -> CeYear {
+    self.yr.clone()
+  }
+
+  pub fn get_mon(&self) -> Month {
+    self.mon
   }
 }
 
@@ -184,7 +211,7 @@ impl std::fmt::Display for Date {
     write!(
       f,
       "{}/{:?}/{} {}:{}",
-      self.yr, self.mon, self.day, self.hr, self.min,
+      self.yr.raw(), self.mon, self.day, self.hr, self.min,
     )
   }
 }

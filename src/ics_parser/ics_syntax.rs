@@ -5,6 +5,8 @@
 
 use crate::{calendar::cal_event::Recurrence, time::{MinInstant, MinInterval}};
 
+use crate::time::timezone::ZoneOffset;
+
 use super::{lexer::{IcsLexer, Token}, peekbuf::PeekBuffer};
 use crate::error::ICSProcessError;
 
@@ -211,13 +213,23 @@ impl<'a> ICSParser<'a> {
 
       // when timezone is not specified
       Token::COLON => {
-       unimplemented!()
+        return self.dt_literal();
       }
 
       x => Err(ICSProcessError::Other(
         format!("Expected : or ; after dt, found {}", x)
       ))
     }
+  }
+
+  /// Parses a datetime literal, in the form of `[yyyymmdd]T[hhmmss]Z`.
+  fn dt_literal(&mut self) -> Result<MinInstant, ICSProcessError> {
+    let maybe_date = self.token()?;
+    self.munch(Token::Other("T".to_string()))?;
+    let maybe_time = self.token()?;
+    self.munch(Token::Other("Z".to_string()))?;
+    println!("dt literal: {}, {}", maybe_date, maybe_time);
+    todo!()
   }
 
   /// Skips till the symbol `begin:after`.

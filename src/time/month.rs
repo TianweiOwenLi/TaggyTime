@@ -1,7 +1,7 @@
 use super::fact::*;
 use super::year::{Year, YearLength};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Month {
   Jan,
   Feb,
