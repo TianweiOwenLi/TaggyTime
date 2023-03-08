@@ -19,6 +19,7 @@ pub struct Vevent {
 }
 
 pub struct ICSParser<'a> {
+  name: String,
   peekbuf: PeekBuffer<'a>
 }
 
@@ -26,8 +27,10 @@ impl<'a> ICSParser<'a> {
 
   // ---------------------------- Helper Functions ----------------------------
 
-  pub fn from_ics_lexer(lex: IcsLexer<'a>) -> Self {
-    ICSParser { peekbuf: PeekBuffer::from_lexer(lex) }
+  pub fn from_ics_lexer(lex: IcsLexer<'a>) -> ICSParser<'a> {
+    ICSParser { 
+      name: lex.get_name(),
+      peekbuf: PeekBuffer::from_lexer(lex) }
   }
 
   pub fn peek(&mut self, pos: usize) -> Result<&Token, &ICSProcessError> {

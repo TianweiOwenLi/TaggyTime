@@ -46,15 +46,22 @@ pub enum Token {
 }
 
 pub struct IcsLexer<'a> {
+  name: &'a str,
   stream: Peekable<Chars<'a>>,
 }
 
 impl<'a> IcsLexer<'a> {
-  // Creates an ics lexer from some string.
-  pub fn new(content: &'a str) -> IcsLexer<'a> {
+  /// Creates an ics lexer from some string.
+  pub fn new(name: &'a str, content: &'a str) -> IcsLexer<'a> {
     IcsLexer {
+      name,
       stream: content.chars().peekable(),
     }
+  }
+
+  /// Gets the name of ics file
+  pub fn get_name(&self) -> String {
+    self.name.to_string()
   }
 
   /// Advances the lexer and returns a particular token.
