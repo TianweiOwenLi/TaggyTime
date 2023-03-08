@@ -27,8 +27,8 @@ pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
       Err(ICSProcessError::EOF) => {
         break Ok(())
       }
-      Err(ICSProcessError::Other(s)) => {
-        break Err(ICSProcessError::Other(s))
+      Err(e) => {
+        break Err(e)
       }
     }
   }

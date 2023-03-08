@@ -45,6 +45,15 @@ pub enum Token {
   Number(String),
 }
 
+impl Token {
+
+  /// Attempts to cast a token as a string; if the token in question shall not 
+  /// be interpreted as part of string under any circumstance, returns error. 
+  pub fn cast_as_string<'a>(&'a self) -> &'a str {
+    unimplemented!()
+  }
+}
+
 pub struct IcsLexer<'a> {
   name: &'a str,
   stream: Peekable<Chars<'a>>,
@@ -127,7 +136,6 @@ impl<'a> IcsLexer<'a> {
   /// Parses some possibly-keyword identifier
   pub fn possible_keyword(&mut self) -> Result<Token, ICSProcessError> {
     let ident_str = self.take_while(|c| c.is_alphabetic())?;
-    println!("{}", ident_str);
 
     // handles the case where something looks like a keyword appears as
     // part of normal ident

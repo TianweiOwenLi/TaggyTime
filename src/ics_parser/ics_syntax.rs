@@ -71,10 +71,10 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Skips till we encounter the target token.
-  fn skip_till(&mut self, target_tok: &Token) -> Result<(), ICSProcessError> {
+  fn skip_till(&mut self, target_tok: Token) -> Result<(), ICSProcessError> {
     loop {
       match self.peek(0) {
-        Ok(head_ok) => if target_tok == head_ok { break Ok(()) }
+        Ok(head_ok) => if &target_tok == head_ok { break Ok(()) }
         Err(e) => break Err(e.clone())
       }
       self.skip()?;
@@ -86,13 +86,44 @@ impl<'a> ICSParser<'a> {
   pub fn parse(&mut self) -> Result<ICalendar, ICSProcessError> {
     let mut vevents = Vec::<Vevent>::new();
 
-    // while true
-    // vevents.push(self.vevent()?);
+    self.munch(Token::BEGIN)?;
+    self.munch(Token::COLON)?;
+    self.munch(Token::VCALENDAR)?;
 
-    return Ok(ICalendar{name: self.name.clone(), content: vevents});
+    loop {
+      self.skip_till(Token::BEGIN)?;
+      if self.peek_copy(2)? == Token::VEVENT {
+
+        // consume body of vevent
+        vevents.push(self.vevent()?);
+
+        // check for end of vcalendar
+        if self.peek(0)? == &Token::END {
+          self.munch(Token::END)?;
+          self.munch(Token::COLON)?;
+          self.munch(Token::VCALENDAR)?;
+
+          // check for EOF
+          match self.token() {
+            Ok(_) => return Err(ICSProcessError::Other(
+              "Unexpected tok after calendar".to_string()
+            )),
+            Err(ICSProcessError::EOF) => {},
+            Err(e) => return Err(e),
+          }
+      
+          return Ok(ICalendar{name: self.name.clone(), content: vevents});
+        }
+      } else {
+        println!("skipped begin since it is {}", self.peek_copy(2)?);
+        self.munch(Token::BEGIN)?;
+        continue;
+      }
+    }
   }
 
   pub fn vevent(&mut self) -> Result<Vevent, ICSProcessError> {
+    println!("-- start of vevent --");
     self.munch(Token::BEGIN)?;
     self.munch(Token::COLON)?;
     self.munch(Token::VEVENT)?;
@@ -102,27 +133,34 @@ impl<'a> ICSParser<'a> {
     let mut summary = String::new();
 
     loop {
-      match self.token()? {
+      match self.peek(0)? {
         Token::DTSTART => {
-          // todo
+          dtstart = Some(self.dtstart()?);
         }
         Token::DTEND => {
-          // todo
+          dtend = Some(self.dtend()?);
         }
         Token::SUMMARY => {
+          self.munch(Token::SUMMARY)?;
           self.munch(Token::COLON)?;
-          // todo
+          summary = self.string()?;
+          println!("Encountered summary: {}", summary);
         }
         Token::RRULE => {
-          // todo
+          // todo when implementing recurrences.
         }
         Token::END => {
+          self.munch(Token::END)?;
           self.munch(Token::COLON)?;
           let end_tag = self.token()?;
           if end_tag == Token::VEVENT {
             match (dtstart, dtend) {
               (Some(start), Some(end)) => {
-
+                println!("-- end of vevent --");
+                return Ok(Vevent { 
+                  repeat: Recurrence::Once(MinInterval::new(start, end)), 
+                  summary
+                })
               }
               (None, _) => {
                 return Err(ICSProcessError::Other(
@@ -136,7 +174,9 @@ impl<'a> ICSParser<'a> {
               }
             }
           } else {
-
+            return Err(ICSProcessError::Other(
+              "VEVENT contains unexpected end".to_string()
+            ));
           }
         }
         _ => {}
@@ -145,10 +185,45 @@ impl<'a> ICSParser<'a> {
 
   }
 
+  /// Parses the time associated with some `DTSTART`.
+  pub fn dtstart(&mut self) -> Result<MinInstant, ICSProcessError> {
+    self.munch(Token::DTSTART)?;
+    self.dt_possible_timezone()
+  }
+
+  pub fn dtend(&mut self) -> Result<MinInstant, ICSProcessError> {
+    self.munch(Token::DTEND)?;
+    self.dt_possible_timezone()
+  }
+
+  fn dt_possible_timezone(&mut self) -> Result<MinInstant, ICSProcessError> {
+    match self.token()? {
+
+      // when timezone is specified
+      Token::SEMICOLON => {
+        self.munch(Token::TZID)?;
+        self.munch(Token::EQ)?;
+        println!("t1 {}", self.token()?);
+        println!("t2 {}", self.token()?);
+        println!("t3 {}", self.token()?);
+        unimplemented!()
+      }
+
+      // when timezone is not specified
+      Token::COLON => {
+       unimplemented!()
+      }
+
+      x => Err(ICSProcessError::Other(
+        format!("Expected : or ; after dt, found {}", x)
+      ))
+    }
+  }
+
   /// Skips till the symbol `begin:after`.
   pub fn goto_colon_sandwich(&mut self, before: Token, after: Token) 
   -> Result<(), ICSProcessError> {
-    self.skip_till(&before)?;
+    self.skip_till(before.clone())?;
     
     let p0 = self.peek_copy(0);
     let p1 = self.peek_copy(1);
@@ -170,6 +245,17 @@ impl<'a> ICSParser<'a> {
       }
       _ => Err(ICSProcessError::Other("ICS colon sandwich malformed".to_string()))
     }
+  }
+
+  /// Concats all subsequent `Other(..)` as string, until encounters some 
+  /// token that is not `Other(..)`.
+  pub fn string(&mut self) -> Result<String, ICSProcessError> {
+    let mut ret = String::new();
+    while let Ok(t) = self.peek(0) {
+      let head = self.token()?;
+      ret.push_str(head.cast_as_string());
+    }
+    Ok(ret)
   }
   
 }
