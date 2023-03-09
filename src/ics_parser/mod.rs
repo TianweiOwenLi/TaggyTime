@@ -12,7 +12,9 @@ pub mod peekbuf;
 #[derive(Clone)]
 pub enum ICSProcessError {
   EOF,
+  NaN(Token),
   CannotCastTok(Token),
+  ICSTimeMalformatted(String, String),
   Other(String),
 }
 
@@ -23,8 +25,18 @@ impl std::fmt::Display for ICSProcessError {
       ICSProcessError::CannotCastTok(t) => {
         write!(f, "Cannot cast token `{}` to str", t)
       }
+      ICSProcessError::NaN(tok) => write!(f, "`{}` is not a number", tok),
+      ICSProcessError::ICSTimeMalformatted(s1, s2) => {
+        write!(f, "Cannot parse `{}/{}` as valid time", s1, s2)
+      }
       ICSProcessError::Other(s) => write!(f, "ICS process error: {}", s),
     }
+  }
+}
+
+impl std::fmt::Debug for ICSProcessError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self)
   }
 }
 

@@ -3,6 +3,7 @@ mod calendar;
 mod ics_parser;
 mod percent;
 mod time;
+mod const_params;
 
 use std::io::BufRead;
 

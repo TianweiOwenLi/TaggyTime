@@ -11,7 +11,7 @@ mod fact;
 
 pub mod timezone;
 
-use crate::calendar::cal_event::Workload;
+use crate::{calendar::cal_event::Workload, ics_parser::ICSProcessError};
 
 use self::{fact::*, timezone::ZoneOffset, year::CeYear};
 
@@ -139,7 +139,7 @@ impl MinInstant {
   pub fn from_date(date: Date) -> year::Result<Self> {
     let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
     let mons_min = date.get_mon().num_min_since_new_year(&date.get_yr() as &dyn Year);
-    let days_min = (date.get_day() - 1) * MIN_IN_DAY;
+    let days_min = (date.get_day() - 1) * MIN_IN_DAY; // 1-index to 0-index
     let hrs_min = (date.get_hr()) * MIN_IN_HR;
     let min_min = date.get_min();
 
@@ -257,6 +257,68 @@ impl Date {
     }
   }
 
+  /// Constructs an instance of `Self` from two strings, one is of form 
+  /// `yyyymmdd`, and the other is of form `hhmmss`. 
+  pub fn from_ics_time_string(ymd: &str, hms: &str) 
+  -> Result<Self, ICSProcessError> {
+
+    // Return error message
+    let bad = Err(ICSProcessError::ICSTimeMalformatted(
+      ymd.to_string(), 
+      hms.to_string())
+    );
+
+    if ymd.len() < 8 || hms.len() < 6 { return bad; }
+
+    let yr_str = &ymd[0..4];
+    let mon_str = &ymd[4..6];
+    let day_str = &ymd[6..8];
+    let hr_str = &hms[0..2];
+    let min_str = &hms[2..4];
+
+    let yr_res: Result<u16, _> = yr_str.parse();
+    let mon_res: Result<usize, _> = mon_str.parse();
+    let day_res: Result<u32, _> = day_str.parse();
+    let hr_res: Result<u32, _> = hr_str.parse();
+    let min_res: Result<u32, _> = min_str.parse();
+
+    match (yr_res, mon_res, day_res, hr_res, min_res) {
+      (Ok(y), Ok(m), Ok(d), Ok(h), Ok(mi)) => {
+
+        let yr = match CeYear::new(y) {
+          Ok(y) => y,
+          _ => return bad,
+        };
+        
+        // since Month::try_from() is 0-indexed
+        let mon = if let Some(m0) = m.checked_sub(1) {
+          match Month::try_from(m0) {
+            Ok(m) => m,
+            _ => return bad
+          }
+        } else {
+          return bad;
+        };
+
+        let day = if d <= mon.num_days(&yr) && d > 0 {
+          d
+        } else {
+          return bad;
+        };
+
+        let hr = if h <= 23 { h } else { return bad; };
+        let min = if mi <= 59 { mi } else { return bad; };
+
+        Ok(Date { yr, mon, day, hr, min })
+      }
+      _ => Err(ICSProcessError::ICSTimeMalformatted(
+        ymd.to_string(), 
+        hms.to_string())
+      )
+    }
+
+  }
+
   pub fn get_yr(&self) -> CeYear { self.yr.clone() }
   pub fn get_mon(&self) -> Month { self.mon }
   
@@ -328,9 +390,9 @@ mod test {
   }
 
   #[test]
+  // Note that this test must occur at no earlier than 2023/Jan/21 21:11 
+  // in order to produce intended result.
   fn mininstant_order() {
-    // Note that this test must occur at no earlier than 2023/Jan/21 21:11 
-    // in order to produce intended result.
     let mi = MinInstant {
       raw: 27905591,
       offset: ZoneOffset::utc(),
@@ -340,4 +402,21 @@ mod test {
 
     assert!(mi < mi_now);
   }
+
+  #[test]
+  /// This test guarantees that u32 parses work as intended even with 
+  /// leading zeroes. 
+  fn parse_u32_behavior() {
+    let parsed: u32 = "0002333".parse().unwrap();
+    assert_eq!(2333, parsed);
+  }
+
+  #[test]
+  fn ics_string_to_date() {
+    let (ymd, hms) = ("20230121", "211123");
+    let date = Date::from_ics_time_string(ymd, hms).unwrap();
+    let mi = MinInstant::from_date(date).unwrap();
+    assert_eq!(27905591, mi.raw());
+  }
+
 }

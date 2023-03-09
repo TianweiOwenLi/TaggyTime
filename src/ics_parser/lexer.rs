@@ -1,19 +1,39 @@
 use std::iter::Peekable;
 use std::str::Chars;
 
+use crate::const_params::ICS_ASSUME_TRANSP_ALWAYS_AFTER_SUMMARY;
+
 use super::ICSProcessError;
 
 pub fn char_after_keyword(c: char) -> bool {
   c.is_whitespace() || [';', ':', '='].contains(&c)
 }
 
+fn is_boring_whitespace(c: char) -> bool {
+  c != ' ' && c.is_whitespace() && c != '\n'
+}
+
+/// Tells if a token cannot appear as part of `SUMMARY` string content. 
+/// 
+/// [todo] Consider the edge case where user puts an ICS tag as part of summary.
+pub fn not_in_summary(t: &Token) -> bool {
+  use Token::*;
+    if [END].contains(t) { return true; }
+
+    return if ICS_ASSUME_TRANSP_ALWAYS_AFTER_SUMMARY {
+      t == &TRANSP
+    } else {
+      false
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum Token {
   // structures
   BEGIN,
+  END,
   COLON,
   SEMICOLON,
-  END,
   PERIOD,
   EQ,
   SLASH,
@@ -32,6 +52,7 @@ pub enum Token {
   VCALENDAR,
   VEVENT,
   LOCATION,
+  TRANSP,
 
   // repetitions
   RRULE,
@@ -41,16 +62,29 @@ pub enum Token {
 
   // format
   NEXTLINE,
+  SPACE,
 
   // numeral
   Number(String),
 }
 
 impl Token {
-  /// Attempts to cast a token as a string; if the token in question shall not
-  /// be interpreted as part of string under any circumstance, returns error.
-  pub fn cast_as_string<'a>(&'a self) -> &'a str {
-    unimplemented!()
+  /// Attempts to cast a token as a str.
+  pub fn cast_as_string(& self) -> String {
+    use Token::*;
+    let ret = match self {
+      COLON => ":",
+      SEMICOLON => ";",
+      PERIOD => ".",
+      EQ => "=",
+      SLASH => "/",
+      UNDERSCORE => "_",
+      DASH => "-",
+      Other(s) | Number(s) => &s,
+      NEXTLINE => "\\n",
+      tok => return tok.to_string(),
+    };
+    ret.to_string()
   }
 }
 
@@ -156,6 +190,7 @@ impl<'a> IcsLexer<'a> {
       "LOCATION" => Ok(Token::LOCATION),
       "RRULE" => Ok(Token::RRULE),
       "SUMMARY" => Ok(Token::SUMMARY),
+      "TRANSP" => Ok(Token::TRANSP),
       _ => Ok(Token::Other(ident_str)),
     }
   }
@@ -168,8 +203,8 @@ impl<'a> IcsLexer<'a> {
 
   pub fn token(&mut self) -> Result<Token, ICSProcessError> {
     let curr_char = self.current()?;
-    if curr_char.is_whitespace() {
-      self.skip_while(|c| c.is_whitespace())?;
+    if is_boring_whitespace(curr_char) {
+      self.skip_while(is_boring_whitespace)?;
       self.token()
     } else {
       match curr_char {

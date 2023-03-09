@@ -31,7 +31,7 @@ impl Month {
     MONTH_LIST.get(safe_sub).copied()
   }
 
-  fn num_days(&self, y: &dyn Year) -> u32 {
+  pub fn num_days(&self, y: &dyn Year) -> u32 {
     use Month::*;
     if *self == Jan {
       // feb
@@ -58,6 +58,19 @@ impl Month {
         .checked_add(prev_mon.num_min(y))
         .expect("Month is never large enough to let u32 overflow"),
       None => 0,
+    }
+  }
+}
+
+impl TryFrom<usize> for Month {
+
+  type Error = String;
+
+  /// Tries to convert a usize to corresponding month, starting with zero. 
+  fn try_from(value: usize) -> Result<Self, Self::Error> {
+    match MONTH_LIST.get(value) {
+      Some(m) => Ok(*m),
+      None => Err(format!("Cannot convert `{}` to Month", value)),
     }
   }
 }
