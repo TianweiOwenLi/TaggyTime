@@ -1,13 +1,38 @@
 use std::fs::File;
 
-use self::{ics_syntax::ICSParser, lexer::IcsLexer};
-use crate::error::ICSProcessError;
+use self::{ics_syntax::ICSParser, lexer::{Token, IcsLexer}};
 
 use std::io::Write;
 
 pub mod ics_syntax;
 pub mod lexer;
 pub mod peekbuf;
+
+#[allow(dead_code)]
+#[derive(Clone)]
+pub enum ICSProcessError {
+  EOF,
+  CannotCastTok(Token),
+  Other(String),
+}
+
+impl std::fmt::Display for ICSProcessError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      ICSProcessError::EOF => write!(f, "End of file error"),
+      ICSProcessError::CannotCastTok(t) => {
+        write!(f, "Cannot cast token `{}` to str", t)
+      }
+      ICSProcessError::Other(s) => write!(f, "ICS process error: {}", s),
+    }
+  }
+}
+
+impl<'a> From<&'a ICSProcessError> for ICSProcessError {
+  fn from(value: &'a ICSProcessError) -> Self {
+    value.clone()
+  }
+}
 
 pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
   let content = std::fs::read_to_string(ics_filename)

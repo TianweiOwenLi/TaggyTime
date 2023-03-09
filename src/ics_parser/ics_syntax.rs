@@ -11,10 +11,10 @@ use crate::{
 use crate::time::timezone::ZoneOffset;
 
 use super::{
+  ICSProcessError,
   lexer::{IcsLexer, Token},
   peekbuf::PeekBuffer,
 };
-use crate::error::ICSProcessError;
 
 pub struct ICalendar {
   name: String,

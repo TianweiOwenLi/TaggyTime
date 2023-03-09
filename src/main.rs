@@ -1,10 +1,7 @@
 mod args;
 mod calendar;
-mod command_parser;
-mod error;
 mod ics_parser;
 mod percent;
-mod tasks_util;
 mod time;
 
 use std::io::BufRead;

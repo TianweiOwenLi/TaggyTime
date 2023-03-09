@@ -1,6 +1,7 @@
-use crate::error::ICSProcessError;
 use std::iter::Peekable;
 use std::str::Chars;
+
+use super::ICSProcessError;
 
 pub fn char_after_keyword(c: char) -> bool {
   c.is_whitespace() || [';', ':', '='].contains(&c)

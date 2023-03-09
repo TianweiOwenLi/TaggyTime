@@ -5,7 +5,7 @@
 use std::collections::VecDeque;
 
 use super::lexer::{IcsLexer, Token};
-use crate::error::ICSProcessError;
+use super::ICSProcessError;
 
 /// A buffer wrapped on top of a lexer that allows arbitrary-depth `peek()`.
 pub struct PeekBuffer<'a> {
