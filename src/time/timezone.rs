@@ -1,5 +1,6 @@
 pub const UTC_LB: i64 = -720;
 pub const UTC_UB: i64 = 840;
+const OFFSET_MIN_IN_HR: i64 = 60;
 
 /// A representation of a timezone offset, in terms of difference in minutes
 /// as compared to UTC.
@@ -29,6 +30,15 @@ impl ZoneOffset {
   /// Returns the raw offset data.
   pub fn raw(&self) -> i64 {
     self.0
+  }
+}
+
+impl std::fmt::Display for ZoneOffset {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let sign_char = if self.0 >= 0 { '+' } else { '-' };
+    let abs = self.0.abs();
+    let (hr, min) = (abs / OFFSET_MIN_IN_HR, abs % OFFSET_MIN_IN_HR);
+    write!(f, "{}{:02}:{:02}", sign_char, hr, min)
   }
 }
 

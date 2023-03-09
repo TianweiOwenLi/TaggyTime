@@ -8,9 +8,28 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use crate::args::*;
+use time::timezone::ZoneOffset;
 
-fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
+use crate::{args::*, time::Date};
+
+/// Stores global variables for such interaction.
+/// 
+/// [todo] Implement load from file.
+struct TaggyEnv {
+  tz: ZoneOffset
+}
+
+/// Loads the interactive environment. 
+fn load_env() -> Result<TaggyEnv, String> {
+  Ok(TaggyEnv { tz: ZoneOffset::utc() })
+}
+
+/// Stores the interactive environment.
+fn store_env() -> Result<(), String> {
+  Ok(())
+}
+
+fn handle_command_vec(cmd: Vec<String>, tenv: &mut TaggyEnv) -> Result<(), String> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
@@ -25,6 +44,19 @@ fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
         Err(e) => Err(e.to_string()),
       }
     }
+    ["now"] => {
+      let mut mi = time::MinInstant::now();
+      mi.set_offset(tenv.tz);
+      println!("The time now is: {}, offset={}", 
+        Date::from_min_instant(mi),
+        mi.get_offset(),
+      );
+      Ok(())
+    }
+    ["set", "tz", "-05:00"] => {
+      tenv.tz = ZoneOffset::new(-300).unwrap();
+      Ok(())
+    }
     _ => Err("Invalid command".to_string()),
   }
 }
@@ -32,6 +64,11 @@ fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
 fn main() {
   let mode = parse_args().unwrap_or_else(|e| {
     eprintln!("Parse argument failed! \n{:?}", e);
+    std::process::exit(1)
+  });
+
+  let mut tenv = load_env().unwrap_or_else(|e| {
+    eprintln!("TaggyTime environment failed to load! \n{:?}", e);
     std::process::exit(1)
   });
 
@@ -51,11 +88,17 @@ fn main() {
       // interpret
       let v: Vec<String> =
         buf.split(' ').map(|s| s.trim().to_string()).collect();
-      if let Err(e) = handle_command_vec(v) {
+      if let Err(e) = handle_command_vec(v, &mut tenv) {
         eprintln!("[taggytime] Command error: {}", e)
       }
-    },
-    Mode::Cli(v) => handle_command_vec(v),
+    }
+    Mode::Cli(v) => {
+      handle_command_vec(v, &mut tenv).unwrap_or_else(|e| {
+        eprintln!("Command execution failed! \n{:?}", e);
+        std::process::exit(1)
+      });
+      store_env()
+    }
   };
 
   if let Err(e) = run_result {

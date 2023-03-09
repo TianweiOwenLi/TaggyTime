@@ -8,9 +8,6 @@ use crate::{
   time::{Date, MinInstant, MinInterval}, const_params::ICS_DEFAULT_TIME_IN_DAY,
 };
 
-use crate::calendar::cal_event::RecurRules::*;
-
-use crate::time::timezone::ZoneOffset;
 
 use super::{
   lexer::{IcsLexer, Token},
@@ -107,21 +104,6 @@ impl<'a> ICSParser<'a> {
   fn skip(&mut self) -> Result<(), ICSProcessError> {
     self.token()?;
     Ok(())
-  }
-
-  /// Skips till we encounter the target token.
-  fn skip_till(&mut self, target_tok: Token) -> Result<(), ICSProcessError> {
-    loop {
-      match self.peek(0) {
-        Ok(head_ok) => {
-          if &target_tok == head_ok {
-            break Ok(());
-          }
-        }
-        Err(e) => break Err(e.clone()),
-      }
-      self.skip()?;
-    }
   }
 
   /// Skips till the given condition holds. If the condition is never met,
@@ -398,7 +380,9 @@ impl<'a> ICSParser<'a> {
           if ready_to_rrule {
             content.push(self.rrule()?);
           } else {
-            return Err(ICSProcessError::Msg("rrules poorly fmt'd"))
+            return Err(ICSProcessError::Other(
+              format!("Cannot rrule yet but encountered `{}`", t)
+            ))
           }
         }
       }
@@ -485,37 +469,6 @@ impl<'a> ICSParser<'a> {
     }
   }
 
-  /// Skips till the symbol `begin:after`.
-  pub fn goto_colon_sandwich(
-    &mut self,
-    before: Token,
-    after: Token,
-  ) -> Result<(), ICSProcessError> {
-    self.skip_till(before.clone())?;
-
-    let p0 = self.peek_copy(0);
-    let p1 = self.peek_copy(1);
-    let p2 = self.peek_copy(2);
-
-    match (p0, p1, p2) {
-      (Ok(tok1), Ok(Token::COLON), Ok(tok2)) => {
-        if tok1 != before {
-          panic!("skip_till() stops at {}, not {}", tok1, before)
-        }
-        if after == tok2 {
-          Ok(())
-        } else {
-          self.munch(before.clone())?;
-          self.munch(Token::COLON)?;
-          self.skip()?;
-          self.goto_colon_sandwich(before, after)
-        }
-      }
-      _ => Err(ICSProcessError::Other(
-        "ICS colon sandwich malformed".to_string(),
-      )),
-    }
-  }
 }
 
 impl std::fmt::Display for RRuleToks {

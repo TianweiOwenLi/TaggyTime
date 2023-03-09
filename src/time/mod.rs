@@ -11,11 +11,9 @@ mod fact;
 
 pub mod timezone;
 
-use crate::{calendar::cal_event::Workload, ics_parser::ICSProcessError};
+use crate::ics_parser::ICSProcessError;
 
 use self::{fact::*, timezone::ZoneOffset, year::CeYear};
-
-const SEC_IN_MIN: i64 = 60;
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
@@ -110,6 +108,11 @@ impl MinInstant {
     }
   }
 
+  /// Returns the current offset.
+  pub fn get_offset(&self) -> ZoneOffset {
+    self.offset
+  }
+
   /// Adjust by an input offset. This merely changes the timezone
   /// representation, and does not shift the represented time instance.
   ///
@@ -168,23 +171,6 @@ impl MinInterval {
   /// the start and end time. This constructor ensures non-negativity.
   pub fn new(start: MinInstant, end: MinInstant) -> MinInterval {
     MinInterval { start, end }
-  }
-
-  /// Constructs a `MinInterval` via a `MinInstant`, which represents its
-  /// starting time, and some `u32`, which represents the duration in minutes
-  /// of such interval.
-  pub fn from_instance_and_minute_duration(
-    mi: MinInstant,
-    duration_minute: u32,
-  ) -> MinInterval {
-    let offset = mi.offset;
-    MinInterval {
-      start: mi,
-      end: MinInstant {
-        raw: mi.raw + duration_minute,
-        offset,
-      },
-    }
   }
 
   /// Converts start and end to `Date` and prints accordingly

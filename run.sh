@@ -1,0 +1,1 @@
+rlwrap ./target/debug/taggytime $@
