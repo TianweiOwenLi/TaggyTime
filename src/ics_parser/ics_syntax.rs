@@ -4,16 +4,17 @@
 //! are less relevant to workload calculation.
 
 use crate::{
-  calendar::cal_event::Recurrence,
-  time::{MinInstant, MinInterval, Date}, ics_parser::lexer,
+  calendar::cal_event::{Recurrence, Pattern, Term},
+  ics_parser::lexer,
+  time::{Date, MinInstant, MinInterval}, const_params::ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE,
 };
 
 use crate::time::timezone::ZoneOffset;
 
 use super::{
-  ICSProcessError,
   lexer::{IcsLexer, Token},
   peekbuf::PeekBuffer,
+  ICSProcessError,
 };
 
 pub struct ICalendar {
@@ -96,38 +97,42 @@ impl<'a> ICSParser<'a> {
     }
   }
 
-  /// Skips till the given condition holds. If the condition is never met, 
-  /// returns EOF error. 
+  /// Skips till the given condition holds. If the condition is never met,
+  /// returns EOF error.
   pub fn skip_until_lambda<F>(&mut self, cond: F) -> Result<(), ICSProcessError>
   where
-    F: Fn(&Token) -> bool
+    F: Fn(&Token) -> bool,
   {
     while let Ok(t) = self.peek(0) {
-      if cond(t) { return Ok(()); }
+      if cond(t) {
+        return Ok(());
+      }
       self.skip()?;
     }
     Err(ICSProcessError::EOF)
   }
 
-  /// Takes a token, verifies that it is of `Number(..)` variant, and 
+  /// Takes a token, verifies that it is of `Number(..)` variant, and
   /// returns the corresponding String literal.
   fn number(&mut self) -> Result<String, ICSProcessError> {
     let tok = self.token()?;
     match tok {
       Token::Number(s) => Ok(s),
-      bad_tok => Err(ICSProcessError::NaN(bad_tok))
+      bad_tok => Err(ICSProcessError::NaN(bad_tok)),
     }
   }
 
-  /// Keeps taking everything as a string, until the peeked token meets the 
-  /// given condition. 
-  pub fn string_until<F>(&mut self, cond: F) -> Result<String, ICSProcessError> 
+  /// Keeps taking everything as a string, until the peeked token meets the
+  /// given condition.
+  pub fn string_until<F>(&mut self, cond: F) -> Result<String, ICSProcessError>
   where
-    F: Fn(&Token) -> bool
+    F: Fn(&Token) -> bool,
   {
     let mut ret = String::new();
     while let Ok(t) = self.peek(0) {
-      if cond(t) { break; }
+      if cond(t) {
+        break;
+      }
       let head = self.token()?;
       ret.push_str(&head.cast_as_string());
     }
@@ -156,18 +161,21 @@ impl<'a> ICSParser<'a> {
           self.skip()?;
         }
         (Token::BEGIN | Token::END, x, _) => {
-          break Err(ICSProcessError::Other(
-            format!("Expected COLON after BEGIN / END, found {}", x)
-          ))
+          break Err(ICSProcessError::Other(format!(
+            "Expected COLON after BEGIN / END, found {}",
+            x
+          )))
         }
-        _ => unreachable!()
+        _ => unreachable!(),
       }
     }
   }
 
   /// Handles end of `VCALENDAR`.
-  pub fn end(&mut self, vevents: Vec<Vevent>) 
-  -> Result<ICalendar, ICSProcessError> {
+  pub fn end(
+    &mut self,
+    vevents: Vec<Vevent>,
+  ) -> Result<ICalendar, ICSProcessError> {
     println!("-- entered end");
     self.munch(Token::END)?;
     self.munch(Token::COLON)?;
@@ -179,9 +187,9 @@ impl<'a> ICSParser<'a> {
     });
   }
 
-  /// Parses some `VEVENT` from calendar. Note that only `DTSTART`, `DTEND`, 
-  /// `SUMMARY`, and `RRULE` will be processed; all other components are 
-  /// simply discarded. 
+  /// Parses some `VEVENT` from calendar. Note that only `DTSTART`, `DTEND`,
+  /// `SUMMARY`, and `RRULE` will be processed; all other components are
+  /// simply discarded.
   pub fn vevent(&mut self) -> Result<Vevent, ICSProcessError> {
     println!("-- start of vevent --");
     self.munch(Token::BEGIN)?;
@@ -191,6 +199,7 @@ impl<'a> ICSParser<'a> {
     let mut dtstart: Option<MinInstant> = None;
     let mut dtend: Option<MinInstant> = None;
     let mut summary = String::new();
+    let mut recur: Option<Recurrence> = None;
 
     loop {
       match self.peek(0)? {
@@ -207,8 +216,7 @@ impl<'a> ICSParser<'a> {
           println!("Encountered summary: {}", summary);
         }
         Token::RRULE => {
-          self.skip()?;
-          // todo when implementing recurrences.
+          recur = Some(self.rrule()?);
         }
         Token::END => {
           self.munch(Token::END)?;
@@ -218,8 +226,10 @@ impl<'a> ICSParser<'a> {
             match (dtstart, dtend) {
               (Some(start), Some(end)) => {
                 println!("-- end of vevent --");
+                let mi = MinInterval::new(start, end);
                 return Ok(Vevent {
-                  repeat: Recurrence::Once(MinInterval::new(start, end)),
+                  repeat: recur
+                    .unwrap_or(Recurrence::once(mi)),
                   summary,
                 });
               }
@@ -237,9 +247,10 @@ impl<'a> ICSParser<'a> {
               }
             }
           } else {
-            return Err(ICSProcessError::Other(
-              format!("VEVENT contains unexpected end: {}", end_tag)
-            ));
+            return Err(ICSProcessError::Other(format!(
+              "VEVENT contains unexpected end: {}",
+              end_tag
+            )));
           }
         }
         _ => {
@@ -261,8 +272,8 @@ impl<'a> ICSParser<'a> {
     self.dt_possible_timezone()
   }
 
-  /// Parses a datetime literal with an optional timezone prefix. 
-  /// 
+  /// Parses a datetime literal with an optional timezone prefix.
+  ///
   /// ### Syntax
   /// `:[yyyymmdd]T[hhmmss]Z | ;TZID=..:[yyyymmdd]T[hhmmss]`
   fn dt_possible_timezone(&mut self) -> Result<MinInstant, ICSProcessError> {
@@ -291,24 +302,58 @@ impl<'a> ICSParser<'a> {
     }
   }
 
+  /// Parses recurrence rule.
+  fn rrule(&mut self) -> Result<Recurrence, ICSProcessError> {
+    self.munch(Token::RRULE)?;
+    self.munch(Token::COLON)?;
+    self.munch(Token::FREQ)?;
+    self.munch(Token::EQ)?;
+    match self.token()? {
+      Token::DAILY => todo!("Cannot yet resolve daily recur"),
+      Token::WEEKLY => {
+        self.munch(Token::SEMICOLON)?;
+        self.weekly_pattern()
+      }
+      Token::MONTHLY => todo!("Cannot yet resolve monthly recur"),
+      Token::YEARLY => todo!("Cannot yet resolve yearly recur"),
+      t => Err(ICSProcessError::Other(
+        format!("`{}` is not a valid frequency", t)
+      )),
+      Token::SECONDLY | Token::MINUTELY | Token::HOURLY => {
+        unimplemented!("Secondly, minutely and hourly freq not supported")
+      }
+    }
+  }
+
+  /// Parses the weekly details
+  fn weekly_pattern(&mut self) -> Result<Recurrence, ICSProcessError> {
+    if ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE {
+      unimplemented!()
+    } else {
+      unimplemented!()
+    }
+  }
+
   /// Parses a datetime literal, in the form of `[yyyymmdd]T[hhmmss]Z`.
-  fn dt_literal(&mut self, zone_specified: bool) 
-  -> Result<MinInstant, ICSProcessError> {
+  fn dt_literal(
+    &mut self,
+    zone_specified: bool,
+  ) -> Result<MinInstant, ICSProcessError> {
     let ymd = self.number()?;
     self.munch(Token::Other("T".to_string()))?;
     let hms = self.number()?;
 
     // deal with weird ICS format rules.
-    if ! zone_specified {
+    if !zone_specified {
       self.munch(Token::Other("Z".to_string()))?;
     }
 
     let dt = Date::from_ics_time_string(&ymd, &hms)?;
-    
+
     let mi_res = MinInstant::from_date(dt);
     match mi_res {
       Ok(mi) => Ok(mi),
-      _ => unreachable!("Well-formatted ICS can never overflow MinInstant")
+      _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
     }
   }
 
@@ -343,7 +388,6 @@ impl<'a> ICSParser<'a> {
       )),
     }
   }
-
 }
 
 impl std::fmt::Display for Vevent {

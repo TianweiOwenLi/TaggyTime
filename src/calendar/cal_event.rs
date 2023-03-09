@@ -1,54 +1,81 @@
+use std::collections::BTreeSet;
+
+use datetime::Month;
+
 use crate::percent::Percent;
 use crate::time::{MinInstant, MinInterval};
+use crate::util_typs::refinement::RangedI64;
 
-/// Indicators representing subsets of days in a week.
-pub struct WeekdayBitset {
-  mon: bool,
-  tue: bool,
-  wed: bool,
-  thu: bool,
-  fri: bool,
-  sat: bool,
-  sun: bool,
+pub enum WeekDay {
+  MO,
+  TU,
+  WE,
+  TH,
+  FR,
+  SA,
+  SU,
 }
 
-impl WeekdayBitset {
-  /// Unset all days of the week.
-  pub fn clear(&mut self) {
-    self.mon = false;
-    self.tue = false;
-    self.wed = false;
-    self.thu = false;
-    self.fri = false;
-    self.sat = false;
-    self.sun = false;
+pub enum OrdSign {
+  P,
+  M,
+}
+
+pub type Minutes = RangedI64::<0, 59>;
+pub type Hours = RangedI64::<0, 23>;
+
+pub type OrdWkDay = (OrdSign, WeekDay);
+pub type OrdMoDay = (OrdSign, RangedI64::<1, 31>);
+pub type OrdYrDay = (OrdSign, RangedI64::<1, 366>);
+pub type OrdWkNum = (OrdSign, RangedI64::<1, 53>);
+
+pub type ByHrLst = BTreeSet<Hours>;
+pub type ByMinLst = BTreeSet<Minutes>;
+pub type ByWkDayLst = BTreeSet<OrdWkDay>;
+pub type ByMoDayLst = BTreeSet<OrdMoDay>;
+pub type ByYrDayLst = BTreeSet<OrdYrDay>;
+pub type ByWkNumLst = BTreeSet<OrdWkNum>;
+pub type ByMonthLst = BTreeSet<Month>;
+
+pub type SetPos = usize;
+pub type Interval = usize;
+
+/// Repetition by day, week, month, year, etc.
+pub enum Repeat {
+  Daily(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+  Weekly(ByMonthLst, ByWkDayLst, ByHrLst, SetPos),
+  Monthly(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+  Yearly(ByMonthLst, ByWkNumLst, ByYrDayLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+}
+
+pub enum Pattern {
+  Once,
+  Many(Repeat, Interval, Term)
+}
+
+/// Recurrence event termination condition, which is either a number of 
+/// occurrences, a "finished" time instance, or never. 
+pub enum Term {
+  Count(usize),
+  Until(MinInstant),
+  Never,
+}
+
+/// Describes when shall some recurring events happen. This can correspond 
+/// to some mapping from `MinInstant` to `bool`, indicating precisely if a 
+/// recurring event is happening.
+pub struct Recurrence {
+  /// Actual time interval of event, ie. 08:30 - 09:50
+  event: MinInterval,
+
+  /// Recurrence pattern, ie. weekly on TU, TH
+  patt: Pattern,
+}
+
+impl Recurrence {
+  pub fn once(mi: MinInterval) -> Self {
+    Self { event: mi, patt: Pattern::Once }
   }
-
-  /// Checks whether none of the says in a week is selected.
-  pub fn is_empty(&self) -> bool {
-    self.mon
-      && self.tue
-      && self.wed
-      && self.thu
-      && self.fri
-      && self.sat
-      && self.sun
-  }
-}
-
-pub struct WeekdayRecurrence {
-  start: MinInstant,
-  end: MinInstant,
-  repeat: WeekdayBitset,
-  interval: MinInterval,
-}
-
-/// Describes when shall some recurring events happen.
-///
-/// [todo] Implement custom executable functions that describes a recurrence.
-pub enum Recurrence {
-  Once(MinInterval),
-  Weekly(MinInstant, WeekdayBitset, MinInterval),
 }
 
 /// A wrapper around u32, which represents the number of minutes needed to
@@ -115,13 +142,6 @@ impl Workload {
 
 impl std::fmt::Display for Recurrence {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      Recurrence::Once(miv) => {
-        write!(f, "Once {}", miv)
-      }
-      Recurrence::Weekly(start, repeat, miv) => {
-        write!(f, "Repeat: ")
-      }
-    }
+    unimplemented!()
   }
 }

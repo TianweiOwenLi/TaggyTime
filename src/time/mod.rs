@@ -44,9 +44,8 @@ pub struct MinInstant {
 }
 
 impl PartialEq for MinInstant {
-
-  /// Tests whether two `MinInstant` equals. 
-  /// 
+  /// Tests whether two `MinInstant` equals.
+  ///
   /// [todo] Improve efficiency.
   fn eq(&self, other: &Self) -> bool {
     let mut lhs = self.clone();
@@ -75,7 +74,9 @@ impl PartialOrd for MinInstant {
 
 impl Ord for MinInstant {
   fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-    self.partial_cmp(other).expect("PartialOrd for MinInstant is impl'd")
+    self
+      .partial_cmp(other)
+      .expect("PartialOrd for MinInstant is impl'd")
   }
 }
 
@@ -138,7 +139,9 @@ impl MinInstant {
   /// Returns an error on u32 overflow.
   pub fn from_date(date: Date) -> year::Result<Self> {
     let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
-    let mons_min = date.get_mon().num_min_since_new_year(&date.get_yr() as &dyn Year);
+    let mons_min = date
+      .get_mon()
+      .num_min_since_new_year(&date.get_yr() as &dyn Year);
     let days_min = (date.get_day() - 1) * MIN_IN_DAY; // 1-index to 0-index
     let hrs_min = (date.get_hr()) * MIN_IN_HR;
     let min_min = date.get_min();
@@ -147,12 +150,15 @@ impl MinInstant {
     let ret_opt = u32_safe_sum(arr_to_safely_sum);
 
     match ret_opt {
-      Some(n) => Ok(MinInstant { raw: n, offset: ZoneOffset::utc() }),
+      Some(n) => Ok(MinInstant {
+        raw: n,
+        offset: ZoneOffset::utc(),
+      }),
       None => Err(YearError::DateToMinInstantOverFlow(
-        date.get_yr().to_ce().raw(), 
-        date.get_mon() as u32, 
+        date.get_yr().to_ce().raw(),
+        date.get_mon() as u32,
         date.get_day(),
-      ))
+      )),
     }
   }
 }
@@ -239,10 +245,7 @@ impl Date {
       // strip month from t
       let x = curr_month.num_min(&curr_year);
       if t >= x {
-        (curr_month, t) = (
-          curr_month.next().expect("Month Overflow"), 
-          t - x
-        )
+        (curr_month, t) = (curr_month.next().expect("Month Overflow"), t - x)
       } else {
         break;
       }
@@ -257,18 +260,21 @@ impl Date {
     }
   }
 
-  /// Constructs an instance of `Self` from two strings, one is of form 
-  /// `yyyymmdd`, and the other is of form `hhmmss`. 
-  pub fn from_ics_time_string(ymd: &str, hms: &str) 
-  -> Result<Self, ICSProcessError> {
-
+  /// Constructs an instance of `Self` from two strings, one is of form
+  /// `yyyymmdd`, and the other is of form `hhmmss`.
+  pub fn from_ics_time_string(
+    ymd: &str,
+    hms: &str,
+  ) -> Result<Self, ICSProcessError> {
     // Return error message
     let bad = Err(ICSProcessError::ICSTimeMalformatted(
-      ymd.to_string(), 
-      hms.to_string())
-    );
+      ymd.to_string(),
+      hms.to_string(),
+    ));
 
-    if ymd.len() < 8 || hms.len() < 6 { return bad; }
+    if ymd.len() < 8 || hms.len() < 6 {
+      return bad;
+    }
 
     let yr_str = &ymd[0..4];
     let mon_str = &ymd[4..6];
@@ -284,17 +290,16 @@ impl Date {
 
     match (yr_res, mon_res, day_res, hr_res, min_res) {
       (Ok(y), Ok(m), Ok(d), Ok(h), Ok(mi)) => {
-
         let yr = match CeYear::new(y) {
           Ok(y) => y,
           _ => return bad,
         };
-        
+
         // since Month::try_from() is 0-indexed
         let mon = if let Some(m0) = m.checked_sub(1) {
           match Month::try_from(m0) {
             Ok(m) => m,
-            _ => return bad
+            _ => return bad,
           }
         } else {
           return bad;
@@ -306,26 +311,49 @@ impl Date {
           return bad;
         };
 
-        let hr = if h <= 23 { h } else { return bad; };
-        let min = if mi <= 59 { mi } else { return bad; };
+        let hr = if h <= 23 {
+          h
+        } else {
+          return bad;
+        };
+        let min = if mi <= 59 {
+          mi
+        } else {
+          return bad;
+        };
 
-        Ok(Date { yr, mon, day, hr, min })
+        Ok(Date {
+          yr,
+          mon,
+          day,
+          hr,
+          min,
+        })
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
-        ymd.to_string(), 
-        hms.to_string())
-      )
+        ymd.to_string(),
+        hms.to_string(),
+      )),
     }
-
   }
 
-  pub fn get_yr(&self) -> CeYear { self.yr.clone() }
-  pub fn get_mon(&self) -> Month { self.mon }
-  
+  pub fn get_yr(&self) -> CeYear {
+    self.yr.clone()
+  }
+  pub fn get_mon(&self) -> Month {
+    self.mon
+  }
+
   /// Day in month, starts from 1.
-  pub fn get_day(&self) -> u32 { self.day }
-  pub fn get_hr(&self) -> u32 { self.hr }
-  pub fn get_min(&self) -> u32 { self.min }
+  pub fn get_day(&self) -> u32 {
+    self.day
+  }
+  pub fn get_hr(&self) -> u32 {
+    self.hr
+  }
+  pub fn get_min(&self) -> u32 {
+    self.min
+  }
 }
 
 impl std::fmt::Display for Date {
@@ -390,7 +418,7 @@ mod test {
   }
 
   #[test]
-  // Note that this test must occur at no earlier than 2023/Jan/21 21:11 
+  // Note that this test must occur at no earlier than 2023/Jan/21 21:11
   // in order to produce intended result.
   fn mininstant_order() {
     let mi = MinInstant {
@@ -404,8 +432,8 @@ mod test {
   }
 
   #[test]
-  /// This test guarantees that u32 parses work as intended even with 
-  /// leading zeroes. 
+  /// This test guarantees that u32 parses work as intended even with
+  /// leading zeroes.
   fn parse_u32_behavior() {
     let parsed: u32 = "0002333".parse().unwrap();
     assert_eq!(2333, parsed);
@@ -418,5 +446,4 @@ mod test {
     let mi = MinInstant::from_date(date).unwrap();
     assert_eq!(27905591, mi.raw());
   }
-
 }

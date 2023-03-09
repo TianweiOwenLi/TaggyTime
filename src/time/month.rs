@@ -2,8 +2,8 @@ use super::fact::*;
 use super::year::{Year, YearLength};
 
 use Month::*;
-const MONTH_LIST: [Month; 12] = [Jan, Feb, Mar, Apr, May, Jun, Jul, 
-  Aug, Sep, Oct, Nov, Dec];
+const MONTH_LIST: [Month; 12] =
+  [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec];
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Month {
@@ -50,11 +50,12 @@ impl Month {
     self.num_days(y) * MIN_IN_DAY
   }
 
-  /// Number of minutes from beginning of the given year to the 
+  /// Number of minutes from beginning of the given year to the
   /// beginning of the month.
   pub fn num_min_since_new_year(&self, y: &dyn Year) -> u32 {
     match self.prev() {
-      Some(prev_mon) => prev_mon.num_min_since_new_year(y)
+      Some(prev_mon) => prev_mon
+        .num_min_since_new_year(y)
         .checked_add(prev_mon.num_min(y))
         .expect("Month is never large enough to let u32 overflow"),
       None => 0,
@@ -63,10 +64,9 @@ impl Month {
 }
 
 impl TryFrom<usize> for Month {
-
   type Error = String;
 
-  /// Tries to convert a usize to corresponding month, starting with zero. 
+  /// Tries to convert a usize to corresponding month, starting with zero.
   fn try_from(value: usize) -> Result<Self, Self::Error> {
     match MONTH_LIST.get(value) {
       Some(m) => Ok(*m),

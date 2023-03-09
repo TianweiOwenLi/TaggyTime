@@ -13,18 +13,20 @@ fn is_boring_whitespace(c: char) -> bool {
   c != ' ' && c.is_whitespace() && c != '\n'
 }
 
-/// Tells if a token cannot appear as part of `SUMMARY` string content. 
-/// 
+/// Tells if a token cannot appear as part of `SUMMARY` string content.
+///
 /// [todo] Consider the edge case where user puts an ICS tag as part of summary.
 pub fn not_in_summary(t: &Token) -> bool {
   use Token::*;
-    if [END].contains(t) { return true; }
+  if [END].contains(t) {
+    return true;
+  }
 
-    return if ICS_ASSUME_TRANSP_ALWAYS_AFTER_SUMMARY {
-      t == &TRANSP
-    } else {
-      false
-    }
+  return if ICS_ASSUME_TRANSP_ALWAYS_AFTER_SUMMARY {
+    t == &TRANSP
+  } else {
+    false
+  };
 }
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -56,6 +58,17 @@ pub enum Token {
 
   // repetitions
   RRULE,
+  FREQ,
+  INTERVAL,
+  COUNT,
+  UNTIL,
+  SECONDLY,
+  MINUTELY,
+  HOURLY,
+  DAILY,
+  WEEKLY,
+  MONTHLY,
+  YEARLY,
 
   // other info
   SUMMARY,
@@ -70,7 +83,7 @@ pub enum Token {
 
 impl Token {
   /// Attempts to cast a token as a str.
-  pub fn cast_as_string(& self) -> String {
+  pub fn cast_as_string(&self) -> String {
     use Token::*;
     let ret = match self {
       COLON => ":",
@@ -191,6 +204,17 @@ impl<'a> IcsLexer<'a> {
       "RRULE" => Ok(Token::RRULE),
       "SUMMARY" => Ok(Token::SUMMARY),
       "TRANSP" => Ok(Token::TRANSP),
+      "FREQ" => Ok(Token::FREQ),
+      "INTERVAL" => Ok(Token::INTERVAL),
+      "COUNT" => Ok(Token::COUNT),
+      "UNTIL" => Ok(Token::UNTIL),
+      "SECONDLY" => Ok(Token::SECONDLY),
+      "MINUTELY" => Ok(Token::MINUTELY),
+      "HOURLY" => Ok(Token::HOURLY),
+      "DAILY" => Ok(Token::DAILY),
+      "WEEKLY" => Ok(Token::WEEKLY),
+      "MONTHLY" => Ok(Token::MONTHLY),
+      "YEARLY" => Ok(Token::YEARLY),
       _ => Ok(Token::Other(ident_str)),
     }
   }

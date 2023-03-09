@@ -20,12 +20,20 @@ impl std::fmt::Debug for YearError {
         write!(f, "Ce year new() underflowed with {}", n)
       }
       YearError::YrToMinInstantOverflow(y) => {
-        write!(f, "Year -> MinInstant conversion caused u32 overflow \
-          with year {}", y)
+        write!(
+          f,
+          "Year -> MinInstant conversion caused u32 overflow \
+          with year {}",
+          y
+        )
       }
       YearError::DateToMinInstantOverFlow(y, m, d) => {
-        write!(f, "Date -> MinInstant conversion caused u32 overflow \
-          with date {}/{}/{}", y, m, d)
+        write!(
+          f,
+          "Date -> MinInstant conversion caused u32 overflow \
+          with date {}/{}/{}",
+          y, m, d
+        )
       }
     }
   }
@@ -94,7 +102,7 @@ impl UnixYear {
   }
 
   /// get the number of minutes from unix epoch to beginning of year.
-  /// 
+  ///
   /// [todo] Improve efficiency.
   pub fn num_min_since_epoch(&self) -> Result<u32> {
     match self.prev() {
@@ -106,7 +114,7 @@ impl UnixYear {
           Some(n) => Ok(n),
           None => Err(YearError::YrToMinInstantOverflow(self.to_ce().raw())),
         }
-      } 
+      }
       None => Ok(0),
     }
   }

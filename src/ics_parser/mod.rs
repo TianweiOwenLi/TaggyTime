@@ -1,6 +1,9 @@
 use std::fs::File;
 
-use self::{ics_syntax::ICSParser, lexer::{Token, IcsLexer}};
+use self::{
+  ics_syntax::ICSParser,
+  lexer::{IcsLexer, Token},
+};
 
 use std::io::Write;
 
