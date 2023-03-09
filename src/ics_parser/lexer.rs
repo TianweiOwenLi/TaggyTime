@@ -41,6 +41,7 @@ pub enum Token {
   SLASH,
   UNDERSCORE,
   DASH,
+  COMMA,
 
   // times
   DTSTART,
@@ -260,6 +261,7 @@ impl<'a> IcsLexer<'a> {
         '-' => self.single(Token::DASH),
         '\n' => self.single(Token::NEXTLINE),
         '.' => self.single(Token::PERIOD),
+        ',' => self.single(Token::COMMA),
         'A'..='Z' | 'a'..='z' => self.possible_keyword(),
         '0'..='9' => self.number(),
         c => self.single(Token::Other(c.to_string())),

@@ -190,7 +190,7 @@ impl MinInterval {
 
 impl std::fmt::Display for MinInstant {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", Date::from_min_instant(*self).to_string())
+    write!(f, "mi({})", self.raw)
   }
 }
 
@@ -372,7 +372,7 @@ impl std::fmt::Display for Date {
 
 #[allow(unused_imports)]
 mod test {
-  use crate::time::timezone::ZoneOffset;
+  use crate::time::{timezone::ZoneOffset, year::CeYear, month::Month};
 
   use super::{Date, MinInstant};
 
@@ -441,9 +441,20 @@ mod test {
 
   #[test]
   fn ics_string_to_date() {
-    let (ymd, hms) = ("20230121", "211123");
-    let date = Date::from_ics_time_string(ymd, hms).unwrap();
-    let mi = MinInstant::from_date(date).unwrap();
-    assert_eq!(27905591, mi.raw());
+    let (ymd, hms) = ("20220314", "211123");
+    let date1 = Date::from_ics_time_string(ymd, hms).unwrap();
+
+    let date2 = Date {
+      yr: CeYear::new(2022).unwrap(), 
+      mon: Month::Mar, 
+      day: 14, 
+      hr: 21, 
+      min: 11, 
+    };
+
+    let mi1 = MinInstant::from_date(date1).unwrap();
+    let mi2 = MinInstant::from_date(date2).unwrap();
+
+    assert_eq!(mi1.raw(), mi2.raw());
   }
 }

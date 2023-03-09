@@ -18,6 +18,9 @@ pub enum ICSProcessError {
   NaN(Token),
   CannotCastTok(Token),
   ICSTimeMalformatted(String, String),
+  MalformedList(Token, Token),
+  InvalidFreq(Token),
+  Msg(&'static str),
   Other(String),
 }
 
@@ -32,6 +35,11 @@ impl std::fmt::Display for ICSProcessError {
       ICSProcessError::ICSTimeMalformatted(s1, s2) => {
         write!(f, "Cannot parse `{}/{}` as valid time", s1, s2)
       }
+      ICSProcessError::MalformedList(t1, t2) => {
+        write!(f, "List malformed with elements {} {}", t1, t2)
+      }
+      ICSProcessError::InvalidFreq(t) => write!(f, "{} is invalid freq", t),
+      ICSProcessError::Msg(s) => write!(f, "ICS err: {}", s),
       ICSProcessError::Other(s) => write!(f, "ICS process error: {}", s),
     }
   }

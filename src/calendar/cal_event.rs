@@ -2,6 +2,9 @@ use std::collections::BTreeSet;
 
 use datetime::Month;
 
+use crate::ics_parser::ICSProcessError;
+use crate::ics_parser::ics_syntax::RRuleToks;
+use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
 use crate::time::{MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
@@ -88,6 +91,13 @@ pub struct Recurrence {
 impl Recurrence {
   pub fn once(mi: MinInterval) -> Self {
     Self { event: mi, patt: Pattern::Once }
+  }
+}
+
+impl TryFrom<Vec<RRuleToks>> for Recurrence {
+  type Error = ICSProcessError;
+  fn try_from(value: Vec<RRuleToks>) -> Result<Self, Self::Error> {
+    unimplemented!()
   }
 }
 

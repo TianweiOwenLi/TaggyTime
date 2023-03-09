@@ -27,8 +27,30 @@ pub struct ICalendar {
 }
 
 pub struct Vevent {
-  repeat: Recurrence,
+  repeat: Option<FreqAndRRules>,
+  mi: MinInterval,
   summary: String,
+}
+
+/// Frequency of some `RRULE` line. 
+pub enum Freq {
+  Daily,
+  Weekly,
+  Monthly,
+  Yearly,
+}
+
+/// A single recurrence rule, in the form `BYXXX=item, item, item...`. 
+/// Composed of tokens, and may not be valid. 
+pub struct RRuleToks {
+  tag: Token,
+  content: Vec<Vec<Token>>
+}
+
+/// A frequency paired with a vec of `RRuleToks`. 
+pub struct FreqAndRRules {
+  freq: Freq,
+  content: Vec<RRuleToks>
 }
 
 pub struct ICSParser<'a> {
@@ -203,12 +225,14 @@ impl<'a> ICSParser<'a> {
     let mut dtstart: Option<MinInstant> = None;
     let mut dtend: Option<MinInstant> = None;
     let mut summary = String::new();
-    let mut recur: Option<Recurrence> = None;
+    let mut recur: Option<FreqAndRRules> = None;
 
     loop {
       match self.peek(0)? {
         Token::DTSTART => {
           dtstart = Some(self.dtstart()?);
+          println!("{}", dtstart.unwrap());
+          println!("{}", Date::from_min_instant(dtstart.unwrap()))
         }
         Token::DTEND => {
           dtend = Some(self.dtend()?);
@@ -220,7 +244,7 @@ impl<'a> ICSParser<'a> {
           println!("Encountered summary: {}", summary);
         }
         Token::RRULE => {
-          recur = Some(self.rrule()?);
+          recur = Some(self.rrules()?);
         }
         Token::END => {
           self.munch(Token::END)?;
@@ -230,10 +254,9 @@ impl<'a> ICSParser<'a> {
             match (dtstart, dtend) {
               (Some(start), Some(end)) => {
                 println!("-- end of vevent --");
-                let mi = MinInterval::new(start, end);
                 return Ok(Vevent {
-                  repeat: recur
-                    .unwrap_or(Recurrence::once(mi)),
+                  repeat: recur,
+                  mi: MinInterval::new(start, end),
                   summary,
                 });
               }
@@ -306,56 +329,88 @@ impl<'a> ICSParser<'a> {
     }
   }
 
-  /// Parses recurrence rule.
-  fn rrule(&mut self) -> Result<Recurrence, ICSProcessError> {
+  /// Parses recurrence rules.
+  fn rrules(&mut self) -> Result<FreqAndRRules, ICSProcessError> {
     self.munch(Token::RRULE)?;
     self.munch(Token::COLON)?;
+
     self.munch(Token::FREQ)?;
     self.munch(Token::EQ)?;
-    match self.token()? {
-      Token::DAILY => todo!("Cannot yet resolve daily recur"),
-      Token::WEEKLY => {
-        self.munch(Token::SEMICOLON)?;
-        self.week_recur_rules()
-      }
-      Token::MONTHLY => todo!("Cannot yet resolve monthly recur"),
-      Token::YEARLY => todo!("Cannot yet resolve yearly recur"),
-      t => Err(ICSProcessError::Other(
-        format!("`{}` is not a valid frequency", t)
-      )),
-      Token::SECONDLY | Token::MINUTELY | Token::HOURLY => {
-        unimplemented!("Secondly, minutely and hourly freq not supported")
-      }
-    }
-  }
-
-  /// Parses the recurrence rules for week.
-  fn week_recur_rules(&mut self) -> Result<Recurrence, ICSProcessError> {
-    // ByMonthLst, ByWkDayLst, ByHrLst, SetPos
-    let mut mo_lst = ByMonthLst::new();
-    let mut wd_lst = ByWkDayLst::new();
-    let mut hr_lst = ByHrLst::new();
-    let mut setpos: SetPos = None;
-    let mut wkst: WeekStart = None;
-    let mut interval: Interval = None;
-    let mut term: Term = Term::Never;
+    let freq = match self.token()? {
+      Token::DAILY => Freq::Daily,
+      Token::WEEKLY => Freq::Weekly,
+      Token::MONTHLY => Freq::Monthly,
+      Token::YEARLY => Freq::Yearly,
+      x => return Err(ICSProcessError::InvalidFreq(x))
+    };
+    
+    let mut content = Vec::<RRuleToks>::new();
+    let mut ready_to_rrule: bool = true;
 
     loop {
-      unimplemented!()
+      match self.peek(0)? {
+        Token::SEMICOLON => {
+          self.skip()?;
+          ready_to_rrule = true;
+        }
+        Token::NEXTLINE => {
+          break Ok(FreqAndRRules { freq, content });
+        }
+        Token::SPACE => {
+          self.skip()?;
+        }
+        t => {
+          if ready_to_rrule {
+            content.push(self.rrule()?);
+          } else {
+            return Err(ICSProcessError::Msg("rrules poorly fmt'd"))
+          }
+        }
+      }
     }
-
-    // if ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE {
-      
-    // } else {
-    //   unimplemented!()
-    // }
+    
   }
 
-  /// Parses a list of tokens until a list terminator.
-  fn colon_token_list(&mut self, end: Token) -> Vec<Token> {
-    unimplemented!()
+  /// Parses a single recur-rule.
+  /// 
+  /// ## Syntax
+  /// `recur=tok_lst`
+  fn rrule(&mut self) -> Result<RRuleToks, ICSProcessError> {
+    let tag = self.token()?;
+    self.munch(Token::EQ)?;
+    let content = self.tok_lst(
+      &Token::COMMA, 
+      |t| {t == &Token::NEXTLINE || t == &Token::SEMICOLON}
+    )?;
+    Ok(RRuleToks{tag, content})
   }
 
+  /// Parses a list of token lists with specified separator and terminator. 
+  /// Does NOT munch terminator.
+  /// 
+  /// ## Syntax
+  /// `vec<tok> end | vec<tok> sep tok_lst`
+  fn tok_lst<F>(&mut self, sep: &Token, end: F) 
+  -> Result<Vec<Vec<Token>>, ICSProcessError> 
+  where 
+    F: Fn(&Token) -> bool 
+  {
+    let mut ret = Vec::<Vec<Token>>::new();
+    let mut entry = Vec::<Token>::new();
+
+    loop {
+      let next_tok = self.peek(0)?;
+      if end(next_tok) {
+        break Ok(ret);
+      } else if next_tok == sep {
+        self.skip()?;
+        ret.push(entry.clone());
+        entry.clear();
+      } else {
+        entry.push(self.token()?);
+      }
+    }
+  }
 
   /// Parses a datetime literal, in the form of `[yyyymmdd]T[hhmmss]Z`.
   fn dt_literal(
@@ -413,9 +468,29 @@ impl<'a> ICSParser<'a> {
   }
 }
 
+impl std::fmt::Display for RRuleToks {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}={:?}", self.tag, self.content)
+  }
+}
+
+impl std::fmt::Display for FreqAndRRules {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "  rrules=[\n")?;
+    for rrt in &self.content {
+      write!(f, "    {}\n", rrt)?;
+    }
+    write!(f, "\n  ]\n")
+  }
+}
+
 impl std::fmt::Display for Vevent {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "  {}\n  {}\n", self.summary.trim(), self.repeat)
+    let repeat_str = match &self.repeat {
+      Some(rpt) => rpt.to_string(),
+      None => "  No Repeat".to_string(),
+    };
+    write!(f, "  {}\n  {}\n{}\n", self.summary.trim(), self.mi, repeat_str)
   }
 }
 
