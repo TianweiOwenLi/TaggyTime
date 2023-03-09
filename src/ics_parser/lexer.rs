@@ -70,6 +70,17 @@ pub enum Token {
   MONTHLY,
   YEARLY,
 
+  // recurrence rules
+  BYMIN,
+  BYHOUR,
+  BYDAY,
+  BYMONTHDAY,
+  BYYEARDAY,
+  BYWEEKNO,
+  BYMONTH,
+  BYSETPOS,
+  WKST,
+
   // other info
   SUMMARY,
 
@@ -215,6 +226,15 @@ impl<'a> IcsLexer<'a> {
       "WEEKLY" => Ok(Token::WEEKLY),
       "MONTHLY" => Ok(Token::MONTHLY),
       "YEARLY" => Ok(Token::YEARLY),
+      "BYMIN" => Ok(Token::BYMIN),
+      "BYHOUR" => Ok(Token::BYHOUR),
+      "BYDAY" => Ok(Token::BYDAY),
+      "BYMONTHDAY" => Ok(Token::BYMONTHDAY),
+      "BYYEARDAY" => Ok(Token::BYYEARDAY),
+      "BYWEEKNO" => Ok(Token::BYWEEKNO),
+      "BYMONTH" => Ok(Token::BYMONTH),
+      "BYSETPOS" => Ok(Token::BYSETPOS),
+      "WKST" => Ok(Token::WKST),
       _ => Ok(Token::Other(ident_str)),
     }
   }

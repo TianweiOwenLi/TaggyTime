@@ -4,7 +4,18 @@ use datetime::Month;
 
 use crate::percent::Percent;
 use crate::time::{MinInstant, MinInterval};
-use crate::util_typs::refinement::RangedI64;
+use crate::util_typs::refinement::*;
+
+#[derive(PartialEq, Eq, PartialOrd, Ord)]
+pub enum RecurRules {
+  ByMon,
+  ByWkNo,
+  ByYrDay,
+  ByMoDay,
+  ByWkDay,
+  ByHr,
+  BySetPos,
+}
 
 pub enum WeekDay {
   MO,
@@ -29,16 +40,18 @@ pub type OrdMoDay = (OrdSign, RangedI64::<1, 31>);
 pub type OrdYrDay = (OrdSign, RangedI64::<1, 366>);
 pub type OrdWkNum = (OrdSign, RangedI64::<1, 53>);
 
-pub type ByHrLst = BTreeSet<Hours>;
 pub type ByMinLst = BTreeSet<Minutes>;
+pub type ByHrLst = BTreeSet<Hours>;
 pub type ByWkDayLst = BTreeSet<OrdWkDay>;
 pub type ByMoDayLst = BTreeSet<OrdMoDay>;
 pub type ByYrDayLst = BTreeSet<OrdYrDay>;
 pub type ByWkNumLst = BTreeSet<OrdWkNum>;
 pub type ByMonthLst = BTreeSet<Month>;
 
-pub type SetPos = usize;
-pub type Interval = usize;
+pub type OneOrMore = LowerBoundI64<1>;
+pub type SetPos = Option<OneOrMore>;
+pub type Interval = Option<OneOrMore>;
+pub type WeekStart = Option<WeekDay>;
 
 /// Repetition by day, week, month, year, etc.
 pub enum Repeat {

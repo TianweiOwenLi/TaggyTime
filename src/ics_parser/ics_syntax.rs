@@ -3,11 +3,15 @@
 //! Note that many details in ICalendar are purposefully omitted, because they
 //! are less relevant to workload calculation.
 
+use std::collections::BTreeSet;
+
 use crate::{
-  calendar::cal_event::{Recurrence, Pattern, Term},
+  calendar::cal_event::{Recurrence, Pattern, Term, RecurRules, ByMonthLst, ByWkDayLst, ByHrLst, SetPos, Interval, WeekStart},
   ics_parser::lexer,
   time::{Date, MinInstant, MinInterval}, const_params::ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE,
 };
+
+use crate::calendar::cal_event::RecurRules::*;
 
 use crate::time::timezone::ZoneOffset;
 
@@ -312,7 +316,7 @@ impl<'a> ICSParser<'a> {
       Token::DAILY => todo!("Cannot yet resolve daily recur"),
       Token::WEEKLY => {
         self.munch(Token::SEMICOLON)?;
-        self.weekly_pattern()
+        self.week_recur_rules()
       }
       Token::MONTHLY => todo!("Cannot yet resolve monthly recur"),
       Token::YEARLY => todo!("Cannot yet resolve yearly recur"),
@@ -325,14 +329,33 @@ impl<'a> ICSParser<'a> {
     }
   }
 
-  /// Parses the weekly details
-  fn weekly_pattern(&mut self) -> Result<Recurrence, ICSProcessError> {
-    if ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE {
-      unimplemented!()
-    } else {
+  /// Parses the recurrence rules for week.
+  fn week_recur_rules(&mut self) -> Result<Recurrence, ICSProcessError> {
+    // ByMonthLst, ByWkDayLst, ByHrLst, SetPos
+    let mut mo_lst = ByMonthLst::new();
+    let mut wd_lst = ByWkDayLst::new();
+    let mut hr_lst = ByHrLst::new();
+    let mut setpos: SetPos = None;
+    let mut wkst: WeekStart = None;
+    let mut interval: Interval = None;
+    let mut term: Term = Term::Never;
+
+    loop {
       unimplemented!()
     }
+
+    // if ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE {
+      
+    // } else {
+    //   unimplemented!()
+    // }
   }
+
+  /// Parses a list of tokens until a list terminator.
+  fn colon_token_list(&mut self, end: Token) -> Vec<Token> {
+    unimplemented!()
+  }
+
 
   /// Parses a datetime literal, in the form of `[yyyymmdd]T[hhmmss]Z`.
   fn dt_literal(
