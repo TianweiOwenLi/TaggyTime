@@ -3,12 +3,9 @@
 //! Note that many details in ICalendar are purposefully omitted, because they
 //! are less relevant to workload calculation.
 
-use std::collections::BTreeSet;
-
 use crate::{
-  calendar::cal_event::{Recurrence, Pattern, Term, RecurRules, ByMonthLst, ByWkDayLst, ByHrLst, SetPos, Interval, WeekStart},
   ics_parser::lexer,
-  time::{Date, MinInstant, MinInterval}, const_params::{ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE, ICS_DEFAULT_TIME_IN_DAY},
+  time::{Date, MinInstant, MinInterval}, const_params::ICS_DEFAULT_TIME_IN_DAY,
 };
 
 use crate::calendar::cal_event::RecurRules::*;
@@ -45,7 +42,7 @@ pub enum Freq {
 /// Composed of tokens, and may not be valid. 
 pub struct RRuleToks {
   tag: Token,
-  content: Vec<Vec<Token>>
+  content: Vec<String>
 }
 
 /// A frequency paired with a vec of `RRuleToks`. 
@@ -368,9 +365,6 @@ impl<'a> ICSParser<'a> {
             until,
           });
         }
-        Token::SPACE => {
-          self.skip()?;
-        }
         Token::INTERVAL => {
           self.skip()?;
           self.munch(Token::EQ)?;
@@ -426,18 +420,18 @@ impl<'a> ICSParser<'a> {
     Ok(RRuleToks{tag, content})
   }
 
-  /// Parses a list of token lists with specified separator and terminator. 
-  /// Does NOT munch terminator.
+  /// Parses a list of token (casted as string) lists with specified separator 
+  /// and terminator. Does NOT munch terminator.
   /// 
   /// ## Syntax
   /// `vec<tok> end | vec<tok> sep tok_lst`
   fn tok_lst<F>(&mut self, sep: &Token, end: F) 
-  -> Result<Vec<Vec<Token>>, ICSProcessError> 
+  -> Result<Vec<String>, ICSProcessError> 
   where 
     F: Fn(&Token) -> bool 
   {
-    let mut ret = Vec::<Vec<Token>>::new();
-    let mut entry = Vec::<Token>::new();
+    let mut ret = Vec::<String>::new();
+    let mut entry = String::new();
 
     loop {
       let next_tok = self.peek(0)?;
@@ -450,7 +444,7 @@ impl<'a> ICSParser<'a> {
         entry.clear();
       } else {
         let tok = self.token()?;
-        entry.push(tok);
+        entry.push_str(&tok.cast_as_string());
       }
     }
   }

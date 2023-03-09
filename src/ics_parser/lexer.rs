@@ -87,7 +87,6 @@ pub enum Token {
 
   // format
   NEXTLINE,
-  SPACE,
 
   // numeral
   Number(String),
@@ -105,6 +104,7 @@ impl Token {
       SLASH => "/",
       UNDERSCORE => "_",
       DASH => "-",
+      COMMA => ",",
       Other(s) | Number(s) => &s,
       NEXTLINE => "\\n",
       tok => return tok.to_string(),
