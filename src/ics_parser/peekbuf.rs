@@ -1,5 +1,5 @@
-//! Peek buffer datastructure. 
-//! 
+//! Peek buffer datastructure.
+//!
 //! This code fragment is from the author's 15411 Compiler class.
 
 use std::collections::VecDeque;
@@ -27,7 +27,10 @@ impl<'a> PeekBuffer<'a> {
   ///
   /// [args] `k` the index of desired item, where `0` stands for the immediate
   /// next item.
-  pub fn peek(&mut self, n: usize) -> std::result::Result<&Token, &ICSProcessError> {
+  pub fn peek(
+    &mut self,
+    n: usize,
+  ) -> std::result::Result<&Token, &ICSProcessError> {
     while self.buf.len() <= n {
       // so that get() will return Some(_).
       self.buf.push_back(self.lex.token());
@@ -52,4 +55,3 @@ impl<'a> PeekBuffer<'a> {
     ret
   }
 }
-

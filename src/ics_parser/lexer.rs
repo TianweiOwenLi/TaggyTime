@@ -1,6 +1,6 @@
+use crate::error::ICSProcessError;
 use std::iter::Peekable;
 use std::str::Chars;
-use crate::error::ICSProcessError;
 
 pub fn char_after_keyword(c: char) -> bool {
   c.is_whitespace() || [';', ':', '='].contains(&c)
@@ -46,9 +46,8 @@ pub enum Token {
 }
 
 impl Token {
-
-  /// Attempts to cast a token as a string; if the token in question shall not 
-  /// be interpreted as part of string under any circumstance, returns error. 
+  /// Attempts to cast a token as a string; if the token in question shall not
+  /// be interpreted as part of string under any circumstance, returns error.
   pub fn cast_as_string<'a>(&'a self) -> &'a str {
     unimplemented!()
   }

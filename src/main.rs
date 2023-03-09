@@ -1,11 +1,11 @@
+mod args;
+mod calendar;
 mod command_parser;
+mod error;
+mod ics_parser;
+mod percent;
 mod tasks_util;
 mod time;
-mod calendar;
-mod percent;
-mod ics_parser;
-mod args;
-mod error;
 
 use std::io::BufRead;
 
@@ -26,7 +26,7 @@ fn handle_command_vec(cmd: Vec<String>) -> Result<(), String> {
         Err(e) => Err(e.to_string()),
       }
     }
-    _ => Err("Invalid command".to_string())
+    _ => Err("Invalid command".to_string()),
   }
 }
 
@@ -50,7 +50,8 @@ fn main() {
       }
 
       // interpret
-      let v: Vec<String> = buf.split(' ').map(|s| s.trim().to_string()).collect();
+      let v: Vec<String> =
+        buf.split(' ').map(|s| s.trim().to_string()).collect();
       if let Err(e) = handle_command_vec(v) {
         eprintln!("[taggytime] Command error: {}", e)
       }

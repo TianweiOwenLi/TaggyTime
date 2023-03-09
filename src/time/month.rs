@@ -1,9 +1,13 @@
 use super::fact::*;
 use super::year::{Year, YearLength};
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+use Month::*;
+const MONTH_LIST: [Month; 12] = [Jan, Feb, Mar, Apr, May, Jun, Jul, 
+  Aug, Sep, Oct, Nov, Dec];
+
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum Month {
-  Jan,
+  Jan = 0,
   Feb,
   Mar,
   Apr,
@@ -18,22 +22,13 @@ pub enum Month {
 }
 
 impl Month {
-  pub fn next_month(&self) -> Self {
-    use Month::*;
-    match self {
-      Jan => Feb,
-      Feb => Mar,
-      Mar => Apr,
-      Apr => May,
-      May => Jun,
-      Jun => Jul,
-      Jul => Aug,
-      Aug => Sep,
-      Sep => Oct,
-      Oct => Nov,
-      Nov => Dec,
-      _ => panic!("no month after december"),
-    }
+  pub fn next(&self) -> Option<Self> {
+    MONTH_LIST.get(*self as usize + 1).copied()
+  }
+
+  pub fn prev(&self) -> Option<Self> {
+    let safe_sub = (*self as usize).checked_sub(1)?;
+    MONTH_LIST.get(safe_sub).copied()
   }
 
   fn num_days(&self, y: &dyn Year) -> u32 {
@@ -53,5 +48,41 @@ impl Month {
 
   pub fn num_min(&self, y: &dyn Year) -> u32 {
     self.num_days(y) * MIN_IN_DAY
+  }
+
+  /// Number of minutes from beginning of the given year to the 
+  /// beginning of the month.
+  pub fn num_min_since_new_year(&self, y: &dyn Year) -> u32 {
+    match self.prev() {
+      Some(prev_mon) => prev_mon.num_min_since_new_year(y)
+        .checked_add(prev_mon.num_min(y))
+        .expect("Month is never large enough to let u32 overflow"),
+      None => 0,
+    }
+  }
+}
+
+#[allow(dead_code, unused_imports)]
+mod test {
+  use super::*;
+
+  #[test]
+  fn prev_next_iterate() {
+    let may = Month::May;
+
+    let jun = may.next().unwrap();
+    let jul = jun.next().unwrap();
+    let aug = jul.next().unwrap();
+    let sep = aug.next().unwrap();
+    let oct = sep.next().unwrap();
+    let nov = oct.next().unwrap();
+    let dec = nov.next().unwrap();
+    assert!(dec.next().is_none());
+
+    let apr = may.prev().unwrap();
+    let mar = apr.prev().unwrap();
+    let feb = mar.prev().unwrap();
+    let jan = feb.prev().unwrap();
+    assert!(jan.prev().is_none());
   }
 }

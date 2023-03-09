@@ -1,17 +1,37 @@
 use super::fact::*;
 
-const UNIX_YEAR_MIN: u16 = u16::MIN;
 const UNIX_YEAR_MAX: u16 = u16::MAX - UNIX_EPOCH_YR_RAW;
 const CE_YEAR_MIN: u16 = u16::MIN + UNIX_EPOCH_YR_RAW;
-const CE_YEAR_MAX: u16 = u16::MAX;
 
-#[derive(Debug)]
 pub enum YearError {
   UnixYearConstructorOverflow(u16),
   CeYearConstructorUnderflow(u16),
+  YrToMinInstantOverflow(u16),
+  DateToMinInstantOverFlow(u16, u32, u32),
 }
 
-type Result<T> = core::result::Result<T, YearError>;
+impl std::fmt::Debug for YearError {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      YearError::UnixYearConstructorOverflow(n) => {
+        write!(f, "Unix year new() overflowed with {}", n)
+      }
+      YearError::CeYearConstructorUnderflow(n) => {
+        write!(f, "Ce year new() underflowed with {}", n)
+      }
+      YearError::YrToMinInstantOverflow(y) => {
+        write!(f, "Year -> MinInstant conversion caused u32 overflow \
+          with year {}", y)
+      }
+      YearError::DateToMinInstantOverFlow(y, m, d) => {
+        write!(f, "Date -> MinInstant conversion caused u32 overflow \
+          with date {}/{}/{}", y, m, d)
+      }
+    }
+  }
+}
+
+pub type Result<T> = core::result::Result<T, YearError>;
 
 pub enum YearLength {
   Leap,
@@ -51,6 +71,13 @@ pub trait Year {
   }
 }
 
+impl std::fmt::Debug for &dyn Year {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let ce = self.to_ce();
+    write!(f, "yr({})", ce.raw())
+  }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnixYear(u16);
 
@@ -67,10 +94,20 @@ impl UnixYear {
   }
 
   /// get the number of minutes from unix epoch to beginning of year.
-  pub fn num_min_since_epoch(&self) -> u32 {
+  /// 
+  /// [todo] Improve efficiency.
+  pub fn num_min_since_epoch(&self) -> Result<u32> {
     match self.prev() {
-      Some(prev_yr) => prev_yr.num_min_since_epoch() + prev_yr.num_min(),
-      None => 0,
+      Some(prev_yr) => {
+        let maybe_overflow = prev_yr
+          .num_min_since_epoch()?
+          .checked_add(prev_yr.num_min());
+        match maybe_overflow {
+          Some(n) => Ok(n),
+          None => Err(YearError::YrToMinInstantOverflow(self.to_ce().raw())),
+        }
+      } 
+      None => Ok(0),
     }
   }
 
@@ -109,15 +146,13 @@ impl Year for UnixYear {
   }
 
   fn to_unix(&self) -> UnixYear {
-    UnixYear::new(self.0)
-      .expect("Year module min/max has logical error")
+    UnixYear::new(self.0).expect("Year module min/max has logical error")
   }
 }
 
 impl Year for CeYear {
   fn to_ce(&self) -> CeYear {
-    CeYear::new(self.0)
-      .expect("Year module min/max has logical error")
+    CeYear::new(self.0).expect("Year module min/max has logical error")
   }
 
   fn to_unix(&self) -> UnixYear {
@@ -125,7 +160,6 @@ impl Year for CeYear {
       .expect("Year module min/max has logical error")
   }
 }
-
 
 #[allow(dead_code, unused_imports)]
 mod test {
@@ -150,7 +184,7 @@ mod test {
   fn convert_back_and_forth() {
     let origin_u = UnixYear::new(1999).unwrap();
     assert_eq!(
-      origin_u, 
+      origin_u,
       origin_u.next().unwrap().to_ce().to_unix().prev().unwrap()
     )
   }
@@ -159,6 +193,9 @@ mod test {
   fn comparsion() {
     assert!(UnixYear::new(2000).unwrap() < UnixYear::new(55555).unwrap());
     assert!(CeYear::new(6666).unwrap() > CeYear::new(2033).unwrap());
-    assert_eq!(CeYear::new(1985).unwrap(), UnixYear::new(15).unwrap().to_ce());
+    assert_eq!(
+      CeYear::new(1985).unwrap(),
+      UnixYear::new(15).unwrap().to_ce()
+    );
   }
 }

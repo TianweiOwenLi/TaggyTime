@@ -26,7 +26,13 @@ impl WeekdayBitset {
 
   /// Checks whether none of the says in a week is selected.
   pub fn is_empty(&self) -> bool {
-    self.mon && self.tue && self.wed && self.thu && self.fri && self.sat && self.sun
+    self.mon
+      && self.tue
+      && self.wed
+      && self.thu
+      && self.fri
+      && self.sat
+      && self.sun
   }
 }
 

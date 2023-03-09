@@ -2,7 +2,7 @@ use core::panic;
 use datetime::Instant;
 
 mod year;
-use year::{UnixYear, Year};
+use year::{UnixYear, Year, YearError};
 
 mod month;
 use month::Month;
@@ -13,13 +13,26 @@ pub mod timezone;
 
 use crate::calendar::cal_event::Workload;
 
-use self::{fact::*, timezone::ZoneOffset, year::{CeYear}};
+use self::{fact::*, timezone::ZoneOffset, year::CeYear};
 
 const SEC_IN_MIN: i64 = 60;
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
 const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
+
+// ---------------------------------- Utils -----------------------------------
+
+/// Safely sums up an array of `u32`, returns `None` if overflows.
+pub fn u32_safe_sum(numbers: &[u32]) -> Option<u32> {
+  let mut ret: u32 = 0;
+  for n in numbers {
+    ret = ret.checked_add(*n)?;
+  }
+  Some(ret)
+}
+
+// ---------------------------------- Impls -----------------------------------
 
 /// minutes since Unix Epoch. This can be casted to a different timezone
 /// by incrementing both raw and offset at the same time, without changing
@@ -31,15 +44,45 @@ pub struct MinInstant {
 }
 
 impl PartialEq for MinInstant {
+
+  /// Tests whether two `MinInstant` equals. 
+  /// 
+  /// [todo] Improve efficiency.
   fn eq(&self, other: &Self) -> bool {
-    unimplemented!()
+    let mut lhs = self.clone();
+    let mut rhs = other.clone();
+
+    lhs.set_offset(ZoneOffset::utc());
+    rhs.set_offset(ZoneOffset::utc());
+
+    lhs.raw == rhs.raw
+  }
+}
+
+impl Eq for MinInstant {}
+
+impl PartialOrd for MinInstant {
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    let mut lhs = self.clone();
+    let mut rhs = other.clone();
+
+    lhs.set_offset(ZoneOffset::utc());
+    rhs.set_offset(ZoneOffset::utc());
+
+    Some(lhs.raw.cmp(&rhs.raw))
+  }
+}
+
+impl Ord for MinInstant {
+  fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+    self.partial_cmp(other).expect("PartialOrd for MinInstant is impl'd")
   }
 }
 
 /// minutes since start of the day. TODO.
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked
-/// by `MinInstant`. This interval must be non-negative. 
+/// by `MinInstant`. This interval must be non-negative.
 pub struct MinInterval {
   start: MinInstant,
   end: MinInstant,
@@ -92,36 +135,50 @@ impl MinInstant {
   }
 
   /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
-  pub fn from_date(date: Date) -> Self {
-    let mut ret = MinInstant {raw: 0, offset: ZoneOffset::utc()};
-    // ret.raw += date.get_yr().num_min();
-    // ret.raw += date.get_mon().num_min(&date.get_yr());
-    unimplemented!()
+  /// Returns an error on u32 overflow.
+  pub fn from_date(date: Date) -> year::Result<Self> {
+    let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
+    let mons_min = date.get_mon().num_min_since_new_year(&date.get_yr() as &dyn Year);
+    let days_min = (date.get_day() - 1) * MIN_IN_DAY;
+    let hrs_min = (date.get_hr()) * MIN_IN_HR;
+    let min_min = date.get_min();
 
+    let arr_to_safely_sum = &[yrs_min, mons_min, days_min, hrs_min, min_min];
+    let ret_opt = u32_safe_sum(arr_to_safely_sum);
+
+    match ret_opt {
+      Some(n) => Ok(MinInstant { raw: n, offset: ZoneOffset::utc() }),
+      None => Err(YearError::DateToMinInstantOverFlow(
+        date.get_yr().to_ce().raw(), 
+        date.get_mon() as u32, 
+        date.get_day(),
+      ))
+    }
   }
 }
 
 impl MinInterval {
-
-  /// Constructs a `MinInterval` via a pair of `MinInstant`, which represents 
+  /// Constructs a `MinInterval` via a pair of `MinInstant`, which represents
   /// the start and end time. This constructor ensures non-negativity.
   pub fn new(start: MinInstant, end: MinInstant) -> MinInterval {
     MinInterval { start, end }
   }
-  
 
-  /// Constructs a `MinInterval` via a `MinInstant`, which represents its 
-  /// starting time, and some `u32`, which represents the duration in minutes 
+  /// Constructs a `MinInterval` via a `MinInstant`, which represents its
+  /// starting time, and some `u32`, which represents the duration in minutes
   /// of such interval.
   pub fn from_instance_and_minute_duration(
-    mi: MinInstant, 
-    duration_minute: u32
-  ) -> MinInterval{
+    mi: MinInstant,
+    duration_minute: u32,
+  ) -> MinInterval {
     let offset = mi.offset;
-    MinInterval { start: mi, end: MinInstant { 
-      raw: mi.raw + duration_minute, 
-      offset 
-    } }
+    MinInterval {
+      start: mi,
+      end: MinInstant {
+        raw: mi.raw + duration_minute,
+        offset,
+      },
+    }
   }
 }
 
@@ -147,9 +204,7 @@ pub struct Date {
 }
 
 #[derive(Debug)]
-pub enum DateError {
-
-}
+pub enum DateError {}
 
 // todo check overflow bounds
 // todo fix timezone type defn
@@ -160,8 +215,8 @@ impl Date {
   /// the provided MinInstant.
   pub fn from_min_instant(mi: MinInstant) -> Self {
     let (mut curr_year, mut curr_month) = (
-      UnixYear::new(0).expect("Should be able to construct unix year 0"), 
-      Month::Jan
+      UnixYear::new(0).expect("Should be able to construct unix year 0"),
+      Month::Jan,
     );
     let mut t = mi.raw();
 
@@ -170,8 +225,10 @@ impl Date {
       let x = curr_year.num_min();
       if t >= x {
         (curr_year, t) = (
-          curr_year.next().expect("Year should not run out before MinInstant"), 
-          t - x
+          curr_year
+            .next()
+            .expect("Year should not run out before MinInstant"),
+          t - x,
         )
       } else {
         break;
@@ -182,7 +239,10 @@ impl Date {
       // strip month from t
       let x = curr_month.num_min(&curr_year);
       if t >= x {
-        (curr_month, t) = (curr_month.next_month(), t - x)
+        (curr_month, t) = (
+          curr_month.next().expect("Month Overflow"), 
+          t - x
+        )
       } else {
         break;
       }
@@ -197,13 +257,13 @@ impl Date {
     }
   }
 
-  pub fn get_yr(&self) -> CeYear {
-    self.yr.clone()
-  }
-
-  pub fn get_mon(&self) -> Month {
-    self.mon
-  }
+  pub fn get_yr(&self) -> CeYear { self.yr.clone() }
+  pub fn get_mon(&self) -> Month { self.mon }
+  
+  /// Day in month, starts from 1.
+  pub fn get_day(&self) -> u32 { self.day }
+  pub fn get_hr(&self) -> u32 { self.hr }
+  pub fn get_min(&self) -> u32 { self.min }
 }
 
 impl std::fmt::Display for Date {
@@ -211,7 +271,11 @@ impl std::fmt::Display for Date {
     write!(
       f,
       "{}/{:?}/{} {}:{}",
-      self.yr.raw(), self.mon, self.day, self.hr, self.min,
+      self.yr.raw(),
+      self.mon,
+      self.day,
+      self.hr,
+      self.min,
     )
   }
 }
@@ -250,5 +314,30 @@ mod test {
 
     mi.set_offset(ZoneOffset::new(-300).unwrap());
     assert_eq!(mi.raw(), 27905591 - 300);
+  }
+
+  #[test]
+  fn mininstant_date_conversions() {
+    let mi = MinInstant {
+      raw: 27905591,
+      offset: ZoneOffset::utc(),
+    };
+    let mi2 = MinInstant::from_date(Date::from_min_instant(mi)).unwrap();
+    println!("{} vs {}", mi.raw(), mi2.raw());
+    assert_eq!(mi, mi2);
+  }
+
+  #[test]
+  fn mininstant_order() {
+    // Note that this test must occur at no earlier than 2023/Jan/21 21:11 
+    // in order to produce intended result.
+    let mi = MinInstant {
+      raw: 27905591,
+      offset: ZoneOffset::utc(),
+    };
+
+    let mi_now = MinInstant::now();
+
+    assert!(mi < mi_now);
   }
 }

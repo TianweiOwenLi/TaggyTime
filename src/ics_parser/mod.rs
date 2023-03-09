@@ -1,12 +1,12 @@
 use std::fs::File;
 
-use self::{lexer::{IcsLexer}, ics_syntax::ICSParser};
+use self::{ics_syntax::ICSParser, lexer::IcsLexer};
 use crate::error::ICSProcessError;
 
 use std::io::Write;
 
-pub mod lexer;
 pub mod ics_syntax;
+pub mod lexer;
 pub mod peekbuf;
 
 pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
@@ -24,12 +24,8 @@ pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
         write!(out_file, "{}\n", tok)
           .expect("Failed to write lexing result to out-file");
       }
-      Err(ICSProcessError::EOF) => {
-        break Ok(())
-      }
-      Err(e) => {
-        break Err(e)
-      }
+      Err(ICSProcessError::EOF) => break Ok(()),
+      Err(e) => break Err(e),
     }
   }
 }

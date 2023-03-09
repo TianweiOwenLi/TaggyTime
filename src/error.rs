@@ -1,7 +1,5 @@
 use crate::ics_parser::lexer::Token;
 
-
-
 #[allow(dead_code)]
 #[derive(Clone)]
 pub enum ICSProcessError {

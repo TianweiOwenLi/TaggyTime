@@ -13,7 +13,10 @@ impl ZoneOffset {
   pub fn new(n: i64) -> Result<Self, String> {
     // Valid UTC offsets must be between -12:00 and +14:00, inclusive.
     if n < UTC_LB || n > UTC_UB {
-      Err("Timezone offset must be a value between -720min and +840min".to_string())
+      Err(
+        "Timezone offset must be a value between -720min and +840min"
+          .to_string(),
+      )
     } else {
       Ok(ZoneOffset(n))
     }
