@@ -348,15 +348,15 @@ impl<'a> ICSParser<'a> {
 
 impl std::fmt::Display for Vevent {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}\n{}", self.summary, self.repeat)
+    write!(f, "  {}\n  {}\n", self.summary.trim(), self.repeat)
   }
 }
 
 impl std::fmt::Display for ICalendar {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "ICalendar `{}`: \n[\n", self.name)?;
+    write!(f, "ICalendar `{}`: \n[", self.name)?;
     for item in &self.content {
-      write!(f, "->\n{}", item)?;
+      write!(f, "\n{}", item)?;
     }
     write!(f, "\n]")
   }
