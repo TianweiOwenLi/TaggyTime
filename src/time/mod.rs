@@ -137,7 +137,7 @@ impl MinInstant {
 
   /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
   /// Returns an error on u32 overflow.
-  pub fn from_date(date: Date) -> year::Result<Self> {
+  pub fn from_date(date: &Date) -> year::Result<Self> {
     let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
     let mons_min = date
       .get_mon()
@@ -260,7 +260,7 @@ impl Date {
 
     Date {
       yr: curr_year.to_ce(),
-      mon: Month::Jan,
+      mon: curr_month,
       day: 1 + t / MIN_IN_DAY,
       hr: (t % MIN_IN_DAY) / MIN_IN_HR,
       min: t % MIN_IN_HR,
@@ -278,8 +278,6 @@ impl Date {
       ymd.to_string(),
       hms.to_string(),
     ));
-
-    println!("ics: {} / {}", ymd, hms);
 
     if ymd.len() < 8 || hms.len() < 6 {
       return bad;
@@ -332,7 +330,6 @@ impl Date {
         };
 
         let ret_date = Date {yr, mon, day, hr, min};
-        println!("{}", ret_date);
         Ok(ret_date)
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
@@ -417,7 +414,7 @@ mod test {
       raw: 27905591,
       offset: ZoneOffset::utc(),
     };
-    let mi2 = MinInstant::from_date(Date::from_min_instant(mi)).unwrap();
+    let mi2 = MinInstant::from_date(&Date::from_min_instant(mi)).unwrap();
     println!("{} vs {}", mi.raw(), mi2.raw());
     assert_eq!(mi, mi2);
   }
@@ -457,8 +454,8 @@ mod test {
       min: 11, 
     };
 
-    let mi1 = MinInstant::from_date(date1).unwrap();
-    let mi2 = MinInstant::from_date(date2).unwrap();
+    let mi1 = MinInstant::from_date(&date1).unwrap();
+    let mi2 = MinInstant::from_date(&date2).unwrap();
 
     assert_eq!(mi1.raw(), mi2.raw());
   }

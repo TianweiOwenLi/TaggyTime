@@ -8,7 +8,7 @@ use std::collections::BTreeSet;
 use crate::{
   calendar::cal_event::{Recurrence, Pattern, Term, RecurRules, ByMonthLst, ByWkDayLst, ByHrLst, SetPos, Interval, WeekStart},
   ics_parser::lexer,
-  time::{Date, MinInstant, MinInterval}, const_params::ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE,
+  time::{Date, MinInstant, MinInterval}, const_params::{ICS_ASSUME_RRULE_ENDS_WITH_NEWLINE, ICS_DEFAULT_TIME_IN_DAY},
 };
 
 use crate::calendar::cal_event::RecurRules::*;
@@ -27,12 +27,13 @@ pub struct ICalendar {
 }
 
 pub struct Vevent {
-  repeat: Option<FreqAndRRules>,
+  repeat: Option<FreqAndRRules>, // corrsponds to Pattern::Once | Many.
   mi: MinInterval,
   summary: String,
 }
 
 /// Frequency of some `RRULE` line. 
+#[derive(Debug)]
 pub enum Freq {
   Daily,
   Weekly,
@@ -49,8 +50,11 @@ pub struct RRuleToks {
 
 /// A frequency paired with a vec of `RRuleToks`. 
 pub struct FreqAndRRules {
-  freq: Freq,
-  content: Vec<RRuleToks>
+  freq: Freq, 
+  content: Vec<RRuleToks>,
+  interval: Option<usize>,
+  count: Option<usize>,
+  until: Option<MinInstant>
 }
 
 pub struct ICSParser<'a> {
@@ -334,6 +338,7 @@ impl<'a> ICSParser<'a> {
 
     self.munch(Token::FREQ)?;
     self.munch(Token::EQ)?;
+
     let freq = match self.token()? {
       Token::DAILY => Freq::Daily,
       Token::WEEKLY => Freq::Weekly,
@@ -341,8 +346,11 @@ impl<'a> ICSParser<'a> {
       Token::YEARLY => Freq::Yearly,
       x => return Err(ICSProcessError::InvalidFreq(x))
     };
-    
     let mut content = Vec::<RRuleToks>::new();
+    let mut interval: Option<usize> = None;
+    let mut count: Option<usize> = None;
+    let mut until: Option<MinInstant> = None;
+
     let mut ready_to_rrule: bool = true;
 
     loop {
@@ -352,10 +360,45 @@ impl<'a> ICSParser<'a> {
           ready_to_rrule = true;
         }
         Token::NEXTLINE => {
-          break Ok(FreqAndRRules { freq, content });
+          break Ok(FreqAndRRules { 
+            freq, 
+            content,
+            count,
+            interval,
+            until,
+          });
         }
         Token::SPACE => {
           self.skip()?;
+        }
+        Token::INTERVAL => {
+          self.skip()?;
+          self.munch(Token::EQ)?;
+          let num_string = self.number()?;
+          let interval_opt: Result<usize, _> = num_string.parse();
+          match interval_opt {
+            Ok(x) => interval = Some(x),
+            Err(_) => return Err(ICSProcessError::Other(
+              format!("{} is not valid interval usize", num_string)
+            ))
+          }
+        }
+        Token::COUNT => {
+          self.skip()?;
+          self.munch(Token::EQ)?;
+          let num_string = self.number()?;
+          let interval_opt: Result<usize, _> = num_string.parse();
+          match interval_opt {
+            Ok(x) => count = Some(x),
+            Err(_) => return Err(ICSProcessError::Other(
+              format!("{} is not count valid usize", num_string)
+            ))
+          }
+        }
+        Token::UNTIL => {
+          self.skip()?;
+          self.munch(Token::EQ)?;
+          until = Some(self.dt_literal(false)?)
         }
         t => {
           if ready_to_rrule {
@@ -398,20 +441,15 @@ impl<'a> ICSParser<'a> {
 
     loop {
       let next_tok = self.peek(0)?;
-      println!("  --tok_list--: {}", next_tok);
       if end(next_tok) {
         ret.push(entry.clone());
-        println!("  --tok_list-- ret: {:?}", ret);
         break Ok(ret);
       } else if next_tok == sep {
         self.skip()?;
-        println!(" --tok_list-- entry b4 clear: {:?} {:?}", entry, ret);
         ret.push(entry.clone());
         entry.clear();
-        println!(" --tok_list-- entry after clear: {:?} {:?}", entry, ret);
       } else {
         let tok = self.token()?;
-        println!("  --tok_list-- push: {}", tok);
         entry.push(tok);
       }
     }
@@ -423,17 +461,30 @@ impl<'a> ICSParser<'a> {
     zone_specified: bool,
   ) -> Result<MinInstant, ICSProcessError> {
     let ymd = self.number()?;
-    self.munch(Token::Other("T".to_string()))?;
-    let hms = self.number()?;
 
-    // deal with weird ICS format rules.
-    if !zone_specified {
-      self.munch(Token::Other("Z".to_string()))?;
-    }
+    let dt = if self.peek(0)? == &Token::Other("T".to_string()) {
+      self.skip()?;
+      let hms = self.number()?;
 
-    let dt = Date::from_ics_time_string(&ymd, &hms)?;
+      // deal with weird ICS format rules: if timezone is not directly 
+      // specified, such a literal shall end with 'Z'.
+      if !zone_specified {
+        self.munch(Token::Other("Z".to_string()))?;
+      }
+      
+      Date::from_ics_time_string(&ymd, &hms)?
+    } else {
+      // Handle the case where time of day is not specified. 
+      let hms = ICS_DEFAULT_TIME_IN_DAY;
+      Date::from_ics_time_string(&ymd, hms)?
+    };
 
-    let mi_res = MinInstant::from_date(dt);
+    let mi_res = MinInstant::from_date(&dt);
+
+    let mi_dbg = mi_res.as_ref().unwrap().clone();
+    println!("  --dt-literal()--: {}, {}, {}, {}", 
+      ymd, dt, mi_dbg, Date::from_min_instant(mi_dbg) );
+
     match mi_res {
       Ok(mi) => Ok(mi),
       _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
@@ -481,14 +532,25 @@ impl std::fmt::Display for RRuleToks {
 
 impl std::fmt::Display for FreqAndRRules {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "  freq={:?}\n", self.freq)?;
+    
+    if let Some(n) = self.interval {
+      write!(f, "  interval={}\n", n)?;
+    }
+
+    if let Some(n) = self.count {
+      write!(f, "  count={}\n", n)?;
+    }
+
+    if let Some(mi) = self.until {
+      write!(f, "  until={}\n", Date::from_min_instant(mi))?;
+    }
+
     write!(f, "  rrules=[\n")?;
-    for rrt in &self.content[..self.content.len()-1] {
+    for rrt in &self.content {
       write!(f, "    {}\n", rrt)?;
     }
-    if let Some(rrt) = self.content.last() {
-      write!(f, "    {}", rrt)?;
-    }
-    write!(f, "\n  ]\n")
+    write!(f, "  ]\n")
   }
 }
 
