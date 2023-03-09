@@ -231,8 +231,6 @@ impl<'a> ICSParser<'a> {
       match self.peek(0)? {
         Token::DTSTART => {
           dtstart = Some(self.dtstart()?);
-          println!("{}", dtstart.unwrap());
-          println!("{}", Date::from_min_instant(dtstart.unwrap()))
         }
         Token::DTEND => {
           dtend = Some(self.dtend()?);
@@ -400,14 +398,21 @@ impl<'a> ICSParser<'a> {
 
     loop {
       let next_tok = self.peek(0)?;
+      println!("  --tok_list--: {}", next_tok);
       if end(next_tok) {
+        ret.push(entry.clone());
+        println!("  --tok_list-- ret: {:?}", ret);
         break Ok(ret);
       } else if next_tok == sep {
         self.skip()?;
+        println!(" --tok_list-- entry b4 clear: {:?} {:?}", entry, ret);
         ret.push(entry.clone());
         entry.clear();
+        println!(" --tok_list-- entry after clear: {:?} {:?}", entry, ret);
       } else {
-        entry.push(self.token()?);
+        let tok = self.token()?;
+        println!("  --tok_list-- push: {}", tok);
+        entry.push(tok);
       }
     }
   }
@@ -477,8 +482,11 @@ impl std::fmt::Display for RRuleToks {
 impl std::fmt::Display for FreqAndRRules {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "  rrules=[\n")?;
-    for rrt in &self.content {
+    for rrt in &self.content[..self.content.len()-1] {
       write!(f, "    {}\n", rrt)?;
+    }
+    if let Some(rrt) = self.content.last() {
+      write!(f, "    {}", rrt)?;
     }
     write!(f, "\n  ]\n")
   }
@@ -490,7 +498,8 @@ impl std::fmt::Display for Vevent {
       Some(rpt) => rpt.to_string(),
       None => "  No Repeat".to_string(),
     };
-    write!(f, "  {}\n  {}\n{}\n", self.summary.trim(), self.mi, repeat_str)
+    write!(f, "  {}\n  {}\n{}\n", 
+      self.summary.trim(), self.mi.as_date_string(), repeat_str)
   }
 }
 

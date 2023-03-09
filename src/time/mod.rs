@@ -186,6 +186,13 @@ impl MinInterval {
       },
     }
   }
+
+  /// Converts start and end to `Date` and prints accordingly
+  pub fn as_date_string(&self) -> String {
+    let start_str = Date::from_min_instant(self.start);
+    let end_str = Date::from_min_instant(self.end);
+    format!("{} - {}", start_str, end_str)
+  }
 }
 
 impl std::fmt::Display for MinInstant {
@@ -272,6 +279,8 @@ impl Date {
       hms.to_string(),
     ));
 
+    println!("ics: {} / {}", ymd, hms);
+
     if ymd.len() < 8 || hms.len() < 6 {
       return bad;
     }
@@ -322,13 +331,9 @@ impl Date {
           return bad;
         };
 
-        Ok(Date {
-          yr,
-          mon,
-          day,
-          hr,
-          min,
-        })
+        let ret_date = Date {yr, mon, day, hr, min};
+        println!("{}", ret_date);
+        Ok(ret_date)
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
         ymd.to_string(),
@@ -360,7 +365,7 @@ impl std::fmt::Display for Date {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
-      "{}/{:?}/{} {}:{}",
+      "{}/{:?}/{} {:02}:{:02}",
       self.yr.raw(),
       self.mon,
       self.day,
