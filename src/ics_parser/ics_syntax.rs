@@ -21,7 +21,7 @@ pub struct ICalendar {
 }
 
 pub struct Vevent {
-  repeat: Option<FreqAndRRules>, // corrsponds to Pattern::Once | Many.
+  repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
   mi: MinInterval,
   summary: String,
 }
@@ -43,10 +43,14 @@ pub struct RRuleToks {
 }
 
 /// A frequency paired with a vec of `RRuleToks`. 
+/// Corresponds to `Pattern::Many`. Specifically, `freq` indicates the specific 
+/// variant of `Repeat`, `content` encodes the potential rules for such a 
+/// variant, `interval` is self explanatory, and `count`, `until` are for 
+/// `Term`.
 pub struct FreqAndRRules {
   freq: Freq, 
   content: Vec<RRuleToks>,
-  interval: Option<usize>,
+  interval: usize,
   count: Option<usize>,
   until: Option<MinInstant>
 }
@@ -185,7 +189,6 @@ impl<'a> ICSParser<'a> {
     &mut self,
     vevents: Vec<Vevent>,
   ) -> Result<ICalendar, ICSProcessError> {
-    println!("-- entered end");
     self.munch(Token::END)?;
     self.munch(Token::COLON)?;
     self.munch(Token::VCALENDAR)?;
@@ -200,7 +203,6 @@ impl<'a> ICSParser<'a> {
   /// `SUMMARY`, and `RRULE` will be processed; all other components are
   /// simply discarded.
   pub fn vevent(&mut self) -> Result<Vevent, ICSProcessError> {
-    println!("-- start of vevent --");
     self.munch(Token::BEGIN)?;
     self.munch(Token::COLON)?;
     self.munch(Token::VEVENT)?;
@@ -222,7 +224,6 @@ impl<'a> ICSParser<'a> {
           self.munch(Token::SUMMARY)?;
           self.munch(Token::COLON)?;
           summary = self.string_until(lexer::not_in_summary)?;
-          println!("Encountered summary: {}", summary);
         }
         Token::RRULE => {
           recur = Some(self.rrules()?);
@@ -234,7 +235,6 @@ impl<'a> ICSParser<'a> {
           if end_tag == Token::VEVENT {
             match (dtstart, dtend) {
               (Some(start), Some(end)) => {
-                println!("-- end of vevent --");
                 return Ok(Vevent {
                   repeat: recur,
                   mi: MinInterval::new(start, end),
@@ -326,7 +326,7 @@ impl<'a> ICSParser<'a> {
       x => return Err(ICSProcessError::InvalidFreq(x))
     };
     let mut content = Vec::<RRuleToks>::new();
-    let mut interval: Option<usize> = None;
+    let mut interval: usize = 1; // default
     let mut count: Option<usize> = None;
     let mut until: Option<MinInstant> = None;
 
@@ -353,7 +353,7 @@ impl<'a> ICSParser<'a> {
           let num_string = self.number()?;
           let interval_opt: Result<usize, _> = num_string.parse();
           match interval_opt {
-            Ok(x) => interval = Some(x),
+            Ok(explicit_interval) => interval = explicit_interval,
             Err(_) => return Err(ICSProcessError::Other(
               format!("{} is not valid interval usize", num_string)
             ))
@@ -457,13 +457,7 @@ impl<'a> ICSParser<'a> {
       Date::from_ics_time_string(&ymd, hms)?
     };
 
-    let mi_res = MinInstant::from_date(&dt);
-
-    let mi_dbg = mi_res.as_ref().unwrap().clone();
-    println!("  --dt-literal()--: {}, {}, {}, {}", 
-      ymd, dt, mi_dbg, Date::from_min_instant(mi_dbg) );
-
-    match mi_res {
+    match MinInstant::from_date(&dt) {
       Ok(mi) => Ok(mi),
       _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
     }
@@ -481,9 +475,7 @@ impl std::fmt::Display for FreqAndRRules {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "  freq={:?}\n", self.freq)?;
     
-    if let Some(n) = self.interval {
-      write!(f, "  interval={}\n", n)?;
-    }
+    write!(f, "  interval={}\n", self.interval)?;
 
     if let Some(n) = self.count {
       write!(f, "  count={}\n", n)?;
@@ -497,7 +489,7 @@ impl std::fmt::Display for FreqAndRRules {
     for rrt in &self.content {
       write!(f, "    {}\n", rrt)?;
     }
-    write!(f, "  ]\n")
+    write!(f, "  ]")
   }
 }
 
