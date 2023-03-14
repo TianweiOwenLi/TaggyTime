@@ -145,7 +145,7 @@ impl MinInstant {
     let mons_min = date
       .get_mon()
       .num_min_since_new_year(&date.get_yr() as &dyn Year);
-    let days_min = (date.get_day() - 1) * MIN_IN_DAY; // 1-index to 0-index
+    let days_min = (date.day_in_mon() - 1) * MIN_IN_DAY; // 1-index to 0-index
     let hrs_min = (date.get_hr()) * MIN_IN_HR;
     let min_min = date.get_min();
 
@@ -160,7 +160,7 @@ impl MinInstant {
       None => Err(YearError::DateToMinInstantOverFlow(
         date.get_yr().to_ce().raw(),
         date.get_mon() as u32,
-        date.get_day(),
+        date.day_in_mon(),
       )),
     }
   }
@@ -325,6 +325,9 @@ impl Date {
     }
   }
 
+
+  // ------------- The followings are all attribute functions.  -------------
+
   pub fn get_yr(&self) -> CeYear {
     self.yr.clone()
   }
@@ -332,8 +335,20 @@ impl Date {
     self.mon
   }
 
+  /// Day in year, starts from 1.
+  pub fn day_in_yr(&self) -> u32 {
+    let mut ret: u32 = self.day_in_mon();
+    let mut var_month = Month::Jan;
+    while var_month != self.mon {
+      ret += var_month.num_days(&self.yr);
+      var_month = var_month.next()
+        .expect("Month iterator can never run out before match");
+    }
+    ret
+  }
+
   /// Day in month, starts from 1.
-  pub fn get_day(&self) -> u32 {
+  pub fn day_in_mon(&self) -> u32 {
     self.day
   }
   pub fn get_hr(&self) -> u32 {
@@ -445,4 +460,18 @@ mod test {
 
     assert_eq!(mi1.raw(), mi2.raw());
   }
+
+  #[test]
+  fn yearday() {
+    let treeday = Date {
+      yr: CeYear::new(1900).unwrap(), 
+      mon: Month::Mar, 
+      day: 12, 
+      hr: 10, 
+      min: 05, 
+    };
+
+    assert_eq!(treeday.day_in_yr(), 31 + 28 + 12);
+  }
+
 }
