@@ -10,7 +10,7 @@ use std::io::BufRead;
 
 use time::timezone::ZoneOffset;
 
-use crate::{args::*, time::Date};
+use crate::{args::*, time::date::Date};
 
 /// Stores global variables for such interaction.
 /// 

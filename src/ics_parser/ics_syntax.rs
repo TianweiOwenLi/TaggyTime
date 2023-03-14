@@ -5,7 +5,7 @@
 
 use crate::{
   ics_parser::lexer,
-  time::{Date, MinInstant, MinInterval}, const_params::ICS_DEFAULT_TIME_IN_DAY,
+  time::{date::Date, MinInstant, MinInterval}, const_params::ICS_DEFAULT_TIME_IN_DAY,
 };
 
 

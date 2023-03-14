@@ -1,4 +1,4 @@
-use super::{Date, year::{CeYear, Year}};
+use super::{*, Date, year::*};
 
 use Weekday::*;
 const WEEKDAY_LIST: [Weekday; 7] = [MO, TU, WE, TH, FR, SA, SU];
@@ -62,18 +62,5 @@ mod test {
   #[test]
   fn iterate() {
     assert_eq!(TU, SA.next_wrap().next_wrap().next_wrap())
-  }
-
-  #[test]
-  fn calc_weekday() {
-    use crate::time::month::Month;
-    let treeday = Date {
-      yr: CeYear::new(2023).unwrap(), 
-      mon: Month::Mar, 
-      day: 14, 
-      hr: 21, 
-      min: 11, 
-    };
-    assert_eq!(TU, Weekday::from(&treeday));
   }
 }
