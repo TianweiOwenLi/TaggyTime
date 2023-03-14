@@ -1,9 +1,9 @@
-use super::{*, Date, year::*};
+use super::{FromDateRef, Date, year::*};
 
 use Weekday::*;
 const WEEKDAY_LIST: [Weekday; 7] = [MO, TU, WE, TH, FR, SA, SU];
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
 pub enum Weekday {
   MO,
   TU,
@@ -30,10 +30,24 @@ impl Weekday {
   }
 }
 
-impl From<&Date> for Weekday {
+impl From<String> for Weekday {
+  fn from(value: String) -> Self {
+    match value.as_str() {
+      "MO" => MO,
+      "TU" => TU,
+      "WE" => WE,
+      "TH" => TH,
+      "FR" => FR,
+      "SA" => SA,
+      "SU" => SU,
+      s => panic!("Failed to convert {} to weekday", s),
+    }
+  }
+}
 
+impl FromDateRef for Weekday {
   /// Returns the weekday of some `Date`.
-  fn from(value: &Date) -> Self {
+  fn from_date(value: &Date) -> Self {
     let mut past_year_iter = CeYear::new(1970).unwrap();
     let mut days_in_past_years: u32 = 0;
 

@@ -1,5 +1,7 @@
 //! Structure that represents calendar days.
 
+use crate::ics_parser::ics_syntax::{FreqAndRRules, Freq};
+use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
 
 use crate::time::*;
@@ -200,8 +202,9 @@ impl std::fmt::Display for Date {
   }
 }
 
+/// Needed to deal with lifetime issues when constructing property from date.
 pub trait FromDateRef {
-  fn from(d: &Date) -> Self;
+  fn from_date(d: &Date) -> Self;
 }
 
 /// Property of `Date`, ie. if its month is Sep or Oct, etc.
@@ -222,11 +225,34 @@ impl<T: FromDateRef + Eq + Hash> DateProperty<T> {
   pub fn is_property_of(&self, d: &Date) -> bool {
     match self {
       Self::Always => true,
-      Self::When(s) => s.contains(&T::from(d)),
+      Self::When(s) => s.contains(&T::from_date(d)),
     }
   }
 }
 
+/// Converts some  entry to `DateProperty`.
+/// 
+/// [todo] Needs to be reimplemented sometime.
+pub fn parse_dateproperty_week(fr: FreqAndRRules) -> DateProperty<Weekday> {
+  match fr.freq {
+    Freq::Weekly => {
+      for item in fr.content {
+        match item.tag {
+          Token::BYDAY => {
+            let mut weekday_vec = Vec::<Weekday>::new();
+            for s in item.content {
+              weekday_vec.push(Weekday::from(s));
+            }
+            return DateProperty::from(weekday_vec);
+          }
+          _ => unimplemented!()
+        }
+      }
+      todo!()
+    }
+    _ => unimplemented!()
+  }
+}
 
 
 #[allow(dead_code, unused_imports)]
@@ -245,7 +271,7 @@ mod test {
       hr: 21, 
       min: 11, 
     };
-    assert_eq!(TU, Weekday::from(&treeday));
+    assert_eq!(TU, Weekday::from_date(&treeday));
   }
 
 

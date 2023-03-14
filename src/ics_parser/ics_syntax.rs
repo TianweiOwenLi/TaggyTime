@@ -38,8 +38,8 @@ pub enum Freq {
 /// A single recurrence rule, in the form `BYXXX=item, item, item...`. 
 /// Composed of tokens, and may not be valid. 
 pub struct RRuleToks {
-  tag: Token,
-  content: Vec<String>
+  pub tag: Token,
+  pub content: Vec<String>
 }
 
 /// A frequency paired with a vec of `RRuleToks`. 
@@ -48,8 +48,8 @@ pub struct RRuleToks {
 /// variant, `interval` is self explanatory, and `count`, `until` are for 
 /// `Term`.
 pub struct FreqAndRRules {
-  freq: Freq, 
-  content: Vec<RRuleToks>,
+  pub freq: Freq, 
+  pub content: Vec<RRuleToks>,
   interval: usize,
   count: Option<usize>,
   until: Option<MinInstant>
