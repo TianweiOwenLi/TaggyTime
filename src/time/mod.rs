@@ -15,7 +15,7 @@ pub mod timezone;
 
 use crate::ics_parser::ICSProcessError;
 
-use self::{fact::*, timezone::ZoneOffset, year::CeYear};
+use self::{fact::*, timezone::ZoneOffset, year::CeYear, week::Weekday};
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
@@ -353,6 +353,11 @@ impl Date {
   pub fn day_in_mon(&self) -> u32 {
     self.day
   }
+
+  pub fn day_in_week(&self) -> Weekday {
+    Weekday::from(self)
+  }
+
   pub fn get_hr(&self) -> u32 {
     self.hr
   }

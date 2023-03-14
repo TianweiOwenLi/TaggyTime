@@ -30,10 +30,10 @@ impl Weekday {
   }
 }
 
-impl From<Date> for Weekday {
+impl From<&Date> for Weekday {
 
   /// Returns the weekday of some `Date`.
-  fn from(value: Date) -> Self {
+  fn from(value: &Date) -> Self {
     let mut past_year_iter = CeYear::new(1970).unwrap();
     let mut days_in_past_years: u32 = 0;
 
@@ -74,6 +74,6 @@ mod test {
       hr: 21, 
       min: 11, 
     };
-    assert_eq!(TU, Weekday::from(treeday));
+    assert_eq!(TU, Weekday::from(&treeday));
   }
 }
