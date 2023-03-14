@@ -464,7 +464,7 @@ mod test {
   #[test]
   fn yearday() {
     let treeday = Date {
-      yr: CeYear::new(1900).unwrap(), 
+      yr: CeYear::new(2100).unwrap(), 
       mon: Month::Mar, 
       day: 12, 
       hr: 10, 

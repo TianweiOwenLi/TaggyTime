@@ -41,6 +41,7 @@ impl std::fmt::Debug for YearError {
 
 pub type Result<T> = core::result::Result<T, YearError>;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YearLength {
   Leap,
   Common,
@@ -204,6 +205,26 @@ mod test {
     assert_eq!(
       CeYear::new(1985).unwrap(),
       UnixYear::new(15).unwrap().to_ce()
+    );
+  }
+
+  #[test]
+  fn normal_leap() {
+    assert_eq!(
+      CeYear::new(2000).unwrap().get_year_length(), 
+      YearLength::Leap
+    );
+    assert_eq!(
+      UnixYear::new(130).unwrap().get_year_length(), 
+      YearLength::Common
+    );
+    assert_eq!(
+      CeYear::new(2001).unwrap().get_year_length(), 
+      YearLength::Common
+    );
+    assert_eq!(
+      UnixYear::new(2).unwrap().get_year_length(),
+      YearLength::Leap
     );
   }
 }
