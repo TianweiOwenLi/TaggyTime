@@ -146,6 +146,14 @@ impl CeYear {
   pub fn raw(&self) -> u16 {
     self.0
   }
+
+  pub fn next(&self) -> Option<Self> {
+    let raw = self.0.checked_add(1)?;
+    match CeYear::new(raw) {
+      Ok(cy) => Some(cy),
+      _ => None,
+    }
+  }
 }
 
 impl Year for UnixYear {

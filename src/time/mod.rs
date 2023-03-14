@@ -7,6 +7,8 @@ use year::{UnixYear, Year, YearError};
 mod month;
 use month::Month;
 
+mod week;
+
 mod fact;
 
 pub mod timezone;
