@@ -4,6 +4,14 @@ use crate::time::{month::Month, week::Weekday};
 
 use crate::time::*;
 
+use std::collections::{BTreeSet, HashSet};
+use std::hash::Hash;
+use std::ops::RangeBounds;
+
+/// A struct that represents some time instance in human-readable form. Namely, 
+/// it has fields like year, month, day, hour, and minute. 
+/// 
+/// Note that `Date` does not record any information about timezone.
 #[derive(Debug)]
 pub struct Date {
   yr: CeYear,
@@ -139,6 +147,13 @@ impl Date {
 
   // ------------- The followings are all attribute functions.  -------------
 
+  pub fn has_property<T>(&self, p: DateProperty<T>) -> bool 
+  where
+    T: FromDateRef + Eq + Hash
+  {
+    p.is_property_of(self)
+  }
+
   pub fn get_yr(&self) -> CeYear {
     self.yr.clone()
   }
@@ -163,10 +178,6 @@ impl Date {
     self.day
   }
 
-  pub fn day_in_week(&self) -> Weekday {
-    Weekday::from(self)
-  }
-
   pub fn get_hr(&self) -> u32 {
     self.hr
   }
@@ -188,6 +199,35 @@ impl std::fmt::Display for Date {
     )
   }
 }
+
+pub trait FromDateRef {
+  fn from(d: &Date) -> Self;
+}
+
+/// Property of `Date`, ie. if its month is Sep or Oct, etc.
+pub enum DateProperty<T: FromDateRef + Eq + Hash> {
+  Always,
+  When(HashSet<T>)
+}
+
+impl<T: FromDateRef + Eq + Hash> DateProperty<T> {
+
+  /// Constructs some `DateProperty` from a vector of potential matches.
+  pub fn from(v: Vec<T>) -> Self {
+    let mut ret = HashSet::<T>::new();
+    ret.extend(v);
+    Self::When(ret)
+  }
+
+  pub fn is_property_of(&self, d: &Date) -> bool {
+    match self {
+      Self::Always => true,
+      Self::When(s) => s.contains(&T::from(d)),
+    }
+  }
+}
+
+
 
 #[allow(dead_code, unused_imports)]
 mod test {

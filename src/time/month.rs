@@ -1,3 +1,4 @@
+use super::date::DateProperty;
 use super::fact::*;
 use super::year::{Year, YearLength};
 
