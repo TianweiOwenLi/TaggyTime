@@ -5,6 +5,7 @@ mod ics_parser;
 mod percent;
 mod time;
 mod util_typs;
+mod load_file;
 
 use std::io::BufRead;
 
@@ -55,6 +56,13 @@ fn handle_command_vec(cmd: Vec<String>, tenv: &mut TaggyEnv) -> Result<(), Strin
     }
     ["set", "tz", "-05:00"] => {
       tenv.tz = ZoneOffset::new(-300).unwrap();
+      Ok(())
+    }
+    ["load", filename] => {
+      if filename.ends_with(".ics") {
+        load_file::load_schedule_ics(filename)
+          .expect("Failed to .ics file");
+      }
       Ok(())
     }
     _ => Err("Invalid command".to_string()),

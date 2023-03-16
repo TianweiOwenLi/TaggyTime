@@ -208,6 +208,7 @@ pub trait FromDateRef {
 }
 
 /// Property of `Date`, ie. if its month is Sep or Oct, etc.
+#[derive(Debug)]
 pub enum DateProperty<T: FromDateRef + Eq + Hash> {
   Always,
   When(HashSet<T>)
@@ -230,25 +231,26 @@ impl<T: FromDateRef + Eq + Hash> DateProperty<T> {
   }
 }
 
-/// Converts some  entry to `DateProperty`.
+/// Strips the `BYDAY` property, ie. which days of a week, from some 
+/// `FreqAndRules` that is of variant `Freq::Weekly`.
 /// 
 /// [todo] Needs to be reimplemented sometime.
-pub fn parse_dateproperty_week(fr: FreqAndRRules) -> DateProperty<Weekday> {
+/// 
+/// [todo] Does not yet faithfully show the rrule of weekly-no-pattern event.
+pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty<Weekday> {
+  let mut weekday_vec = Vec::<Weekday>::new();
+
   match fr.freq {
     Freq::Weekly => {
-      for item in fr.content {
-        match item.tag {
-          Token::BYDAY => {
-            let mut weekday_vec = Vec::<Weekday>::new();
-            for s in item.content {
-              weekday_vec.push(Weekday::from(s));
-            }
-            return DateProperty::from(weekday_vec);
+      'iter_recur_rules : for item in &fr.content {
+        if let Token::BYDAY = &item.tag {
+          for s in &item.content {
+            weekday_vec.push(Weekday::from(s.as_str()));
           }
-          _ => unimplemented!()
+          break 'iter_recur_rules;
         }
       }
-      todo!()
+      return DateProperty::from(weekday_vec);
     }
     _ => unimplemented!()
   }

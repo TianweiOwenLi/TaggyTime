@@ -17,11 +17,11 @@ use super::{
 
 pub struct ICalendar {
   name: String,
-  content: Vec<Vevent>,
+  pub content: Vec<Vevent>,
 }
 
 pub struct Vevent {
-  repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
+  pub repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
   mi: MinInterval,
   summary: String,
 }

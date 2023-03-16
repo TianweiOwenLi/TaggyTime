@@ -30,9 +30,9 @@ impl Weekday {
   }
 }
 
-impl From<String> for Weekday {
-  fn from(value: String) -> Self {
-    match value.as_str() {
+impl From<&str> for Weekday {
+  fn from(value: &str) -> Self {
+    match value {
       "MO" => MO,
       "TU" => TU,
       "WE" => WE,
