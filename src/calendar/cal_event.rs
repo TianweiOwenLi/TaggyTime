@@ -6,8 +6,10 @@ use crate::ics_parser::ICSProcessError;
 use crate::ics_parser::ics_syntax::RRuleToks;
 use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
-use crate::time::{MinInstant, MinInterval};
+use crate::time::{MinInstant, MinInterval, date::DateProperty};
 use crate::util_typs::refinement::*;
+
+use crate::time::week::Weekday;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum RecurRules {
@@ -20,16 +22,6 @@ pub enum RecurRules {
   BySetPos,
 }
 
-pub enum WeekDay {
-  MO,
-  TU,
-  WE,
-  TH,
-  FR,
-  SA,
-  SU,
-}
-
 pub enum OrdSign {
   P,
   M,
@@ -38,14 +30,14 @@ pub enum OrdSign {
 pub type Minutes = RangedI64::<0, 59>;
 pub type Hours = RangedI64::<0, 23>;
 
-pub type OrdWkDay = (OrdSign, WeekDay);
+// pub type OrdWkDay = (OrdSign, WeekDay);
 pub type OrdMoDay = (OrdSign, RangedI64::<1, 31>);
 pub type OrdYrDay = (OrdSign, RangedI64::<1, 366>);
 pub type OrdWkNum = (OrdSign, RangedI64::<1, 53>);
 
 pub type ByMinLst = BTreeSet<Minutes>;
 pub type ByHrLst = BTreeSet<Hours>;
-pub type ByWkDayLst = BTreeSet<OrdWkDay>;
+// pub type ByWkDayLst = BTreeSet<OrdWkDay>;
 pub type ByMoDayLst = BTreeSet<OrdMoDay>;
 pub type ByYrDayLst = BTreeSet<OrdYrDay>;
 pub type ByWkNumLst = BTreeSet<OrdWkNum>;
@@ -54,14 +46,18 @@ pub type ByMonthLst = BTreeSet<Month>;
 pub type OneOrMore = LowerBoundI64<1>;
 pub type SetPos = Option<OneOrMore>;
 pub type Interval = Option<OneOrMore>;
-pub type WeekStart = Option<WeekDay>;
+// pub type WeekStart = Option<WeekDay>;
 
 /// Repetition by day, week, month, year, etc.
-pub enum Repeat {
-  Daily(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
-  Weekly(ByMonthLst, ByWkDayLst, ByHrLst, SetPos),
-  Monthly(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
-  Yearly(ByMonthLst, ByWkNumLst, ByYrDayLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+// pub enum Repeat {
+//   Daily(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+//   Weekly(ByMonthLst, ByWkDayLst, ByHrLst, SetPos),
+//   Monthly(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+//   Yearly(ByMonthLst, ByWkNumLst, ByYrDayLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
+// }
+
+pub struct Repeat {
+  weekday: DateProperty<Weekday>
 }
 
 pub enum Pattern {

@@ -9,7 +9,7 @@ mod month;
 pub mod date;
 use date::*;
 
-mod week;
+pub mod week;
 
 mod fact;
 
