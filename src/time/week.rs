@@ -1,4 +1,6 @@
-use super::{FromDateRef, Date, year::*};
+use super::{Date, year::*};
+
+use crate::time::DatePropertyElt;
 
 use Weekday::*;
 const WEEKDAY_LIST: [Weekday; 7] = [MO, TU, WE, TH, FR, SA, SU];
@@ -45,9 +47,8 @@ impl From<&str> for Weekday {
   }
 }
 
-impl FromDateRef for Weekday {
-  /// Returns the weekday of some `Date`.
-  fn from_date(value: &Date) -> Self {
+impl From<&Date> for Weekday {
+  fn from(value: &Date) -> Self {
     let mut past_year_iter = CeYear::new(1970).unwrap();
     let mut days_in_past_years: u32 = 0;
 
@@ -63,6 +64,8 @@ impl FromDateRef for Weekday {
     Weekday::thursday_plus(total_days as usize)
   }
 }
+
+impl DatePropertyElt<'_> for Weekday {}
 
 #[allow(dead_code, unused_imports)]
 mod test {

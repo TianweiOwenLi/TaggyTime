@@ -7,6 +7,7 @@ use crate::time::{month::Month, week::Weekday};
 use crate::time::*;
 
 use std::collections::{BTreeSet, HashSet};
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::ops::RangeBounds;
 
@@ -149,11 +150,8 @@ impl Date {
 
   // ------------- The followings are all attribute functions.  -------------
 
-  pub fn has_property<T>(&self, p: DateProperty<T>) -> bool 
-  where
-    T: FromDateRef + Eq + Hash
-  {
-    p.is_property_of(self)
+  pub fn has_property(&self, p: DateProperty) -> bool {
+    p.check(self)
   }
 
   pub fn get_yr(&self) -> CeYear {
@@ -202,31 +200,49 @@ impl std::fmt::Display for Date {
   }
 }
 
-/// Needed to deal with lifetime issues when constructing property from date.
-pub trait FromDateRef {
-  fn from_date(d: &Date) -> Self;
+pub trait DatePropertyElt<'a>: From<&'a Date> + Eq + Hash + std::fmt::Debug {}
+
+pub struct DateProperty {
+  filter_fn: Box<dyn Fn(&Date) -> bool>,
+  dbg_info: String
 }
 
-/// Property of `Date`, ie. if its month is Sep or Oct, etc.
-#[derive(Debug)]
-pub enum DateProperty<T: FromDateRef + Eq + Hash> {
-  Always,
-  When(HashSet<T>)
-}
-
-impl<T: FromDateRef + Eq + Hash> DateProperty<T> {
-
-  /// Constructs some `DateProperty` from a vector of potential matches.
-  pub fn from(v: Vec<T>) -> Self {
-    let mut ret = HashSet::<T>::new();
-    ret.extend(v);
-    Self::When(ret)
+impl DateProperty {
+  pub fn check(&self, d: &Date) -> bool {
+    (self.filter_fn)(d)
   }
+}
 
-  pub fn is_property_of(&self, d: &Date) -> bool {
-    match self {
-      Self::Always => true,
-      Self::When(s) => s.contains(&T::from_date(d)),
+impl<'a, T: DatePropertyElt<'a>> From<Vec<T>> for DateProperty {
+  fn from(value: Vec<T>) -> Self {
+    let dbg_info = format!("{:?}", &value);
+    let mut property_set = HashSet::<T>::new();
+    property_set.extend(value);
+    DateProperty { 
+      filter_fn: Box::new(
+        |d: &Date| {
+          property_set.contains(T::from(d))
+        }
+      ),
+      dbg_info
+    }
+  }
+}
+
+impl std::fmt::Debug for DateProperty {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}", self.dbg_info)
+  }
+}
+
+impl std::ops::Mul for DateProperty {
+  type Output = Self;
+  fn mul(self, rhs: Self) -> Self::Output {
+    DateProperty {
+      filter_fn: Box::new(
+        move |x: &Date| (self.filter_fn)(x) && (rhs.filter_fn)(x)
+      ),
+      dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info)
     }
   }
 }
@@ -237,7 +253,7 @@ impl<T: FromDateRef + Eq + Hash> DateProperty<T> {
 /// [todo] Needs to be reimplemented sometime.
 /// 
 /// [todo] Does not yet faithfully show the rrule of weekly-no-pattern event.
-pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty<Weekday> {
+pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty {
   let mut weekday_vec = Vec::<Weekday>::new();
 
   match fr.freq {
@@ -273,7 +289,7 @@ mod test {
       hr: 21, 
       min: 11, 
     };
-    assert_eq!(TU, Weekday::from_date(&treeday));
+    assert_eq!(TU, Weekday::from(&treeday));
   }
 
 

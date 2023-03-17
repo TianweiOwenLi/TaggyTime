@@ -57,7 +57,7 @@ pub type Interval = Option<OneOrMore>;
 // }
 
 pub struct Repeat {
-  weekday: DateProperty<Weekday>
+  weekday: DateProperty
 }
 
 pub enum Pattern {
