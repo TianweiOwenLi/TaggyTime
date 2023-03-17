@@ -47,8 +47,8 @@ impl From<&str> for Weekday {
   }
 }
 
-impl From<&Date> for Weekday {
-  fn from(value: &Date) -> Self {
+impl From<Date> for Weekday {
+  fn from(value: Date) -> Self {
     let mut past_year_iter = CeYear::new(1970).unwrap();
     let mut days_in_past_years: u32 = 0;
 
@@ -65,7 +65,7 @@ impl From<&Date> for Weekday {
   }
 }
 
-impl DatePropertyElt<'_> for Weekday {}
+impl DatePropertyElt for Weekday {}
 
 #[allow(dead_code, unused_imports)]
 mod test {

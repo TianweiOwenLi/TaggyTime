@@ -15,7 +15,7 @@ use std::ops::RangeBounds;
 /// it has fields like year, month, day, hour, and minute. 
 /// 
 /// Note that `Date` does not record any information about timezone.
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub struct Date {
   yr: CeYear,
   mon: Month,
@@ -151,7 +151,7 @@ impl Date {
   // ------------- The followings are all attribute functions.  -------------
 
   pub fn has_property(&self, p: DateProperty) -> bool {
-    p.check(self)
+    p.check(*self)
   }
 
   pub fn get_yr(&self) -> CeYear {
@@ -200,28 +200,28 @@ impl std::fmt::Display for Date {
   }
 }
 
-pub trait DatePropertyElt<'a>: From<&'a Date> + Eq + Hash + std::fmt::Debug {}
+pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
 pub struct DateProperty {
-  filter_fn: Box<dyn Fn(&Date) -> bool>,
+  filter_fn: Box<dyn Fn(Date) -> bool>,
   dbg_info: String
 }
 
 impl DateProperty {
-  pub fn check(&self, d: &Date) -> bool {
+  pub fn check(&self, d: Date) -> bool {
     (self.filter_fn)(d)
   }
 }
 
-impl<'a, T: DatePropertyElt<'a>> From<Vec<T>> for DateProperty {
+impl<T: DatePropertyElt> From<Vec<T>> for DateProperty {
   fn from(value: Vec<T>) -> Self {
     let dbg_info = format!("{:?}", &value);
     let mut property_set = HashSet::<T>::new();
     property_set.extend(value);
     DateProperty { 
       filter_fn: Box::new(
-        |d: &Date| {
-          property_set.contains(T::from(d))
+        |d: Date| {
+          property_set.contains(&T::from(d))
         }
       ),
       dbg_info
@@ -240,7 +240,7 @@ impl std::ops::Mul for DateProperty {
   fn mul(self, rhs: Self) -> Self::Output {
     DateProperty {
       filter_fn: Box::new(
-        move |x: &Date| (self.filter_fn)(x) && (rhs.filter_fn)(x)
+        move |x: Date| (self.filter_fn)(x) && (rhs.filter_fn)(x)
       ),
       dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info)
     }
@@ -289,7 +289,7 @@ mod test {
       hr: 21, 
       min: 11, 
     };
-    assert_eq!(TU, Weekday::from(&treeday));
+    assert_eq!(TU, Weekday::from(treeday));
   }
 
 
