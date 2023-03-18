@@ -213,13 +213,14 @@ impl DateProperty {
   }
 }
 
-impl<T: DatePropertyElt> From<Vec<T>> for DateProperty {
+impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
   fn from(value: Vec<T>) -> Self {
     let dbg_info = format!("{:?}", &value);
     let mut property_set = HashSet::<T>::new();
     property_set.extend(value);
     DateProperty { 
       filter_fn: Box::new(
+        move
         |d: Date| {
           property_set.contains(&T::from(d))
         }
