@@ -1,6 +1,7 @@
 
 pub mod refinement;
 
+#[derive(Debug)]
 pub enum RefinementError {
   RangedI64Overflow(i64, i64, i64),
   RangedI64Underflow(i64, i64, i64),

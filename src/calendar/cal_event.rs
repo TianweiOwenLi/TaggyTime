@@ -4,12 +4,9 @@ use datetime::Month;
 
 use crate::ics_parser::ICSProcessError;
 use crate::ics_parser::ics_syntax::RRuleToks;
-use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
 use crate::time::{MinInstant, MinInterval, date::DateProperty};
 use crate::util_typs::refinement::*;
-
-use crate::time::week::Weekday;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
 pub enum RecurRules {
@@ -48,27 +45,16 @@ pub type SetPos = Option<OneOrMore>;
 pub type Interval = Option<OneOrMore>;
 // pub type WeekStart = Option<WeekDay>;
 
-/// Repetition by day, week, month, year, etc.
-// pub enum Repeat {
-//   Daily(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
-//   Weekly(ByMonthLst, ByWkDayLst, ByHrLst, SetPos),
-//   Monthly(ByMonthLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
-//   Yearly(ByMonthLst, ByWkNumLst, ByYrDayLst, ByMoDayLst, ByWkDayLst, ByHrLst, SetPos),
-// }
-
-pub struct Repeat {
-  weekday: DateProperty
-}
 
 pub enum Pattern {
   Once,
-  Many(Repeat, Interval, Term)
+  Many(DateProperty, Interval, Term)
 }
 
 /// Recurrence event termination condition, which is either a number of 
 /// occurrences, a "finished" time instance, or never. 
 pub enum Term {
-  Count(usize),
+  Count(OneOrMore),
   Until(MinInstant),
   Never,
 }
@@ -80,13 +66,22 @@ pub struct Recurrence {
   /// Actual time interval of event, ie. 08:30 - 09:50
   event: MinInterval,
 
+  /// Indicates that `event` is the nth occurrence. Shall be initialized as 1.
+  ordinal: OneOrMore,
+
   /// Recurrence pattern, ie. weekly on TU, TH
   patt: Pattern,
 }
 
 impl Recurrence {
   pub fn once(mi: MinInterval) -> Self {
-    Self { event: mi, patt: Pattern::Once }
+    Self { event: mi, ordinal: OneOrMore::new(1).unwrap(), patt: Pattern::Once }
+  }
+
+  /// Computes the next occurrence of the recurrence. If passes termination 
+  /// condition, returns `None`.
+  pub fn next(&self) -> Option<Self> {
+    unimplemented!()
   }
 }
 
