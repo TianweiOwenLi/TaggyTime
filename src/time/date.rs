@@ -6,10 +6,9 @@ use crate::time::{month::Month, week::Weekday};
 
 use crate::time::*;
 
-use std::collections::{BTreeSet, HashSet};
+use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
-use std::ops::RangeBounds;
 
 /// A struct that represents some time instance in human-readable form. Namely, 
 /// it has fields like year, month, day, hour, and minute. 

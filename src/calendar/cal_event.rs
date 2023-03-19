@@ -64,7 +64,7 @@ pub enum Term {
 /// recurring event is happening.
 pub struct Recurrence {
   /// Actual time interval of event, ie. 08:30 - 09:50
-  event: MinInterval,
+  event_miv: MinInterval,
 
   /// Indicates that `event` is the nth occurrence. Shall be initialized as 1.
   ordinal: OneOrMore,
@@ -75,13 +75,24 @@ pub struct Recurrence {
 
 impl Recurrence {
   pub fn once(mi: MinInterval) -> Self {
-    Self { event: mi, ordinal: OneOrMore::new(1).unwrap(), patt: Pattern::Once }
+    Self { event_miv: mi, ordinal: OneOrMore::new(1).unwrap(), patt: Pattern::Once }
   }
 
   /// Computes the next occurrence of the recurrence. If passes termination 
   /// condition, returns `None`.
+  /// 
+  /// [todo] Advancement is at least one day.
   pub fn next(&self) -> Option<Self> {
-    unimplemented!()
+    match &self.patt {
+      Pattern::Once => None,
+      Pattern::Many(dp, iv, term) => {
+        let mut new_miv = self.event_miv;
+
+        while !dp.check(d) {
+          
+        }
+      }
+    }
   }
 }
 

@@ -23,6 +23,10 @@ use self::{fact::*, timezone::ZoneOffset, year::CeYear};
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
 const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
 
+pub enum TimeError {
+  MinInstantAdvanceOverflow(u32, ZoneOffset, u32),
+}
+
 // ---------------------------------- Utils -----------------------------------
 
 /// Safely sums up an array of `u32`, returns `None` if overflows.
@@ -168,6 +172,24 @@ impl MinInstant {
       )),
     }
   }
+
+  /// Advances the `MinInstant` by given number of minutes. Checks bounds while 
+  /// advancing, and returns an error if overflows.
+  pub fn advance(&self, num_min: u32) -> Result<MinInstant, TimeError> {
+    let added_raw = self.raw.checked_add(num_min);
+    if let Some(added_safe_raw) = added_raw {
+      let zoneoffset_redundancy = MINUTE_UPPERBOUND.checked_add(self.offset.raw())
+        .expect("MI upperbound shall never overflow when added by zone offset");
+      if i64::from(added_safe_raw) <= zoneoffset_redundancy {
+        return Ok(MinInstant { raw: added_safe_raw, offset: self.offset })
+      }
+    }
+    Err(TimeError::MinInstantAdvanceOverflow(
+      self.raw, 
+      self.offset, 
+      num_min
+    ))
+  }
 }
 
 impl MinInterval {
@@ -182,6 +204,15 @@ impl MinInterval {
     let start_str = Date::from_min_instant(self.start);
     let end_str = Date::from_min_instant(self.end);
     format!("{} - {}", start_str, end_str)
+  }
+
+  /// Advances the `MinInterval` by given number of minutes. Checks bounds while 
+  /// advancing, and returns an error if overflows.
+  pub fn advance(&self, num_min: u32) -> Result<MinInterval, TimeError> {
+    Ok(MinInterval { 
+      start: self.start.advance(num_min)?, 
+      end: self.end.advance(num_min)? 
+    })
   }
 }
 
