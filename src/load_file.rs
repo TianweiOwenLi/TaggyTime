@@ -1,9 +1,7 @@
 //! Loads various types of files.
 
 use crate::ics_parser::{
-  ics_syntax::ICSParser,
-  lexer::IcsLexer,
-  ICSProcessError,
+  ics_syntax::ICSParser, lexer::IcsLexer, ICSProcessError,
 };
 
 /// [todo] elim code-duplication from test_parser

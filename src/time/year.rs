@@ -219,15 +219,15 @@ mod test {
   #[test]
   fn normal_leap() {
     assert_eq!(
-      CeYear::new(2000).unwrap().get_year_length(), 
+      CeYear::new(2000).unwrap().get_year_length(),
       YearLength::Leap
     );
     assert_eq!(
-      UnixYear::new(130).unwrap().get_year_length(), 
+      UnixYear::new(130).unwrap().get_year_length(),
       YearLength::Common
     );
     assert_eq!(
-      CeYear::new(2001).unwrap().get_year_length(), 
+      CeYear::new(2001).unwrap().get_year_length(),
       YearLength::Common
     );
     assert_eq!(

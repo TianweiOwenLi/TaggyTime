@@ -21,7 +21,7 @@ use crate::time::*;
 /// be cached, and only refreshed if needed.
 ///
 /// [todo] Finish example code
-/// 
+///
 /// [todo] Implement recurrences for todo
 ///
 /// # Examples

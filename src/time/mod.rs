@@ -11,11 +11,11 @@ use date::*;
 
 pub mod week;
 
-mod fact;
+pub mod fact;
 
 pub mod timezone;
 
-use crate::ics_parser::ICSProcessError;
+use crate::{ics_parser::ICSProcessError, util_typs::RefinementError};
 
 use self::{fact::*, timezone::ZoneOffset, year::CeYear};
 
@@ -25,6 +25,13 @@ const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
 
 pub enum TimeError {
   MinInstantAdvanceOverflow(u32, ZoneOffset, u32),
+  RefinementErr(RefinementError),
+}
+
+impl From<RefinementError> for TimeError {
+  fn from(value: RefinementError) -> Self {
+    Self::RefinementErr(value)
+  }
 }
 
 // ---------------------------------- Utils -----------------------------------
@@ -90,6 +97,7 @@ impl Ord for MinInstant {
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked
 /// by `MinInstant`. This interval must be non-negative.
+#[derive(Clone)]
 pub struct MinInterval {
   start: MinInstant,
   end: MinInstant,
@@ -173,21 +181,25 @@ impl MinInstant {
     }
   }
 
-  /// Advances the `MinInstant` by given number of minutes. Checks bounds while 
+  /// Advances the `MinInstant` by given number of minutes. Checks bounds while
   /// advancing, and returns an error if overflows.
   pub fn advance(&self, num_min: u32) -> Result<MinInstant, TimeError> {
     let added_raw = self.raw.checked_add(num_min);
     if let Some(added_safe_raw) = added_raw {
-      let zoneoffset_redundancy = MINUTE_UPPERBOUND.checked_add(self.offset.raw())
+      let zoneoffset_redundancy = MINUTE_UPPERBOUND
+        .checked_add(self.offset.raw())
         .expect("MI upperbound shall never overflow when added by zone offset");
       if i64::from(added_safe_raw) <= zoneoffset_redundancy {
-        return Ok(MinInstant { raw: added_safe_raw, offset: self.offset })
+        return Ok(MinInstant {
+          raw: added_safe_raw,
+          offset: self.offset,
+        });
       }
     }
     Err(TimeError::MinInstantAdvanceOverflow(
-      self.raw, 
-      self.offset, 
-      num_min
+      self.raw,
+      self.offset,
+      num_min,
     ))
   }
 }
@@ -206,13 +218,40 @@ impl MinInterval {
     format!("{} - {}", start_str, end_str)
   }
 
-  /// Advances the `MinInterval` by given number of minutes. Checks bounds while 
+  /// Advances the `MinInterval` by given number of minutes. Checks bounds while
   /// advancing, and returns an error if overflows.
   pub fn advance(&self, num_min: u32) -> Result<MinInterval, TimeError> {
-    Ok(MinInterval { 
-      start: self.start.advance(num_min)?, 
-      end: self.end.advance(num_min)? 
+    Ok(MinInterval {
+      start: self.start.advance(num_min)?,
+      end: self.end.advance(num_min)?,
     })
+  }
+
+  /// Advances the `MinInterval` until its starting time matches the
+  /// provided `DateProperty`, or if `start` exceeds the `until` mininstant.
+  pub fn advance_until(
+    &self,
+    dp: &DateProperty,
+    until_opt: Option<MinInstant>,
+  ) -> Result<Option<MinInterval>, TimeError> {
+    let mut new_miv = self.clone();
+    while !dp.check(Date::from_min_instant(new_miv.get_start())) {
+      new_miv = new_miv.advance(MIN_IN_DAY)?;
+      if let Some(until) = until_opt {
+        if new_miv.start > until {
+          return Ok(None);
+        }
+      }
+    }
+    Ok(Some(new_miv))
+  }
+
+  pub fn get_start(&self) -> MinInstant {
+    self.start
+  }
+
+  pub fn get_end(&self) -> MinInstant {
+    self.end
   }
 }
 
@@ -228,11 +267,9 @@ impl std::fmt::Display for MinInterval {
   }
 }
 
-
-
 #[allow(unused_imports)]
 mod test {
-  use crate::time::{timezone::ZoneOffset, year::CeYear, month::Month};
+  use crate::time::{month::Month, timezone::ZoneOffset, year::CeYear};
 
   use super::{Date, MinInstant};
 
@@ -298,5 +335,4 @@ mod test {
     let parsed: u32 = "0002333".parse().unwrap();
     assert_eq!(2333, parsed);
   }
-
 }

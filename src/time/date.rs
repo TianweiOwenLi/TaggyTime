@@ -1,6 +1,6 @@
 //! Structure that represents calendar days.
 
-use crate::ics_parser::ics_syntax::{FreqAndRRules, Freq};
+use crate::ics_parser::ics_syntax::{Freq, FreqAndRRules};
 use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
 
@@ -10,9 +10,9 @@ use std::collections::HashSet;
 use std::fmt::Debug;
 use std::hash::Hash;
 
-/// A struct that represents some time instance in human-readable form. Namely, 
-/// it has fields like year, month, day, hour, and minute. 
-/// 
+/// A struct that represents some time instance in human-readable form. Namely,
+/// it has fields like year, month, day, hour, and minute.
+///
 /// Note that `Date` does not record any information about timezone.
 #[derive(Debug, Clone, Copy)]
 pub struct Date {
@@ -136,7 +136,13 @@ impl Date {
           return bad;
         };
 
-        let ret_date = Date {yr, mon, day, hr, min};
+        let ret_date = Date {
+          yr,
+          mon,
+          day,
+          hr,
+          min,
+        };
         Ok(ret_date)
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
@@ -145,7 +151,6 @@ impl Date {
       )),
     }
   }
-
 
   // ------------- The followings are all attribute functions.  -------------
 
@@ -166,7 +171,8 @@ impl Date {
     let mut var_month = Month::Jan;
     while var_month != self.mon {
       ret += var_month.num_days(&self.yr);
-      var_month = var_month.next()
+      var_month = var_month
+        .next()
         .expect("Month iterator can never run out before match");
     }
     ret
@@ -203,7 +209,7 @@ pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
 pub struct DateProperty {
   filter_fn: Box<dyn Fn(Date) -> bool>,
-  dbg_info: String
+  dbg_info: String,
 }
 
 impl DateProperty {
@@ -217,14 +223,9 @@ impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
     let dbg_info = format!("{:?}", &value);
     let mut property_set = HashSet::<T>::new();
     property_set.extend(value);
-    DateProperty { 
-      filter_fn: Box::new(
-        move
-        |d: Date| {
-          property_set.contains(&T::from(d))
-        }
-      ),
-      dbg_info
+    DateProperty {
+      filter_fn: Box::new(move |d: Date| property_set.contains(&T::from(d))),
+      dbg_info,
     }
   }
 }
@@ -239,26 +240,26 @@ impl std::ops::Mul for DateProperty {
   type Output = Self;
   fn mul(self, rhs: Self) -> Self::Output {
     DateProperty {
-      filter_fn: Box::new(
-        move |x: Date| (self.filter_fn)(x) && (rhs.filter_fn)(x)
-      ),
-      dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info)
+      filter_fn: Box::new(move |x: Date| {
+        (self.filter_fn)(x) && (rhs.filter_fn)(x)
+      }),
+      dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info),
     }
   }
 }
 
-/// Strips the `BYDAY` property, ie. which days of a week, from some 
+/// Strips the `BYDAY` property, ie. which days of a week, from some
 /// `FreqAndRules` that is of variant `Freq::Weekly`.
-/// 
+///
 /// [todo] Needs to be reimplemented sometime.
-/// 
+///
 /// [todo] Does not yet faithfully show the rrule of weekly-no-pattern event.
 pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty {
   let mut weekday_vec = Vec::<Weekday>::new();
 
   match fr.freq {
     Freq::Weekly => {
-      'iter_recur_rules : for item in &fr.content {
+      'iter_recur_rules: for item in &fr.content {
         if let Token::BYDAY = &item.tag {
           for s in &item.content {
             weekday_vec.push(Weekday::from(s.as_str()));
@@ -268,10 +269,9 @@ pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty {
       }
       return DateProperty::from(weekday_vec);
     }
-    _ => unimplemented!()
+    _ => unimplemented!(),
   }
 }
-
 
 #[allow(dead_code, unused_imports)]
 mod test {
@@ -283,15 +283,14 @@ mod test {
     use Weekday::*;
 
     let treeday = Date {
-      yr: CeYear::new(2023).unwrap(), 
-      mon: Month::Mar, 
-      day: 14, 
-      hr: 21, 
-      min: 11, 
+      yr: CeYear::new(2023).unwrap(),
+      mon: Month::Mar,
+      day: 14,
+      hr: 21,
+      min: 11,
     };
     assert_eq!(TU, Weekday::from(treeday));
   }
-
 
   #[test]
   fn ics_string_to_date() {
@@ -299,11 +298,11 @@ mod test {
     let date1 = Date::from_ics_time_string(ymd, hms).unwrap();
 
     let date2 = Date {
-      yr: CeYear::new(2022).unwrap(), 
-      mon: Month::Mar, 
-      day: 14, 
-      hr: 21, 
-      min: 11, 
+      yr: CeYear::new(2022).unwrap(),
+      mon: Month::Mar,
+      day: 14,
+      hr: 21,
+      min: 11,
     };
 
     let mi1 = MinInstant::from_date(&date1).unwrap();
@@ -315,11 +314,11 @@ mod test {
   #[test]
   fn yearday() {
     let treeday = Date {
-      yr: CeYear::new(2100).unwrap(), 
-      mon: Month::Mar, 
-      day: 12, 
-      hr: 10, 
-      min: 05, 
+      yr: CeYear::new(2100).unwrap(),
+      mon: Month::Mar,
+      day: 12,
+      hr: 10,
+      min: 05,
     };
 
     assert_eq!(treeday.day_in_yr(), 31 + 28 + 12);

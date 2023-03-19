@@ -1,13 +1,11 @@
-
-
 use super::{RefinementError, Result};
 
 pub const I64_MAX: i64 = i64::MAX;
 pub const I64_MIN: i64 = i64::MIN;
 
-/// Ranged `i64` type, behaves exactly like `i64`, except that elements out 
-/// of range can never be used to instantiate. 
-/// 
+/// Ranged `i64` type, behaves exactly like `i64`, except that elements out
+/// of range can never be used to instantiate.
+///
 /// ## Examples
 /// ```
 /// type weekdays = RangedI64<1, 7>;
@@ -17,12 +15,11 @@ pub const I64_MIN: i64 = i64::MIN;
 /// assert!(n.is_err());
 /// ```
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub struct RangedI64<const MIN: i64, const MAX: i64> (i64);
+pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
-
-  /// Attempts to construct some ranged i64 using `n`. Returns underflow / 
-  /// overflow error if bounds check failed. 
+  /// Attempts to construct some ranged i64 using `n`. Returns underflow /
+  /// overflow error if bounds check failed.
   pub fn new(n: i64) -> Result<Self> {
     if n < MIN {
       Err(RefinementError::RangedI64Underflow(n, MIN, MAX))
@@ -33,6 +30,14 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
     }
   }
 
+  pub fn increment(&self) -> Result<Self> {
+    let new_raw = self.0.checked_add(1);
+    if let Some(new_safe_raw) = new_raw {
+      Self::new(new_safe_raw)
+    } else {
+      Err(RefinementError::RangedI64ArithmeticError(self.0, '+', 1))
+    }
+  }
 }
 
 pub type LowerBoundI64<const MIN: i64> = RangedI64<MIN, I64_MAX>;

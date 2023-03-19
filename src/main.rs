@@ -2,10 +2,10 @@ mod args;
 mod calendar;
 mod const_params;
 mod ics_parser;
+mod load_file;
 mod percent;
 mod time;
 mod util_typs;
-mod load_file;
 
 use std::io::BufRead;
 
@@ -14,15 +14,17 @@ use time::timezone::ZoneOffset;
 use crate::{args::*, time::date::Date};
 
 /// Stores global variables for such interaction.
-/// 
+///
 /// [todo] Implement load from file.
 struct TaggyEnv {
-  tz: ZoneOffset
+  tz: ZoneOffset,
 }
 
-/// Loads the interactive environment. 
+/// Loads the interactive environment.
 fn load_env() -> Result<TaggyEnv, String> {
-  Ok(TaggyEnv { tz: ZoneOffset::utc() })
+  Ok(TaggyEnv {
+    tz: ZoneOffset::utc(),
+  })
 }
 
 /// Stores the interactive environment.
@@ -30,7 +32,10 @@ fn store_env() -> Result<(), String> {
   Ok(())
 }
 
-fn handle_command_vec(cmd: Vec<String>, tenv: &mut TaggyEnv) -> Result<(), String> {
+fn handle_command_vec(
+  cmd: Vec<String>,
+  tenv: &mut TaggyEnv,
+) -> Result<(), String> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
@@ -48,7 +53,8 @@ fn handle_command_vec(cmd: Vec<String>, tenv: &mut TaggyEnv) -> Result<(), Strin
     ["now"] => {
       let mut mi = time::MinInstant::now();
       mi.set_offset(tenv.tz);
-      println!("The time now is: {}, offset={}", 
+      println!(
+        "The time now is: {}, offset={}",
         Date::from_min_instant(mi),
         mi.get_offset(),
       );
@@ -60,8 +66,7 @@ fn handle_command_vec(cmd: Vec<String>, tenv: &mut TaggyEnv) -> Result<(), Strin
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {
-        load_file::load_schedule_ics(filename)
-          .expect("Failed to .ics file");
+        load_file::load_schedule_ics(filename).expect("Failed to .ics file");
       }
       Ok(())
     }
@@ -99,7 +104,7 @@ fn main() {
       if let Err(e) = handle_command_vec(v, &mut tenv) {
         eprintln!("[taggytime] Command error: {}", e)
       }
-    }
+    },
     Mode::Cli(v) => {
       handle_command_vec(v, &mut tenv).unwrap_or_else(|e| {
         eprintln!("Command execution failed! \n{:?}", e);

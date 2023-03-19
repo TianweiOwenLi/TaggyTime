@@ -2,10 +2,13 @@ use std::collections::BTreeSet;
 
 use datetime::Month;
 
-use crate::ics_parser::ICSProcessError;
 use crate::ics_parser::ics_syntax::RRuleToks;
+use crate::ics_parser::ICSProcessError;
 use crate::percent::Percent;
-use crate::time::{MinInstant, MinInterval, date::DateProperty};
+use crate::time::date::Date;
+use crate::time::fact::MIN_IN_DAY;
+use crate::time::TimeError;
+use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
 
 #[derive(PartialEq, Eq, PartialOrd, Ord)]
@@ -24,13 +27,13 @@ pub enum OrdSign {
   M,
 }
 
-pub type Minutes = RangedI64::<0, 59>;
-pub type Hours = RangedI64::<0, 23>;
+pub type Minutes = RangedI64<0, 59>;
+pub type Hours = RangedI64<0, 23>;
 
 // pub type OrdWkDay = (OrdSign, WeekDay);
-pub type OrdMoDay = (OrdSign, RangedI64::<1, 31>);
-pub type OrdYrDay = (OrdSign, RangedI64::<1, 366>);
-pub type OrdWkNum = (OrdSign, RangedI64::<1, 53>);
+pub type OrdMoDay = (OrdSign, RangedI64<1, 31>);
+pub type OrdYrDay = (OrdSign, RangedI64<1, 366>);
+pub type OrdWkNum = (OrdSign, RangedI64<1, 53>);
 
 pub type ByMinLst = BTreeSet<Minutes>;
 pub type ByHrLst = BTreeSet<Hours>;
@@ -45,29 +48,28 @@ pub type SetPos = Option<OneOrMore>;
 pub type Interval = Option<OneOrMore>;
 // pub type WeekStart = Option<WeekDay>;
 
-
 pub enum Pattern {
   Once,
-  Many(DateProperty, Interval, Term)
+  Many(DateProperty, Interval, Term),
 }
 
-/// Recurrence event termination condition, which is either a number of 
-/// occurrences, a "finished" time instance, or never. 
+/// Recurrence event termination condition, which is either a number of
+/// occurrences, a "finished" time instance, or never.
 pub enum Term {
   Count(OneOrMore),
   Until(MinInstant),
   Never,
 }
 
-/// Describes when shall some recurring events happen. This can correspond 
-/// to some mapping from `MinInstant` to `bool`, indicating precisely if a 
+/// Describes when shall some recurring events happen. This can correspond
+/// to some mapping from `MinInstant` to `bool`, indicating precisely if a
 /// recurring event is happening.
 pub struct Recurrence {
   /// Actual time interval of event, ie. 08:30 - 09:50
   event_miv: MinInterval,
 
-  /// Indicates that `event` is the nth occurrence. Shall be initialized as 1.
-  ordinal: OneOrMore,
+  /// Indicates that `event_miv` is the nth occurrence. Shall be initialized as 1.
+  occurrence_count: OneOrMore,
 
   /// Recurrence pattern, ie. weekly on TU, TH
   patt: Pattern,
@@ -75,22 +77,60 @@ pub struct Recurrence {
 
 impl Recurrence {
   pub fn once(mi: MinInterval) -> Self {
-    Self { event_miv: mi, ordinal: OneOrMore::new(1).unwrap(), patt: Pattern::Once }
+    Self {
+      event_miv: mi,
+      occurrence_count: OneOrMore::new(1).unwrap(),
+      patt: Pattern::Once,
+    }
   }
 
-  /// Computes the next occurrence of the recurrence. If passes termination 
+  /// Computes the next occurrence of the recurrence. If passes termination
   /// condition, returns `None`.
-  /// 
+  ///
   /// [todo] Advancement is at least one day.
-  pub fn next(&self) -> Option<Self> {
+  pub fn next(self) -> Result<Option<Self>, TimeError> {
     match &self.patt {
-      Pattern::Once => None,
-      Pattern::Many(dp, iv, term) => {
-        let mut new_miv = self.event_miv;
-
-        while !dp.check(d) {
-          
+      Pattern::Once => Ok(None),
+      Pattern::Many(dp, iv, Term::Count(n)) => {
+        if self.occurrence_count >= *n {
+          Ok(None)
+        } else {
+          let new_miv = self
+            .event_miv
+            .advance(MIN_IN_DAY)?
+            .advance_until(dp, None)?;
+          Ok(Some(Recurrence {
+            event_miv: new_miv
+              .expect("Unreachable since term is count variant"),
+            occurrence_count: self.occurrence_count.increment()?,
+            patt: self.patt,
+          }))
         }
+      }
+      Pattern::Many(dp, iv, Term::Until(term_mi)) => {
+        let new_miv_opt = self
+          .event_miv
+          .advance(MIN_IN_DAY)?
+          .advance_until(dp, Some(*term_mi))?;
+        Ok(match new_miv_opt {
+          Some(new_miv) => Some(Recurrence {
+            event_miv: new_miv,
+            occurrence_count: self.occurrence_count.increment()?,
+            patt: self.patt,
+          }),
+          None => None,
+        })
+      }
+      Pattern::Many(dp, iv, Term::Never) => {
+        let new_miv = self
+          .event_miv
+          .advance(MIN_IN_DAY)?
+          .advance_until(dp, None)?;
+        Ok(Some(Recurrence {
+          event_miv: new_miv.expect("Unreachable since term is count variant"),
+          occurrence_count: self.occurrence_count.increment()?,
+          patt: self.patt,
+        }))
       }
     }
   }

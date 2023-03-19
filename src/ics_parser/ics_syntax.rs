@@ -4,10 +4,10 @@
 //! are less relevant to workload calculation.
 
 use crate::{
+  const_params::ICS_DEFAULT_TIME_IN_DAY,
   ics_parser::lexer,
-  time::{date::Date, MinInstant, MinInterval}, const_params::ICS_DEFAULT_TIME_IN_DAY,
+  time::{date::Date, MinInstant, MinInterval},
 };
-
 
 use super::{
   lexer::{IcsLexer, Token},
@@ -26,7 +26,7 @@ pub struct Vevent {
   summary: String,
 }
 
-/// Frequency of some `RRULE` line. 
+/// Frequency of some `RRULE` line.
 #[derive(Debug)]
 pub enum Freq {
   Daily,
@@ -35,24 +35,24 @@ pub enum Freq {
   Yearly,
 }
 
-/// A single recurrence rule, in the form `BYXXX=item, item, item...`. 
-/// Composed of tokens, and may not be valid. 
+/// A single recurrence rule, in the form `BYXXX=item, item, item...`.
+/// Composed of tokens, and may not be valid.
 pub struct RRuleToks {
   pub tag: Token,
-  pub content: Vec<String>
+  pub content: Vec<String>,
 }
 
-/// A frequency paired with a vec of `RRuleToks`. 
-/// Corresponds to `Pattern::Many`. Specifically, `freq` indicates the specific 
-/// variant of `Repeat`, `content` encodes the potential rules for such a 
-/// variant, `interval` is self explanatory, and `count`, `until` are for 
+/// A frequency paired with a vec of `RRuleToks`.
+/// Corresponds to `Pattern::Many`. Specifically, `freq` indicates the specific
+/// variant of `Repeat`, `content` encodes the potential rules for such a
+/// variant, `interval` is self explanatory, and `count`, `until` are for
 /// `Term`.
 pub struct FreqAndRRules {
-  pub freq: Freq, 
+  pub freq: Freq,
   pub content: Vec<RRuleToks>,
   interval: usize,
   count: Option<usize>,
-  until: Option<MinInstant>
+  until: Option<MinInstant>,
 }
 
 pub struct ICSParser<'a> {
@@ -323,7 +323,7 @@ impl<'a> ICSParser<'a> {
       Token::WEEKLY => Freq::Weekly,
       Token::MONTHLY => Freq::Monthly,
       Token::YEARLY => Freq::Yearly,
-      x => return Err(ICSProcessError::InvalidFreq(x))
+      x => return Err(ICSProcessError::InvalidFreq(x)),
     };
     let mut content = Vec::<RRuleToks>::new();
     let mut interval: usize = 1; // default
@@ -339,8 +339,8 @@ impl<'a> ICSParser<'a> {
           ready_to_rrule = true;
         }
         Token::NEXTLINE => {
-          break Ok(FreqAndRRules { 
-            freq, 
+          break Ok(FreqAndRRules {
+            freq,
             content,
             count,
             interval,
@@ -354,9 +354,12 @@ impl<'a> ICSParser<'a> {
           let interval_opt: Result<usize, _> = num_string.parse();
           match interval_opt {
             Ok(explicit_interval) => interval = explicit_interval,
-            Err(_) => return Err(ICSProcessError::Other(
-              format!("{} is not valid interval usize", num_string)
-            ))
+            Err(_) => {
+              return Err(ICSProcessError::Other(format!(
+                "{} is not valid interval usize",
+                num_string
+              )))
+            }
           }
         }
         Token::COUNT => {
@@ -366,9 +369,12 @@ impl<'a> ICSParser<'a> {
           let interval_opt: Result<usize, _> = num_string.parse();
           match interval_opt {
             Ok(x) => count = Some(x),
-            Err(_) => return Err(ICSProcessError::Other(
-              format!("{} is not count valid usize", num_string)
-            ))
+            Err(_) => {
+              return Err(ICSProcessError::Other(format!(
+                "{} is not count valid usize",
+                num_string
+              )))
+            }
           }
         }
         Token::UNTIL => {
@@ -380,39 +386,41 @@ impl<'a> ICSParser<'a> {
           if ready_to_rrule {
             content.push(self.rrule()?);
           } else {
-            return Err(ICSProcessError::Other(
-              format!("Cannot rrule yet but encountered `{}`", t)
-            ))
+            return Err(ICSProcessError::Other(format!(
+              "Cannot rrule yet but encountered `{}`",
+              t
+            )));
           }
         }
       }
     }
-    
   }
 
   /// Parses a single recur-rule.
-  /// 
+  ///
   /// ## Syntax
   /// `recur=tok_lst`
   fn rrule(&mut self) -> Result<RRuleToks, ICSProcessError> {
     let tag = self.token()?;
     self.munch(Token::EQ)?;
-    let content = self.tok_lst(
-      &Token::COMMA, 
-      |t| {t == &Token::NEXTLINE || t == &Token::SEMICOLON}
-    )?;
-    Ok(RRuleToks{tag, content})
+    let content = self.tok_lst(&Token::COMMA, |t| {
+      t == &Token::NEXTLINE || t == &Token::SEMICOLON
+    })?;
+    Ok(RRuleToks { tag, content })
   }
 
-  /// Parses a list of token (casted as string) lists with specified separator 
+  /// Parses a list of token (casted as string) lists with specified separator
   /// and terminator. Does NOT munch terminator.
-  /// 
+  ///
   /// ## Syntax
   /// `vec<tok> end | vec<tok> sep tok_lst`
-  fn tok_lst<F>(&mut self, sep: &Token, end: F) 
-  -> Result<Vec<String>, ICSProcessError> 
-  where 
-    F: Fn(&Token) -> bool 
+  fn tok_lst<F>(
+    &mut self,
+    sep: &Token,
+    end: F,
+  ) -> Result<Vec<String>, ICSProcessError>
+  where
+    F: Fn(&Token) -> bool,
   {
     let mut ret = Vec::<String>::new();
     let mut entry = String::new();
@@ -444,15 +452,15 @@ impl<'a> ICSParser<'a> {
       self.skip()?;
       let hms = self.number()?;
 
-      // deal with weird ICS format rules: if timezone is not directly 
+      // deal with weird ICS format rules: if timezone is not directly
       // specified, such a literal shall end with 'Z'.
       if !zone_specified {
         self.munch(Token::Other("Z".to_string()))?;
       }
-      
+
       Date::from_ics_time_string(&ymd, &hms)?
     } else {
-      // Handle the case where time of day is not specified. 
+      // Handle the case where time of day is not specified.
       let hms = ICS_DEFAULT_TIME_IN_DAY;
       Date::from_ics_time_string(&ymd, hms)?
     };
@@ -462,7 +470,6 @@ impl<'a> ICSParser<'a> {
       _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
     }
   }
-
 }
 
 impl std::fmt::Display for RRuleToks {
@@ -474,7 +481,7 @@ impl std::fmt::Display for RRuleToks {
 impl std::fmt::Display for FreqAndRRules {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "  freq={:?}\n", self.freq)?;
-    
+
     write!(f, "  interval={}\n", self.interval)?;
 
     if let Some(n) = self.count {
@@ -499,8 +506,13 @@ impl std::fmt::Display for Vevent {
       Some(rpt) => rpt.to_string(),
       None => "  No Repeat".to_string(),
     };
-    write!(f, "  {}\n  {}\n{}\n", 
-      self.summary.trim(), self.mi.as_date_string(), repeat_str)
+    write!(
+      f,
+      "  {}\n  {}\n{}\n",
+      self.summary.trim(),
+      self.mi.as_date_string(),
+      repeat_str
+    )
   }
 }
 

@@ -1,4 +1,4 @@
-use super::{Date, year::*};
+use super::{year::*, Date};
 
 use crate::time::DatePropertyElt;
 
@@ -17,14 +17,13 @@ pub enum Weekday {
 }
 
 impl Weekday {
-
   /// Next weekday. Wraps around.
   pub fn next_wrap(&self) -> Self {
     let idx = *self as usize + 1;
     WEEKDAY_LIST[idx % 7]
   }
 
-  /// Computes the weekday corresponding to `n` days after Thursday (which is 
+  /// Computes the weekday corresponding to `n` days after Thursday (which is
   /// the weekday for Unix Epoch, ie. 1970.1.1).
   fn thursday_plus(n: usize) -> Self {
     let days_after_monday = (TH as usize) + n;
@@ -54,7 +53,8 @@ impl From<Date> for Weekday {
 
     while past_year_iter != value.get_yr() {
       days_in_past_years += past_year_iter.days_in_year();
-      past_year_iter = past_year_iter.next()
+      past_year_iter = past_year_iter
+        .next()
         .expect("CeYear can never overflow before match");
     }
 
@@ -70,7 +70,7 @@ impl DatePropertyElt for Weekday {}
 #[allow(dead_code, unused_imports)]
 mod test {
   use super::*;
-  
+
   #[test]
   fn weekday_arithmetic() {
     assert_eq!(MO, Weekday::thursday_plus(1005));
