@@ -22,7 +22,7 @@ pub struct ICalendar {
 
 pub struct Vevent {
   pub repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
-  mi: MinInterval,
+  pub miv: MinInterval,
   summary: String,
 }
 
@@ -50,9 +50,9 @@ pub struct RRuleToks {
 pub struct FreqAndRRules {
   pub freq: Freq,
   pub content: Vec<RRuleToks>,
-  interval: usize,
-  count: Option<usize>,
-  until: Option<MinInstant>,
+  pub interval: usize,
+  pub count: Option<usize>,
+  pub until: Option<MinInstant>,
 }
 
 pub struct ICSParser<'a> {
@@ -237,7 +237,7 @@ impl<'a> ICSParser<'a> {
               (Some(start), Some(end)) => {
                 return Ok(Vevent {
                   repeat: recur,
-                  mi: MinInterval::new(start, end),
+                  miv: MinInterval::new(start, end),
                   summary,
                 });
               }
@@ -510,7 +510,7 @@ impl std::fmt::Display for Vevent {
       f,
       "  {}\n  {}\n{}\n",
       self.summary.trim(),
-      self.mi.as_date_string(),
+      self.miv.as_date_string(),
       repeat_str
     )
   }

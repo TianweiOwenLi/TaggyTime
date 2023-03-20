@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 
 use datetime::Month;
 
-use crate::ics_parser::ics_syntax::RRuleToks;
+use crate::ics_parser::ics_syntax::{RRuleToks, FreqAndRRules, Freq, Vevent};
 use crate::ics_parser::ICSProcessError;
 use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
@@ -47,12 +47,35 @@ pub type ByMonthLst = BTreeSet<Month>;
 
 pub type OneOrMore = LowerBoundI64<1>;
 pub type SetPos = Option<OneOrMore>;
-pub type Interval = Option<OneOrMore>;
+pub type Interval = OneOrMore;
 // pub type WeekStart = Option<WeekDay>;
 
 pub enum Pattern {
   Once,
   Many(DateProperty, Interval, Term),
+}
+
+impl TryFrom<Option<FreqAndRRules>> for Pattern {
+  type Error = ICSProcessError;
+  fn try_from(value: Option<FreqAndRRules>) -> Result<Self, Self::Error> {
+    match value {
+      Some(frq) => {
+        let dp = DateProperty::from(frq.content);
+        let itv = OneOrMore::new(frq.interval)?;
+        let term = match (frq.count, frq.until) {
+          (None, None) => Term::Never,
+          (None, Some(mi)) => Term::Until(mi),
+          (Some(c), None) => Term::Count(OneOrMore::new(c)?),
+          (Some(c), Some(mi)) => {
+            return Err(ICSProcessError::UntilAndCountBothAppear(c, mi))
+          }
+        };
+
+        Ok(Pattern::Many(dp, itv, term))
+      }
+      None => Ok(Pattern::Once)
+    }
+  }
 }
 
 /// Recurrence event termination condition, which is either a number of
@@ -138,14 +161,19 @@ impl Recurrence {
   }
 }
 
-impl TryFrom<Vec<RRuleToks>> for Recurrence {
+impl TryFrom<Vevent> for Recurrence {
   type Error = ICSProcessError;
 
   /// Converts a parsed vector of rrules into a `Recurrence` instance. 
   /// 
   /// [warning] Only weekly - by weekday is implemented. 
-  fn try_from(value: Vec<RRuleToks>) -> Result<Self, Self::Error> {
-    unimplemented!()
+  fn try_from(value: Vevent) -> Result<Self, Self::Error> {
+    let patt = Pattern::try_from(value.repeat)?;
+    Ok(Recurrence {
+      event_miv: value.miv,
+      occurrence_count: OneOrMore::new(1).unwrap(),
+      patt
+    })
   }
 }
 
@@ -232,7 +260,7 @@ mod test {
     let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
     let dp = DateProperty::from(weeks);
 
-    let p = Pattern::Many(dp, None, Term::Count(OneOrMore::new(12).unwrap()));
+    let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
 
     let mut r = Recurrence {
       event_miv: iv,
