@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use super::{RefinementError, Result};
 
 pub const I64_MAX: i64 = i64::MAX;
@@ -20,13 +22,30 @@ pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
   /// Attempts to construct some ranged i64 using `n`. Returns underflow /
   /// overflow error if bounds check failed.
-  pub fn new(n: i64) -> Result<Self> {
+  pub fn new<T: Into<i64> + PartialOrd>(num: T) -> Result<Self> {
+    let n: i64 = num.into();
     if n < MIN {
       Err(RefinementError::RangedI64Underflow(n, MIN, MAX))
     } else if n > MAX {
       Err(RefinementError::RangedI64Overflow(n, MIN, MAX))
     } else {
       Ok(Self(n))
+    }
+  }
+
+  /// Attempts to construct some ranged i64 using `n`. Returns underflow /
+  /// overflow error if bounds check failed.
+  pub fn try_new<T: TryInto<i64> + PartialOrd + Display + Copy>(num: T) -> Result<Self> {
+    let n_opt = num.try_into();
+    match n_opt {
+      Ok(n) => {
+        Self::new(n)
+      }
+      Err(_) => {
+        Err(RefinementError::FailedConversionToI64(
+          format!("{}", num)
+        ))
+      }
     }
   }
 

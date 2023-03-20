@@ -61,11 +61,11 @@ impl TryFrom<Option<FreqAndRRules>> for Pattern {
     match value {
       Some(frq) => {
         let dp = DateProperty::from(frq.content);
-        let itv = OneOrMore::new(frq.interval)?;
+        let itv = OneOrMore::try_new(frq.interval)?;
         let term = match (frq.count, frq.until) {
           (None, None) => Term::Never,
           (None, Some(mi)) => Term::Until(mi),
-          (Some(c), None) => Term::Count(OneOrMore::new(c)?),
+          (Some(c), None) => Term::Count(OneOrMore::try_new(c)?),
           (Some(c), Some(mi)) => {
             return Err(ICSProcessError::UntilAndCountBothAppear(c, mi))
           }

@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use crate::time::MinInstant;
+use crate::{time::MinInstant, util_typs::RefinementError};
 
 use self::{
   ics_syntax::ICSParser,
@@ -23,6 +23,7 @@ pub enum ICSProcessError {
   MalformedList(Token, Token),
   InvalidFreq(Token),
   UntilAndCountBothAppear(usize, MinInstant),
+  Refinement(RefinementError),
   Msg(&'static str),
   Other(String),
 }
@@ -47,6 +48,7 @@ impl std::fmt::Display for ICSProcessError {
       }
       ICSProcessError::Msg(s) => write!(f, "ICS err: {}", s),
       ICSProcessError::Other(s) => write!(f, "ICS process error: {}", s),
+      ICSProcessError::Refinement(r) => write!(f, "{:?}", r),
     }
   }
 }
@@ -60,6 +62,12 @@ impl std::fmt::Debug for ICSProcessError {
 impl<'a> From<&'a ICSProcessError> for ICSProcessError {
   fn from(value: &'a ICSProcessError) -> Self {
     value.clone()
+  }
+}
+
+impl From<RefinementError> for ICSProcessError {
+  fn from(value: RefinementError) -> Self {
+    ICSProcessError::Refinement(value)
   }
 }
 
