@@ -4,10 +4,12 @@ use datetime::Month;
 
 use crate::ics_parser::ics_syntax::RRuleToks;
 use crate::ics_parser::ICSProcessError;
+use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
 use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
 use crate::time::TimeError;
+use crate::time::week::Weekday;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
 
@@ -138,6 +140,10 @@ impl Recurrence {
 
 impl TryFrom<Vec<RRuleToks>> for Recurrence {
   type Error = ICSProcessError;
+
+  /// Converts a parsed vector of rrules into a `Recurrence` instance. 
+  /// 
+  /// [warning] Only weekly - by weekday is implemented. 
   fn try_from(value: Vec<RRuleToks>) -> Result<Self, Self::Error> {
     unimplemented!()
   }

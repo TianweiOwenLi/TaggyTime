@@ -22,6 +22,8 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * DateProperty never true leads to next() not terminate
 * Implement interval and setpos handling
 * Optimize miv::advance_until() via elim. back-forth conversion.
+* Use DFA and / or their genfun for optimization?
+* Implement Recurrence parse from non-weekly events. 
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

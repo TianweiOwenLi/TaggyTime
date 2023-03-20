@@ -1,6 +1,6 @@
 //! Structure that represents calendar days.
 
-use crate::ics_parser::ics_syntax::{Freq, FreqAndRRules};
+use crate::ics_parser::ics_syntax::{Freq, FreqAndRRules, RRuleToks};
 use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
 
@@ -216,6 +216,13 @@ impl DateProperty {
   pub fn check(&self, d: Date) -> bool {
     (self.filter_fn)(d)
   }
+
+  pub fn always() -> Self {
+    DateProperty { 
+      filter_fn: Box::new(|_| true), 
+      dbg_info: String::from("[true]") 
+    }
+  }
 }
 
 impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
@@ -227,6 +234,34 @@ impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
       filter_fn: Box::new(move |d: Date| property_set.contains(&T::from(d))),
       dbg_info,
     }
+  }
+}
+
+impl From<Vec<RRuleToks>> for DateProperty {
+  
+  /// [todo] consider restriction constraints as per RFC 5545.
+  fn from(value: Vec<RRuleToks>) -> Self {
+    let mut dp = DateProperty::always();
+    for rrt in value {
+      match rrt.tag {
+        Token::BYDAY => {
+          let v: Vec<Weekday> = rrt
+            .content
+            .iter()
+            .map(|s| Weekday::from(s.as_str()))
+            .collect();
+          dp = dp * DateProperty::from(v);
+        }
+        Token::BYHOUR | Token::BYMIN | Token::BYMONTH | Token::BYMONTHDAY 
+        | Token::BYSETPOS | Token::BYWEEKNO | Token::BYYEARDAY => {
+          unimplemented!()
+        }
+        t => {
+          unreachable!("Encountered unexpected rrule tag: {}", t)
+        }
+      }
+    }
+    dp
   }
 }
 
