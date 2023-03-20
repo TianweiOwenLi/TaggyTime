@@ -23,8 +23,11 @@ use self::{fact::*, timezone::ZoneOffset, year::CeYear};
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
 const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
 
+#[derive(Debug)]
 pub enum TimeError {
   MinInstantAdvanceOverflow(u32, ZoneOffset, u32),
+  MinInstantConstructionOverflow(u32),
+  MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
 }
 
@@ -122,6 +125,17 @@ impl MinInstant {
       raw: t as u32,
       offset: ZoneOffset::utc(),
     }
+  }
+
+  pub fn from_raw(raw: u32) -> Result<Self, TimeError> {
+    if i64::from(raw) > MINUTE_UPPERBOUND {
+      return Err(TimeError::MinInstantConstructionOverflow(raw));
+    };
+    if i64::from(raw) < MINUTE_LOWERBOUND {
+      return Err(TimeError::MinInstantConstructionUnderflow(raw));
+    };
+
+    Ok(Self { raw, offset: ZoneOffset::utc()})
   }
 
   /// Returns the current offset.

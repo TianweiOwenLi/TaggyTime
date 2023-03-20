@@ -17,10 +17,11 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Time machine
 * GUI
 * Handling of `.ics` timezone
-* Cache datetime property computations
+* Cache datetime property computations [important]
 * Handle Date to MinInstant conversion timezone bias
 * DateProperty never true leads to next() not terminate
 * Implement interval and setpos handling
+* Optimize miv::advance_until() via elim. back-forth conversion.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

@@ -210,3 +210,42 @@ impl std::fmt::Display for Recurrence {
     unimplemented!()
   }
 }
+
+
+#[allow(dead_code, unused_imports)]
+mod test {
+  use super::*;
+
+  #[test]
+  fn print_iter() {
+    let mi = MinInstant::from_raw(27988182).unwrap();
+    let mi2 = mi.advance(60).unwrap();
+    let iv = MinInterval::new(mi, mi2);
+
+    use crate::time::week::Weekday;
+    let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
+    let dp = DateProperty::from(weeks);
+
+    let p = Pattern::Many(dp, None, Term::Count(OneOrMore::new(12).unwrap()));
+
+    let mut r = Recurrence {
+      event_miv: iv,
+      occurrence_count: OneOrMore::new(1).unwrap(),
+      patt: p
+    };
+
+    let mut last_string = String::new();
+    loop {
+      r = match r.next().unwrap() {
+        Some(rn) => rn,
+        None => break,
+      };
+      last_string = r.event_miv.as_date_string();
+    };
+
+    assert_eq!(
+      String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
+      last_string
+    );
+  }
+}
