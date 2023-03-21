@@ -1,4 +1,5 @@
 use core::panic;
+use std::cmp::{min, max};
 use datetime::Instant;
 
 mod year;
@@ -100,7 +101,7 @@ impl Ord for MinInstant {
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked
 /// by `MinInstant`. This interval must be non-negative.
-#[derive(Clone)]
+#[derive(Clone, Copy)]
 pub struct MinInterval {
   start: MinInstant,
   end: MinInstant,
@@ -225,6 +226,12 @@ impl MinInterval {
     MinInterval { start, end }
   }
 
+  /// Computes the duration of overlap of two `MinInterval` in minutes.
+  pub fn overlap_duration(&self, rhs: MinInterval) -> u32 {
+    let (lb, ub) = (max(self.start, rhs.start), min(self.end, rhs.end));
+    if lb >= ub { 0 } else { ub.raw - lb.raw }
+  }
+
   /// Converts start and end to `Date` and prints accordingly
   pub fn as_date_string(&self) -> String {
     let start_str = Date::from_min_instant(self.start);
@@ -285,7 +292,7 @@ impl std::fmt::Display for MinInterval {
 mod test {
   use crate::time::{month::Month, timezone::ZoneOffset, year::CeYear};
 
-  use super::{Date, MinInstant};
+  use super::{Date, MinInstant, MinInterval};
 
   #[test]
   fn instant_to_date() {
@@ -343,10 +350,38 @@ mod test {
   }
 
   #[test]
+  fn mi_eq() {
+    let m1 = MinInstant { raw: 5000, offset: ZoneOffset::utc() };
+    let m2 = MinInstant { raw: 5060, offset: ZoneOffset::new(60).unwrap() };
+    assert_eq!(m1, m2);
+  }
+
+  #[test]
   /// This test guarantees that u32 parses work as intended even with
   /// leading zeroes.
   fn parse_u32_behavior() {
     let parsed: u32 = "0002333".parse().unwrap();
     assert_eq!(2333, parsed);
+  }
+
+  #[test]
+  fn miv_overlap() {
+    let offset = ZoneOffset::utc();
+    let t1 = MinInstant { raw: 23333, offset };
+    let t2 = MinInstant { raw: 23300, offset };
+    let t3 = MinInstant { raw: 5000, offset };
+    let t4 = MinInstant { raw: 40000, offset };
+
+    let miv_1 = MinInterval::new(t1, t2);
+    assert_eq!(0, miv_1.overlap_duration(miv_1));
+
+    let miv_2 = MinInterval::new(t3, t4);
+    let miv_3 = MinInterval::new(t2, t1);
+    assert_eq!(23333 - 23300, miv_2.overlap_duration(miv_3));
+    assert_eq!(23333 - 23300, miv_3.overlap_duration(miv_2));
+
+    let miv_4 = MinInterval::new(t3, t1);
+    let miv_5 = MinInterval::new(t2, t4);
+    assert_eq!(23333 - 23300, miv_5.overlap_duration(miv_4));
   }
 }

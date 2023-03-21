@@ -24,6 +24,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Optimize miv::advance_until() via elim. back-forth conversion.
 * Use DFA and / or their genfun for optimization?
 * Implement Recurrence parse from non-weekly events. 
+* Handle week starting day.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
