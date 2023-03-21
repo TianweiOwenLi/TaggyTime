@@ -160,6 +160,18 @@ impl Recurrence {
       }
     }
   }
+
+  /// Computes the duration of overlap of `Self` with some `MinInterval`, in 
+  /// terms of minutes. 
+  /// 
+  /// [todo] check bounds
+  pub fn overlap(self, miv: MinInterval) -> u32 {
+    let mut ret: u32 = 0;
+    for item in self {
+      ret += item.overlap_duration(miv);
+    }
+    ret
+  }
 }
 
 impl TryFrom<Vevent> for Recurrence {

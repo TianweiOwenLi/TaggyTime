@@ -25,6 +25,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Use DFA and / or their genfun for optimization?
 * Implement Recurrence parse from non-weekly events. 
 * Handle week starting day.
+* Restore Recurrence to starting point (to avoid cloning lambdas).
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
