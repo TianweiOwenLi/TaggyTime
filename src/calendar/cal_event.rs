@@ -1,4 +1,5 @@
 use std::collections::BTreeSet;
+use std::mem;
 
 use datetime::Month;
 
@@ -113,49 +114,49 @@ impl Recurrence {
   /// condition, returns `None`.
   ///
   /// [todo] Advancement is at least one day.
-  pub fn next(self) -> Result<Option<Self>, TimeError> {
+  pub fn next(self) -> Option<Self> {
     match &self.patt {
-      Pattern::Once => Ok(None),
+      Pattern::Once => None,
       Pattern::Many(dp, iv, Term::Count(n)) => {
         if self.occurrence_count >= *n {
-          Ok(None)
+          None
         } else {
           let new_miv = self
             .event_miv
-            .advance(MIN_IN_DAY)?
-            .advance_until(dp, None)?;
-          Ok(Some(Recurrence {
+            .advance_unwrap(MIN_IN_DAY)
+            .advance_until_unwrap(dp, None);
+          Some(Recurrence {
             event_miv: new_miv
               .expect("Unreachable since term is count variant"),
-            occurrence_count: self.occurrence_count.increment()?,
+            occurrence_count: self.occurrence_count.increment_unwrap(),
             patt: self.patt,
-          }))
+          })
         }
       }
       Pattern::Many(dp, iv, Term::Until(term_mi)) => {
         let new_miv_opt = self
           .event_miv
-          .advance(MIN_IN_DAY)?
-          .advance_until(dp, Some(*term_mi))?;
-        Ok(match new_miv_opt {
+          .advance_unwrap(MIN_IN_DAY)
+          .advance_until_unwrap(dp, Some(*term_mi));
+        match new_miv_opt {
           Some(new_miv) => Some(Recurrence {
             event_miv: new_miv,
-            occurrence_count: self.occurrence_count.increment()?,
+            occurrence_count: self.occurrence_count.increment_unwrap(),
             patt: self.patt,
           }),
           None => None,
-        })
+        }
       }
       Pattern::Many(dp, iv, Term::Never) => {
         let new_miv = self
           .event_miv
-          .advance(MIN_IN_DAY)?
-          .advance_until(dp, None)?;
-        Ok(Some(Recurrence {
+          .advance_unwrap(MIN_IN_DAY)
+          .advance_until_unwrap(dp, None);
+        Some(Recurrence {
           event_miv: new_miv.expect("Unreachable since term is count variant"),
-          occurrence_count: self.occurrence_count.increment()?,
+          occurrence_count: self.occurrence_count.increment_unwrap(),
           patt: self.patt,
-        }))
+        })
       }
     }
   }
@@ -174,6 +175,32 @@ impl TryFrom<Vevent> for Recurrence {
       occurrence_count: OneOrMore::new(1).unwrap(),
       patt
     })
+  }
+}
+
+pub struct Iter {
+  rec: Option<Recurrence>
+}
+
+impl Iterator for Iter {
+  type Item = MinInterval;
+
+  fn next(&mut self) -> Option<Self::Item> {
+    // This is full of acrobatics......
+    let old_rec = mem::replace(&mut self.rec, None);
+    let ret = old_rec.as_ref()?.event_miv;
+    self.rec = old_rec?.next();
+
+    Some(ret)
+  }
+}
+
+impl IntoIterator for Recurrence {
+  type Item = MinInterval;
+  type IntoIter = Iter;
+
+  fn into_iter(self) -> Self::IntoIter {
+    Iter { rec: Some(self) }
   }
 }
 
@@ -251,7 +278,7 @@ mod test {
   use super::*;
 
   #[test]
-  fn print_iter() {
+  fn rec_next() {
     let mi = MinInstant::from_raw(27988182).unwrap();
     let mi2 = mi.advance(60).unwrap();
     let iv = MinInterval::new(mi, mi2);
@@ -270,7 +297,7 @@ mod test {
 
     let mut last_string = String::new();
     loop {
-      r = match r.next().unwrap() {
+      r = match r.next() {
         Some(rn) => rn,
         None => break,
       };
@@ -281,5 +308,41 @@ mod test {
       String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
       last_string
     );
+  }
+
+  #[test]
+  fn rec_iter() {
+    let mi = MinInstant::from_raw(27988182).unwrap();
+    let mi2 = mi.advance(60).unwrap();
+    let iv = MinInterval::new(mi, mi2);
+
+    use crate::time::week::Weekday;
+    let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
+    let dp = DateProperty::from(weeks);
+
+    let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
+
+    let mut r = Recurrence {
+      event_miv: iv,
+      occurrence_count: OneOrMore::new(1).unwrap(),
+      patt: p
+    };
+
+    let mut it = r.into_iter();
+
+    let mut last_string = String::new();
+    loop {
+      let tmp = match it.next() {
+        Some(rn) => rn,
+        None => break,
+      };
+      last_string = tmp.as_date_string();
+    };
+
+    assert_eq!(
+      String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
+      last_string
+    );
+
   }
 }

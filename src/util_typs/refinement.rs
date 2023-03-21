@@ -16,7 +16,7 @@ pub const I64_MIN: i64 = i64::MIN;
 /// assert!(m.is_ok());
 /// assert!(n.is_err());
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
@@ -49,6 +49,7 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
     }
   }
 
+  /// Attempts to increment the ranged number; returns an error if fails.
   pub fn increment(&self) -> Result<Self> {
     let new_raw = self.0.checked_add(1);
     if let Some(new_safe_raw) = new_raw {
@@ -56,6 +57,11 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
     } else {
       Err(RefinementError::RangedI64ArithmeticError(self.0, '+', 1))
     }
+  }
+
+  /// Attempts to increment the ranged number; panics if fails.
+  pub fn increment_unwrap(&self) -> Self {
+    self.increment().unwrap()
   }
 }
 

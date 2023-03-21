@@ -226,6 +226,11 @@ impl MinInterval {
     MinInterval { start, end }
   }
 
+  /// Creates a `MinInterval` from now till the given `MinInstant`.
+  pub fn from_now_till(end: MinInstant) -> MinInterval {
+    MinInterval { start: MinInstant::now(), end }
+  }
+
   /// Computes the duration of overlap of two `MinInterval` in minutes.
   pub fn overlap_duration(&self, rhs: MinInterval) -> u32 {
     let (lb, ub) = (max(self.start, rhs.start), min(self.end, rhs.end));
@@ -248,6 +253,12 @@ impl MinInterval {
     })
   }
 
+  /// Advances the `MinInterval` by given number of minutes. Checks bounds while
+  /// advancing. Panics if encounters overflow.
+  pub fn advance_unwrap(&self, num_min: u32) -> MinInterval {
+    self.advance(num_min).unwrap()
+  }
+
   /// Advances the `MinInterval` until its starting time matches the
   /// provided `DateProperty`, or if `start` exceeds the `until` mininstant.
   pub fn advance_until(
@@ -265,6 +276,18 @@ impl MinInterval {
       }
     }
     Ok(Some(new_miv))
+  }
+
+  /// Advances the `MinInterval` until its starting time matches the
+  /// provided `DateProperty`, or if `start` exceeds the `until` mininstant. 
+  /// 
+  /// [note] This function panics on overflow.
+  pub fn advance_until_unwrap(
+    &self,
+    dp: &DateProperty,
+    until_opt: Option<MinInstant>,
+  ) -> Option<MinInterval> {
+    self.advance_until(dp, until_opt).unwrap()
   }
 
   pub fn get_start(&self) -> MinInstant {
