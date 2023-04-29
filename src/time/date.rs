@@ -229,7 +229,7 @@ impl DateProperty {
 
   pub fn always() -> Self {
     DateProperty { 
-      filter_fn: Box::new(|_| true), 
+      filter_fn: Rc::new(|_| true), 
       dbg_info: String::from("[true]") 
     }
   }
@@ -241,7 +241,7 @@ impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
     let mut property_set = HashSet::<T>::new();
     property_set.extend(value);
     DateProperty {
-      filter_fn: Box::new(move |d: Date| property_set.contains(&T::from(d))),
+      filter_fn: Rc::new(move |d: Date| property_set.contains(&T::from(d))),
       dbg_info,
     }
   }
@@ -285,7 +285,7 @@ impl std::ops::Mul for DateProperty {
   type Output = Self;
   fn mul(self, rhs: Self) -> Self::Output {
     DateProperty {
-      filter_fn: Box::new(move |x: Date| {
+      filter_fn: Rc::new(move |x: Date| {
         (self.filter_fn)(x) && (rhs.filter_fn)(x)
       }),
       dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info),

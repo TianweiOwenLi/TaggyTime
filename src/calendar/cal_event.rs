@@ -1,56 +1,20 @@
-use std::collections::BTreeSet;
 use std::mem;
 
-use datetime::Month;
-
-use crate::ics_parser::ics_syntax::{RRuleToks, FreqAndRRules, Freq, Vevent};
+use crate::const_params::MAX_WORKLOAD;
+use crate::ics_parser::ics_syntax::{FreqAndRRules, Vevent};
 use crate::ics_parser::ICSProcessError;
-use crate::ics_parser::lexer::Token;
 use crate::percent::Percent;
-use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
-use crate::time::TimeError;
-use crate::time::week::Weekday;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
 
-#[derive(PartialEq, Eq, PartialOrd, Ord)]
-pub enum RecurRules {
-  ByMon,
-  ByWkNo,
-  ByYrDay,
-  ByMoDay,
-  ByWkDay,
-  ByHr,
-  BySetPos,
-}
-
-pub enum OrdSign {
-  P,
-  M,
-}
-
-pub type Minutes = RangedI64<0, 59>;
-pub type Hours = RangedI64<0, 23>;
-
-// pub type OrdWkDay = (OrdSign, WeekDay);
-pub type OrdMoDay = (OrdSign, RangedI64<1, 31>);
-pub type OrdYrDay = (OrdSign, RangedI64<1, 366>);
-pub type OrdWkNum = (OrdSign, RangedI64<1, 53>);
-
-pub type ByMinLst = BTreeSet<Minutes>;
-pub type ByHrLst = BTreeSet<Hours>;
-// pub type ByWkDayLst = BTreeSet<OrdWkDay>;
-pub type ByMoDayLst = BTreeSet<OrdMoDay>;
-pub type ByYrDayLst = BTreeSet<OrdYrDay>;
-pub type ByWkNumLst = BTreeSet<OrdWkNum>;
-pub type ByMonthLst = BTreeSet<Month>;
-
 pub type OneOrMore = LowerBoundI64<1>;
-pub type SetPos = Option<OneOrMore>;
-pub type Interval = OneOrMore;
-// pub type WeekStart = Option<WeekDay>;
 
+/// Occurrence skip interval, ie. happens every x (x >= 1) times.
+pub type Interval = OneOrMore;
+
+
+/// Recurrence pattern, ie. biweekly on TU, TH
 pub enum Pattern {
   Once,
   Many(DateProperty, Interval, Term),
@@ -97,7 +61,6 @@ pub struct Recurrence {
   /// Indicates that `event_miv` is the nth occurrence. Shall be initialized as 1.
   occurrence_count: OneOrMore,
 
-  /// Recurrence pattern, ie. weekly on TU, TH
   patt: Pattern,
 }
 
@@ -190,11 +153,13 @@ impl TryFrom<Vevent> for Recurrence {
   }
 }
 
-pub struct Iter {
+
+/// An iterator for the `MinInterval` items in some recurrence.
+pub struct RecIter {
   rec: Option<Recurrence>
 }
 
-impl Iterator for Iter {
+impl Iterator for RecIter {
   type Item = MinInterval;
 
   fn next(&mut self) -> Option<Self::Item> {
@@ -209,55 +174,30 @@ impl Iterator for Iter {
 
 impl IntoIterator for Recurrence {
   type Item = MinInterval;
-  type IntoIter = Iter;
+  type IntoIter = RecIter;
 
   fn into_iter(self) -> Self::IntoIter {
-    Iter { rec: Some(self) }
+    RecIter { rec: Some(self) }
   }
 }
 
-/// A wrapper around u32, which represents the number of minutes needed to
-/// complete some task. Such a u32 can only be from 0 to 60,000 (inclusive)
-/// to prevent u32 multiplication overflow.
-///
-/// # Examples
-/// ```
-/// let w1: Workload = Workload::from_num_min(16);
-/// let w1: Workload = Workload::from_num_min(15);
-///
-/// let p = Percent::from_u8(63);
-///
-/// let d1 = w1.get_duration(); // = 16
-/// let d2 = w2
-///   .multiply_percent(p)
-///   .get_duration(); // 25 * (63%) = 15.75, which rounds to 16.
-///
-/// assert_eq!(d1, d2);
-/// ```
+/// A wrapper around `u32`, which represents the number of minutes needed to
+/// complete some task. Can only be from 0 to 60,000 (inclusive).
 pub struct Workload(u32);
 
 impl Workload {
-  /// Construct a `Workload` instance from some `u32`, which represents the
-  /// number of minutes of such a workload. Only values from 0 to 60,000
-  /// (inclusive) are allowed, in order to prevent u32 multiplication overflow.
+  /// Construct a `Workload` instance from some number of minutes. 
+  /// Returns `Err` variant of out of bounds.
   pub fn from_num_min(num_min: u32) -> Result<Self, String> {
-    if num_min <= 60_000 {
+    if num_min <= MAX_WORKLOAD {
       Ok(Workload(num_min))
     } else {
-      Err("Workload is too high: cannot exceed 60,000 minutes".to_string())
+      Err("Workload cannot exceed 60,000 minutes".to_string())
     }
   }
 
   /// Multiply a Workload instance by some percentage. Rounded to the nearest
   /// integer minute.
-  ///
-  /// # Example
-  /// ```
-  /// assert_eq!(
-  ///   31,
-  ///   Workload(60).multiply_percent(Percent::from_u8(51))
-  /// );
-  /// ```
   pub fn multiply_percent(&self, p: Percent) -> Self {
     // will not overflow since such produce never exceeds 100 * 60_000.
     let workload_times_numerator = self.0 * (p.raw() as u32);
@@ -273,7 +213,7 @@ impl Workload {
   }
 
   /// Returns the duration, in number of minutes, of such a workload.
-  pub fn get_duration(&self) -> u32 {
+  pub fn num_min(&self) -> u32 {
     self.0
   }
 }
