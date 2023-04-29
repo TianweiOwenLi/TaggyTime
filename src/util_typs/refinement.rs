@@ -1,3 +1,5 @@
+//! Refinement type wrappers for Rust primitives. 
+
 use std::fmt::Display;
 
 use super::{RefinementError, Result};

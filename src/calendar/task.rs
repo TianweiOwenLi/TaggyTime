@@ -2,7 +2,7 @@
 
 use crate::calendar::cal_event::Recurrence;
 use crate::const_params::MAX_WORKLOAD;
-use crate::percent::Percent;
+use crate::util_typs::percent::Percent;
 use crate::time::*;
 
 /// A wrapper around `u32`, which represents the number of minutes needed to

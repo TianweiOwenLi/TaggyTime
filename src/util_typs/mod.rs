@@ -1,4 +1,5 @@
 pub mod refinement;
+pub mod percent;
 
 #[derive(Debug, Clone)]
 pub enum RefinementError {

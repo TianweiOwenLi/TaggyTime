@@ -3,7 +3,6 @@ mod calendar;
 mod const_params;
 mod ics_parser;
 mod load_file;
-mod percent;
 mod time;
 mod util_typs;
 

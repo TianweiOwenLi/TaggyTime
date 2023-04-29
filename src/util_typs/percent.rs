@@ -1,6 +1,4 @@
 //! a module encapsulating the `Percent` type.
-//!
-//! Author: Owen Li <tianwei2@andrew.cmu.edu>
 
 #[derive(Debug)]
 pub enum Error {
