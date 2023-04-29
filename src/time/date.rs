@@ -214,9 +214,11 @@ pub struct DateProperty {
 }
 
 impl Clone for DateProperty {
+
+  /// Makes a clone while shallow-copying the filter function.
   fn clone(&self) -> Self {
     DateProperty { 
-      filter_fn: (self.filter_fn).clone(), 
+      filter_fn: Rc::clone(&self.filter_fn),
       dbg_info: self.dbg_info.clone() 
     }
   }
@@ -238,8 +240,7 @@ impl DateProperty {
 impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
   fn from(value: Vec<T>) -> Self {
     let dbg_info = format!("{:?}", &value);
-    let mut property_set = HashSet::<T>::new();
-    property_set.extend(value);
+    let property_set = HashSet::<T>::from_iter(value.into_iter());
     DateProperty {
       filter_fn: Rc::new(move |d: Date| property_set.contains(&T::from(d))),
       dbg_info,

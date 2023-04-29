@@ -15,6 +15,7 @@ pub type Interval = OneOrMore;
 
 
 /// Recurrence pattern, ie. biweekly on TU, TH
+#[derive(Clone)]
 pub enum Pattern {
   Once,
   Many(DateProperty, Interval, Term),
@@ -45,6 +46,7 @@ impl TryFrom<Option<FreqAndRRules>> for Pattern {
 
 /// Recurrence event termination condition, which is either a number of
 /// occurrences, a "finished" time instance, or never.
+#[derive(Clone, Copy)]
 pub enum Term {
   Count(OneOrMore),
   Until(MinInstant),
@@ -54,6 +56,7 @@ pub enum Term {
 /// Describes when shall some recurring events happen. This can correspond
 /// to some mapping from `MinInstant` to `bool`, indicating precisely if a
 /// recurring event is happening.
+#[derive(Clone)]
 pub struct Recurrence {
   /// Actual time interval of event, ie. 08:30 - 09:50
   event_miv: MinInterval,

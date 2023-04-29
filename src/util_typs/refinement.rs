@@ -16,7 +16,7 @@ pub const I64_MIN: i64 = i64::MIN;
 /// assert!(m.is_ok());
 /// assert!(n.is_err());
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
