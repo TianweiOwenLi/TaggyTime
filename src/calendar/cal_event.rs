@@ -1,9 +1,7 @@
 use std::mem;
 
-use crate::const_params::MAX_WORKLOAD;
 use crate::ics_parser::ics_syntax::{FreqAndRRules, Vevent};
 use crate::ics_parser::ICSProcessError;
-use crate::percent::Percent;
 use crate::time::fact::MIN_IN_DAY;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
@@ -164,50 +162,6 @@ impl TryFrom<Vevent> for Event {
     Ok(Event(value.summary.clone(), Recurrence::try_from(value)?))
   }
 }
-
-/// A wrapper around `u32`, which represents the number of minutes needed to
-/// complete some task. Can only be from 0 to 60,000 (inclusive).
-pub struct Workload(u32);
-
-impl Workload {
-  /// Construct a `Workload` instance from some number of minutes. 
-  /// Returns `Err` variant of out of bounds.
-  pub fn from_num_min(num_min: u32) -> Result<Self, String> {
-    if num_min <= MAX_WORKLOAD {
-      Ok(Workload(num_min))
-    } else {
-      Err("Workload cannot exceed 60,000 minutes".to_string())
-    }
-  }
-
-  /// Multiply a Workload instance by some percentage. Rounded to the nearest
-  /// integer minute.
-  pub fn multiply_percent(&self, p: Percent) -> Self {
-    // will not overflow since such produce never exceeds 100 * 60_000.
-    let workload_times_numerator = self.0 * (p.raw() as u32);
-
-    let mut divided_by_denominator = workload_times_numerator / 100;
-
-    // rounding up
-    if workload_times_numerator % 100 >= 50 {
-      divided_by_denominator += 1;
-    }
-
-    Workload(divided_by_denominator)
-  }
-
-  /// Returns the duration, in number of minutes, of such a workload.
-  pub fn num_min(&self) -> u32 {
-    self.0
-  }
-}
-
-impl std::fmt::Display for Recurrence {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    unimplemented!()
-  }
-}
-
 
 #[allow(dead_code, unused_imports)]
 mod test {
