@@ -1,11 +1,11 @@
 //! Loads various types of files.
 
-use crate::ics_parser::{
+use crate::{ics_parser::{
   ics_syntax::ICSParser, lexer::IcsLexer, ICSProcessError,
-};
+}, calendar::cal_event::Event};
 
 /// [todo] elim code-duplication from test_parser
-pub fn load_schedule_ics(ics_filename: &str) -> Result<(), ICSProcessError> {
+pub fn load_schedule_ics(ics_filename: &str) -> Result<Vec<Event>, ICSProcessError> {
   let content = std::fs::read_to_string(ics_filename)
     .expect(format!("Cannot read from `{}`", ics_filename).as_str());
 
@@ -21,5 +21,5 @@ pub fn load_schedule_ics(ics_filename: &str) -> Result<(), ICSProcessError> {
     }
   }
 
-  Ok(())
+  parse_result.content.into_iter().map(Event::try_from).collect()
 }

@@ -118,11 +118,10 @@ impl TryFrom<Vevent> for Recurrence {
   /// 
   /// [warning] Only weekly - by weekday is implemented. 
   fn try_from(value: Vevent) -> Result<Self, Self::Error> {
-    let patt = Pattern::try_from(value.repeat)?;
     Ok(Recurrence {
       event_miv: value.miv,
       occurrence_count: OneOrMore::new(1).unwrap(),
-      patt
+      patt: Pattern::try_from(value.repeat)?,
     })
   }
 }
@@ -152,6 +151,17 @@ impl IntoIterator for Recurrence {
 
   fn into_iter(self) -> Self::IntoIter {
     RecIter { rec: Some(self) }
+  }
+}
+
+/// A struct that pairs the summary of some event with its `Recurrence`.
+pub struct Event(String, Recurrence);
+
+impl TryFrom<Vevent> for Event {
+  type Error = ICSProcessError;
+
+  fn try_from(value: Vevent) -> Result<Self, Self::Error> {
+    Ok(Event(value.summary.clone(), Recurrence::try_from(value)?))
   }
 }
 

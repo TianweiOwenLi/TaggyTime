@@ -20,14 +20,7 @@ use crate::time::*;
 /// before deadline. Can only be updated with an external schedule. This shall
 /// be cached, and only refreshed if needed.
 ///
-/// [todo] Finish example code
-///
 /// [todo] Implement recurrences for todo
-///
-/// # Examples
-/// ```
-///
-/// ```
 pub struct Todo {
   name: String,
   due: MinInstant,

@@ -66,7 +66,8 @@ fn handle_command_vec(
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {
-        load_file::load_schedule_ics(filename).expect("Failed to .ics file");
+        let _events = load_file::load_schedule_ics(filename)
+          .expect("Failed to .ics file");
       }
       Ok(())
     }

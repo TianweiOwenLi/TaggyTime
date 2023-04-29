@@ -23,7 +23,7 @@ pub struct ICalendar {
 pub struct Vevent {
   pub repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
   pub miv: MinInterval,
-  summary: String,
+  pub summary: String,
 }
 
 /// Frequency of some `RRULE` line.
