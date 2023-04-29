@@ -205,11 +205,21 @@ impl std::fmt::Display for Date {
   }
 }
 
+use std::rc::Rc;
 pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
 pub struct DateProperty {
-  filter_fn: Box<dyn Fn(Date) -> bool>,
+  filter_fn: Rc<dyn Fn(Date) -> bool>,
   dbg_info: String,
+}
+
+impl Clone for DateProperty {
+  fn clone(&self) -> Self {
+    DateProperty { 
+      filter_fn: (self.filter_fn).clone(), 
+      dbg_info: self.dbg_info.clone() 
+    }
+  }
 }
 
 impl DateProperty {
