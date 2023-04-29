@@ -267,11 +267,16 @@ impl MinInterval {
     until_opt: Option<MinInstant>,
   ) -> Result<Option<MinInterval>, TimeError> {
     let mut new_miv = self.clone();
-    while !dp.check(Date::from_min_instant(new_miv.get_start())) {
-      new_miv = new_miv.advance(MIN_IN_DAY)?;
-      if let Some(until) = until_opt {
-        if new_miv.start > until {
-          return Ok(None);
+    match until_opt {
+      Some(until) => {
+        while !dp.check(Date::from_min_instant(new_miv.get_start())) {
+          new_miv = new_miv.advance(MIN_IN_DAY)?;
+          if new_miv.start > until { return Ok(None); }
+        }
+      }
+      None => {
+        while !dp.check(Date::from_min_instant(new_miv.get_start())) {
+          new_miv = new_miv.advance(MIN_IN_DAY)?;
         }
       }
     }
