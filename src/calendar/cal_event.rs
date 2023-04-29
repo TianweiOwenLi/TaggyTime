@@ -81,50 +81,25 @@ impl Recurrence {
   ///
   /// [todo] Advancement is at least one day.
   pub fn next(self) -> Option<Self> {
-    match &self.patt {
-      Pattern::Once => None,
+    let tmr = self.event_miv.advance_unwrap(MIN_IN_DAY);
+    let event_miv = match &self.patt {
+      Pattern::Once => return None,
       Pattern::Many(dp, iv, Term::Count(n)) => {
-        if self.occurrence_count >= *n {
-          None
-        } else {
-          let new_miv = self
-            .event_miv
-            .advance_unwrap(MIN_IN_DAY)
-            .advance_until_unwrap(dp, None);
-          Some(Recurrence {
-            event_miv: new_miv
-              .expect("Unreachable since term is count variant"),
-            occurrence_count: self.occurrence_count.increment_unwrap(),
-            patt: self.patt,
-          })
-        }
+        if self.occurrence_count >= *n { return None; }
+        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
       }
       Pattern::Many(dp, iv, Term::Until(term_mi)) => {
-        let new_miv_opt = self
-          .event_miv
-          .advance_unwrap(MIN_IN_DAY)
-          .advance_until_unwrap(dp, Some(*term_mi));
-        match new_miv_opt {
-          Some(new_miv) => Some(Recurrence {
-            event_miv: new_miv,
-            occurrence_count: self.occurrence_count.increment_unwrap(),
-            patt: self.patt,
-          }),
-          None => None,
-        }
+        tmr.advance_until_unwrap(dp, Some(*term_mi))?
       }
       Pattern::Many(dp, iv, Term::Never) => {
-        let new_miv = self
-          .event_miv
-          .advance_unwrap(MIN_IN_DAY)
-          .advance_until_unwrap(dp, None);
-        Some(Recurrence {
-          event_miv: new_miv.expect("Unreachable since term is count variant"),
-          occurrence_count: self.occurrence_count.increment_unwrap(),
-          patt: self.patt,
-        })
+        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
       }
-    }
+    };
+    Some(Recurrence {
+      event_miv,
+      occurrence_count: self.occurrence_count.increment_unwrap(),
+      patt: self.patt,
+    })
   }
 
   /// Computes the duration of overlap of `Self` with some `MinInterval`, in 
