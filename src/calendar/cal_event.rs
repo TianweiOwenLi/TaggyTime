@@ -78,8 +78,6 @@ impl Recurrence {
 
   /// Computes the next occurrence of the recurrence. If passes termination
   /// condition, returns `None`.
-  ///
-  /// [todo] Advancement is at least one day.
   pub fn next(self) -> Option<Self> {
     let tmr = self.event_miv.advance_unwrap(MIN_IN_DAY);
     let event_miv = match &self.patt {
@@ -102,14 +100,12 @@ impl Recurrence {
     })
   }
 
-  /// Computes the duration of overlap of `Self` with some `MinInterval`, in 
-  /// terms of minutes. 
-  /// 
-  /// [todo] check bounds
+  /// Computes the number of minutes overlapped with some `MinInterval`.
   pub fn overlap(self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;
-    for item in self {
-      ret += item.overlap_duration(miv);
+    for rec_miv in self {
+      ret = ret.checked_add(rec_miv.overlap_duration(miv))
+        .expect("Overflowed while computing recurrence and miv overlap");
     }
     ret
   }
@@ -252,7 +248,7 @@ mod test {
 
     let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
 
-    let mut r = Recurrence {
+    let r = Recurrence {
       event_miv: iv,
       occurrence_count: OneOrMore::new(1).unwrap(),
       patt: p
