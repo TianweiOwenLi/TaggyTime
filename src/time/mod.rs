@@ -359,7 +359,6 @@ mod test {
       offset: ZoneOffset::utc(),
     };
     let mi2 = MinInstant::from_date(&Date::from_min_instant(mi)).unwrap();
-    println!("{} vs {}", mi.raw(), mi2.raw());
     assert_eq!(mi, mi2);
   }
 

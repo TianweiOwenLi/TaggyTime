@@ -271,6 +271,29 @@ mod test {
       String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
       last_string
     );
+  }
+
+  #[test]
+  fn rec_overlap() {
+    let mi = MinInstant::from_raw(28038182).unwrap(); // sunday
+    let mi2 = mi.advance(MIN_IN_DAY * 5 - 720).unwrap(); // friday
+    let miv = MinInterval::new(mi, mi2); // 2023/04/23 23:02 - 04/28 11:02
+
+    let cls_start = MinInstant::from_raw(27900600).unwrap(); 
+    let cls_end = cls_start.advance(120).unwrap();
+    let cls = MinInterval::new(cls_start, cls_end); // 2023/01/18 10:00-12:00
+    let dp = {
+      use crate::time::week::Weekday::*;
+      DateProperty::from(vec![MO, WE, FR])
+    };
+    let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Never);
+    let cls_rec = Recurrence {
+      event_miv: cls,
+      occurrence_count: OneOrMore::new(1).unwrap(),
+      patt: p,
+    };
+    
+    assert_eq!(302, cls_rec.overlap(miv));
 
   }
 }
