@@ -69,6 +69,12 @@ pub struct Todo {
 }
 
 impl Todo {
+
+  /// Constructs a new instance with zero completion.
+  pub fn new(name: String, due: MinInstant, length: Workload) -> Self {
+    Todo { name, due, length, completion: Percent::zero(), cached_impact: None }
+  }
+
   /// Computes the remaining workload of this `Todo` item, considering its
   /// `length` and `completion` fields.
   pub fn get_remaining_workload(&self) -> Workload {

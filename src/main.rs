@@ -8,7 +8,7 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{Calendars, CalError};
+use calendar::{Calendars, CalError, task::Todo};
 use const_params::DBG;
 use time::timezone::ZoneOffset;
 
@@ -21,6 +21,7 @@ struct TaggyEnv {
   tz: ZoneOffset,
   calendars: Calendars,
   prompt_stack: Vec<Prompt>,
+  todolist: Vec<Todo>,
 }
 
 /// A user-promptable lambda.
@@ -43,6 +44,7 @@ fn load_env() -> Result<TaggyEnv, String> {
     tz: ZoneOffset::utc(),
     calendars: Calendars::mk_empty(),
     prompt_stack: vec![],
+    todolist: vec![],
   })
 }
 
@@ -143,6 +145,9 @@ fn handle_command_vec(
         }
       }
       Ok(())
+    }
+    ["add-todo", name_str, due_str, len_str] => {
+      todo!()
     }
     _ => Err("Invalid command".to_string()),
   }

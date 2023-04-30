@@ -29,6 +29,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Calendar repetition interval chk
 * Iterator for `&Recurrence`
 * `MinInterval` bounds chk
+* Complete `todolist` skeleton.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
