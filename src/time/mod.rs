@@ -30,6 +30,7 @@ pub enum TimeError {
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
+  TimeZoneParseErr(String),
 }
 
 impl From<RefinementError> for TimeError {

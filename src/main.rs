@@ -117,9 +117,15 @@ fn handle_command_vec(
       );
       Ok(())
     }
-    ["set", "tz", "-05:00"] => {
-      tenv.tz = ZoneOffset::new(-300).unwrap();
-      Ok(())
+    ["set", "tz", s] => {
+      match s.parse() {
+        Ok(tz) => {
+          tenv.tz = tz;
+          println!("[taggytime] timezone={}", tz);
+          Ok(())
+        }
+        Err(e) => Err(format!("{:?}", e))
+      }
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {

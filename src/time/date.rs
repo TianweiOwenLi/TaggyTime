@@ -25,7 +25,9 @@ pub struct Date {
 }
 
 #[derive(Debug)]
-pub enum DateError {}
+pub enum DateError {
+  ParsingError(String)
+}
 
 // todo check overflow bounds
 // todo fix timezone type defn
@@ -192,6 +194,22 @@ impl Date {
   }
 }
 
+// parses a string for date
+impl FromStr for Date {
+  type Err = DateError;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let maybe_split = s.split_once(' ');
+    match maybe_split {
+      Some((date, time)) => {
+        todo!()
+      }
+      None => {
+        Err(DateError::ParsingError(s.to_string()))
+      }
+    }
+  }
+}
+
 impl std::fmt::Display for Date {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
@@ -207,6 +225,7 @@ impl std::fmt::Display for Date {
 }
 
 use std::rc::Rc;
+use std::str::FromStr;
 pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
 pub struct DateProperty {

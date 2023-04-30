@@ -1,3 +1,7 @@
+use std::str::FromStr;
+
+use super::{TimeError, fact::MIN_IN_HR};
+
 pub const UTC_LB: i64 = -720;
 pub const UTC_UB: i64 = 840;
 const OFFSET_MIN_IN_HR: i64 = 60;
@@ -30,6 +34,42 @@ impl ZoneOffset {
   /// Returns the raw offset data.
   pub fn raw(&self) -> i64 {
     self.0
+  }
+}
+
+/// Attempts to parse some expression as u32.
+fn parse_u32(expr: &str) -> Result<u32, TimeError> {
+  match expr.parse() {
+    Ok(n) => Ok(n),
+    _ => Err(TimeError::TimeZoneParseErr(expr.to_string()))
+  }
+}
+
+impl FromStr for ZoneOffset {
+  type Err = TimeError;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let bad = Err(TimeError::TimeZoneParseErr(s.to_string()));
+
+    let positive = if s.starts_with('+') { 
+      true 
+    } else if s.starts_with('-') { 
+      false 
+    } else {
+      return bad;
+    };
+
+    let (hr_offset, min_offset) =  match &s[1..].split_once(':') {
+      Some((hr_str, min_str)) => (parse_u32(hr_str)?, parse_u32(min_str)?),
+      None => (parse_u32(&s[1..])?, 0) // no min field, only hours
+    };
+
+    let mut total_offset: i64 = i64::from(MIN_IN_HR * hr_offset + min_offset);
+    if ! positive { total_offset *= -1; }
+
+    match ZoneOffset::new(total_offset) {
+      Ok(z) => Ok(z),
+      _ => bad
+    }
   }
 }
 

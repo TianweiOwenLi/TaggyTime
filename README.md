@@ -30,6 +30,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Iterator for `&Recurrence`
 * `MinInterval` bounds chk
 * Complete `todolist` skeleton.
+* Error-typ proper conversion.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
