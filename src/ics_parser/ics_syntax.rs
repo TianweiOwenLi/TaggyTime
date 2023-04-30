@@ -148,6 +148,12 @@ impl<'a> ICSParser<'a> {
       }
       let head = self.token()?;
       ret.push_str(&head.cast_as_string());
+
+      // when an ics file string spans to next line, it seens to always start 
+      // with an extra space; this needs to be skipped. 
+      if let (Token::NEXTLINE, Token::SPACE) = (head, self.peek(0)?) {
+        self.skip()?;
+      }
     }
     Ok(ret)
   }

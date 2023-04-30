@@ -87,6 +87,7 @@ pub enum Token {
 
   // format
   NEXTLINE,
+  SPACE,
 
   // numeral
   Number(String),
@@ -106,7 +107,8 @@ impl Token {
       DASH => "-",
       COMMA => ",",
       Other(s) | Number(s) => &s,
-      NEXTLINE => "\\n",
+      NEXTLINE => "",
+      SPACE => " ",
       tok => return tok.to_string(),
     };
     ret.to_string()
@@ -260,6 +262,7 @@ impl<'a> IcsLexer<'a> {
         '_' => self.single(Token::UNDERSCORE),
         '-' => self.single(Token::DASH),
         '\n' => self.single(Token::NEXTLINE),
+        ' ' => self.single(Token::SPACE),
         '.' => self.single(Token::PERIOD),
         ',' => self.single(Token::COMMA),
         'A'..='Z' | 'a'..='z' => self.possible_keyword(),
