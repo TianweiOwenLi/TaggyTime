@@ -8,6 +8,8 @@ mod util_typs;
 
 use std::io::BufRead;
 
+use calendar::{Calendars, CalError};
+use const_params::DBG;
 use time::timezone::ZoneOffset;
 
 use crate::{args::*, time::date::Date};
@@ -17,18 +19,45 @@ use crate::{args::*, time::date::Date};
 /// [todo] Implement load from file.
 struct TaggyEnv {
   tz: ZoneOffset,
+  calendars: Calendars
 }
 
 /// Loads the interactive environment.
 fn load_env() -> Result<TaggyEnv, String> {
   Ok(TaggyEnv {
     tz: ZoneOffset::utc(),
+    calendars: Calendars::mk_empty(),
   })
 }
 
 /// Stores the interactive environment.
 fn store_env() -> Result<(), String> {
   Ok(())
+}
+
+fn load_ics_to_tenv(
+  tenv: &mut TaggyEnv, 
+  filename: &str, 
+  newname_opt: Option<&str>
+) {
+  if tenv.calendars.contains(filename) {
+    println!("[taggytime] Calendar {} already exists! ", filename);
+  } else {
+    let events = load_file::load_schedule_ics(filename)
+      .expect("[taggytime] Failed to .ics file");
+    if DBG {
+      for event in &events { println!("{}", event); }
+    }
+    tenv.calendars.force_insert(filename, events);
+
+    match newname_opt {
+      Some(newname) => {
+        tenv.calendars.rename(filename, newname).expect("Just inserted");
+        println!("[taggytime] Successfully loaded {} as {}", filename, newname);
+      }
+      None => println!("[taggytime] Successfully loaded {}", filename)
+    }
+  }
 }
 
 fn handle_command_vec(
@@ -65,10 +94,25 @@ fn handle_command_vec(
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {
-        let events = load_file::load_schedule_ics(filename)
-          .expect("Failed to .ics file");
-        for event in events {
-          println!("{}", event);
+        load_ics_to_tenv(tenv, filename, None);
+      } else {
+        println!("[taggytime] Invalid file extension: {}", filename);
+      }
+      Ok(())
+    }
+    ["load", filename, "as", newname] => {
+      if filename.ends_with(".ics") {
+        load_ics_to_tenv(tenv, filename, Some(newname));
+      } else {
+        println!("[taggytime] Invalid file extension: {}", filename);
+      }
+      Ok(())
+    }
+    ["rename", old_name, new_name] => {
+      match tenv.calendars.rename(old_name, new_name) {
+        Ok(()) => {}
+        Err(CalError::RenameNonexist(_)) => {
+          println!("[taggytime] Calendar `{}` does not exist", old_name);
         }
       }
       Ok(())
