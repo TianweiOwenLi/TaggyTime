@@ -81,14 +81,14 @@ impl Recurrence {
     let tmr = self.event_miv.advance_unwrap(MIN_IN_DAY);
     let event_miv = match &self.patt {
       Pattern::Once => return None,
-      Pattern::Many(dp, iv, Term::Count(n)) => {
+      Pattern::Many(dp, _, Term::Count(n)) => {
         if self.occurrence_count >= *n { return None; }
         tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
       }
-      Pattern::Many(dp, iv, Term::Until(term_mi)) => {
+      Pattern::Many(dp, _, Term::Until(term_mi)) => {
         tmr.advance_until_unwrap(dp, Some(*term_mi))?
       }
-      Pattern::Many(dp, iv, Term::Never) => {
+      Pattern::Many(dp, _, Term::Never) => {
         tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
       }
     };
@@ -102,7 +102,11 @@ impl Recurrence {
   /// Computes the number of minutes overlapped with some `MinInterval`.
   pub fn overlap(self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;
-    for rec_miv in self {
+    'a : for rec_miv in self {
+      // skip the non-interacting min-intervals.
+      if rec_miv.get_end() <= miv.get_start() { continue 'a; }
+      if rec_miv.get_start() >= miv.get_end() { break 'a; }
+
       ret = ret.checked_add(rec_miv.overlap_duration(miv))
         .expect("Overflowed while computing recurrence and miv overlap");
     }
