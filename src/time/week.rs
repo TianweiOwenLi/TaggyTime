@@ -51,7 +51,7 @@ impl From<Date> for Weekday {
     let mut past_year_iter = CeYear::new(1970).unwrap();
     let mut days_in_past_years: u32 = 0;
 
-    while past_year_iter != value.get_yr() {
+    while past_year_iter != value.yr {
       days_in_past_years += past_year_iter.days_in_year();
       past_year_iter = past_year_iter
         .next()

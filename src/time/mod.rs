@@ -192,13 +192,13 @@ impl MinInstant {
   /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
   /// Returns an error on u32 overflow.
   pub fn from_date(date: &Date) -> Result<Self, TimeError> {
-    let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
+    let yrs_min = date.yr.to_unix().num_min_since_epoch()?;
     let mons_min = date
-      .get_mon()
-      .num_min_since_new_year(&date.get_yr() as &dyn Year);
-    let days_min = (date.day_in_mon() - 1) * MIN_IN_DAY; // 1-index to 0-index
-    let hrs_min = (date.get_hr()) * MIN_IN_HR;
-    let min_min = date.get_min();
+      .mon
+      .num_min_since_new_year(&date.yr as &dyn Year);
+    let days_min = (date.day - 1) * MIN_IN_DAY; // 1-index to 0-index
+    let hrs_min = date.hr * MIN_IN_HR;
+    let min_min = date.min;
 
     let arr_to_safely_sum = &[yrs_min, mons_min, days_min, hrs_min, min_min];
     let ret_opt = u32_safe_sum(arr_to_safely_sum);
@@ -206,12 +206,12 @@ impl MinInstant {
     match ret_opt {
       Some(n) => Ok(MinInstant {
         raw: n,
-        offset: ZoneOffset::utc(),
+        offset:  date.tz,
       }),
       None => Err(TimeError::DateToMiOverflow(
-        date.get_yr().to_ce().raw(),
-        date.get_mon() as u32,
-        date.day_in_mon(),
+        date.yr.to_ce().raw(),
+        date.mon as u32,
+        date.day,
       )),
     }
   }

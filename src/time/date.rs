@@ -17,12 +17,12 @@ use std::hash::Hash;
 /// Note that `Date` does not record any information about timezone.
 #[derive(Debug, Clone, Copy)]
 pub struct Date {
-  yr: CeYear,
-  mon: Month,
-  day: u32,
-  hr: u32,
-  min: u32,
-  tz: ZoneOffset,
+  pub yr: CeYear,
+  pub mon: Month,
+  pub day: u32,
+  pub hr: u32,
+  pub min: u32,
+  pub tz: ZoneOffset,
 }
 
 // todo check overflow bounds
@@ -135,16 +135,9 @@ impl Date {
     p.check(*self)
   }
 
-  pub fn get_yr(&self) -> CeYear {
-    self.yr.clone()
-  }
-  pub fn get_mon(&self) -> Month {
-    self.mon
-  }
-
   /// Day in year, starts from 1.
   pub fn day_in_yr(&self) -> u32 {
-    let mut ret: u32 = self.day_in_mon();
+    let mut ret: u32 = self.day;
     let mut var_month = Month::Jan;
     while var_month != self.mon {
       ret += var_month.num_days(&self.yr);
@@ -153,18 +146,6 @@ impl Date {
         .expect("Month iterator can never run out before match");
     }
     ret
-  }
-
-  /// Day in month, starts from 1.
-  pub fn day_in_mon(&self) -> u32 {
-    self.day
-  }
-
-  pub fn get_hr(&self) -> u32 {
-    self.hr
-  }
-  pub fn get_min(&self) -> u32 {
-    self.min
   }
 
   /// Given a default timezone, parses a string as a date.
