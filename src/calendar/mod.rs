@@ -1,6 +1,8 @@
 use std::collections::HashMap;
 
-use self::cal_event::Event;
+use crate::{time::MinInterval, util_typs::percent::Percent};
+
+use self::{cal_event::Event, task::Todo};
 
 pub mod cal_event;
 pub mod task;
@@ -39,5 +41,27 @@ impl Calendars {
       }
       None => Err(CalError::RenameNonexist(old_name))
     }
+  }
+
+  /// Computes the number of minutes overlapped with some `MinInterval`.
+  fn overlap_miv(&self, miv: MinInterval) -> u32 {
+    let mut ret: u32 = 0;
+    for event_vec in self.contents.values() {
+      for event in event_vec {
+        ret = ret.checked_add(event.1.clone().overlap(miv)).expect("Overflowed");
+      }
+    }
+    ret
+  }
+
+  pub fn impact(&self, todo: Todo) -> Percent {
+    let miv = MinInterval::from_now_till(todo.due);
+    let total_time = miv.num_min();
+    let occupied_time = self.overlap_miv(miv);
+    let available_time = total_time - occupied_time;
+    let needed_time = todo.get_remaining_workload().num_min();
+
+    Percent::try_from((needed_time as f32) / (available_time as f32))
+      .expect("impact overflowed")
   }
 }

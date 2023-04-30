@@ -302,6 +302,11 @@ impl MinInterval {
   pub fn get_end(&self) -> MinInstant {
     self.end
   }
+
+  pub fn num_min(&self) -> u32 {
+    self.end.raw - self.start.raw
+  }
+
 }
 
 impl std::fmt::Display for MinInstant {

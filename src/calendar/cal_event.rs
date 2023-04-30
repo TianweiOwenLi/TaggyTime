@@ -154,7 +154,7 @@ impl IntoIterator for Recurrence {
 }
 
 /// A struct that pairs the summary of some event with its `Recurrence`.
-pub struct Event(String, Recurrence);
+pub struct Event(pub String, pub Recurrence);
 
 impl TryFrom<Vevent> for Event {
   type Error = ICSProcessError;

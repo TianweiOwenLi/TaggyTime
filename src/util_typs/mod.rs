@@ -9,4 +9,9 @@ pub enum RefinementError {
   FailedConversionToI64(String),
 }
 
-pub type Result<T> = core::result::Result<T, RefinementError>;
+#[derive(Debug)]
+pub enum PercentError {
+  PercentF32Overflow(f32),
+}
+
+pub type RefineResult<T> = core::result::Result<T, RefinementError>;

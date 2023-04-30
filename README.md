@@ -26,6 +26,9 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Implement Recurrence parse from non-weekly events. 
 * Handle week starting day.
 * Use refinement typ for `ZoneOffset`
+* Calendar repetition interval chk
+* Iterator for `&Recurrence`
+* `MinInterval` bounds chk
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

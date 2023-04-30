@@ -1,5 +1,7 @@
 //! a module encapsulating the `Percent` type.
 
+use super::PercentError;
+
 #[derive(Debug)]
 pub enum Error {
   CreationOutOfBound(u16),
@@ -53,6 +55,17 @@ impl Percent {
   /// Checks whether this percent value is beyond `100%`.
   pub fn is_overflow(&self) -> bool {
     self.0 > 100
+  }
+}
+
+impl TryFrom<f32> for Percent {
+  type Error = PercentError;
+  fn try_from(value: f32) -> Result<Self, Self::Error> {
+    let rounded = value.round();
+    if rounded < 0.0 || rounded > (u16::MAX as f32) {
+      return Err(PercentError::PercentF32Overflow(value));
+    }
+    Ok(Percent(rounded as u16))
   }
 }
 
@@ -134,5 +147,10 @@ mod test {
     let p = Percent(666) - Percent(233);
     assert_eq!(p.unwrap(), Percent(433));
     assert!((Percent(0) - Percent(1)).is_err());
+  }
+
+  #[test]
+  fn cast_f32() {
+    assert_eq!(Percent(233), Percent::try_from(233.33333).unwrap())
   }
 }

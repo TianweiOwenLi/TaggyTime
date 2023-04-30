@@ -2,7 +2,7 @@
 
 use std::fmt::Display;
 
-use super::{RefinementError, Result};
+use super::{RefinementError, RefineResult};
 
 pub const I64_MAX: i64 = i64::MAX;
 pub const I64_MIN: i64 = i64::MIN;
@@ -24,7 +24,7 @@ pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
   /// Attempts to construct some ranged i64 using `n`. Returns underflow /
   /// overflow error if bounds check failed.
-  pub fn new<T: Into<i64> + PartialOrd>(num: T) -> Result<Self> {
+  pub fn new<T: Into<i64> + PartialOrd>(num: T) -> RefineResult<Self> {
     let n: i64 = num.into();
     if n < MIN {
       Err(RefinementError::RangedI64Underflow(n, MIN, MAX))
@@ -37,7 +37,7 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
 
   /// Attempts to construct some ranged i64 using `n`. Returns underflow /
   /// overflow error if bounds check failed.
-  pub fn try_new<T: TryInto<i64> + PartialOrd + Display + Copy>(num: T) -> Result<Self> {
+  pub fn try_new<T: TryInto<i64> + PartialOrd + Display + Copy>(num: T) -> RefineResult<Self> {
     let n_opt = num.try_into();
     match n_opt {
       Ok(n) => {
@@ -52,7 +52,7 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
   }
 
   /// Attempts to increment the ranged number; returns an error if fails.
-  pub fn increment(&self) -> Result<Self> {
+  pub fn increment(&self) -> RefineResult<Self> {
     let new_raw = self.0.checked_add(1);
     if let Some(new_safe_raw) = new_raw {
       Self::new(new_safe_raw)

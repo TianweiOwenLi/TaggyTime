@@ -1,6 +1,5 @@
 //! Types and functions for tasks on TaggyTime calendar.
 
-use crate::calendar::cal_event::Recurrence;
 use crate::const_params::MAX_WORKLOAD;
 use crate::util_typs::percent::Percent;
 use crate::time::*;
@@ -62,15 +61,11 @@ impl Workload {
 ///
 /// [todo] Implement recurrences for todo
 pub struct Todo {
-  name: String,
-  due: MinInstant,
-  length: Workload,
-  completion: Percent,
+  pub name: String,
+  pub due: MinInstant,
+  pub length: Workload,
+  pub completion: Percent,
   cached_impact: Option<Percent>,
-}
-
-pub struct TodoList {
-  content: Vec<Todo>,
 }
 
 impl Todo {
@@ -95,8 +90,6 @@ impl Todo {
     };
   }
 }
-
-impl TodoList {}
 
 #[allow(unused_imports)]
 mod test {
