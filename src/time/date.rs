@@ -254,6 +254,8 @@ impl From<Vec<RRuleToks>> for DateProperty {
   /// [todo] consider restriction constraints as per RFC 5545.
   fn from(value: Vec<RRuleToks>) -> Self {
     let mut dp = DateProperty::always();
+    let mut dp_is_always = true;
+
     for rrt in value {
       match rrt.tag {
         Token::BYDAY => {
@@ -262,7 +264,12 @@ impl From<Vec<RRuleToks>> for DateProperty {
             .iter()
             .map(|s| Weekday::from(s.as_str()))
             .collect();
-          dp = dp * DateProperty::from(v);
+          dp = if dp_is_always {
+            dp_is_always = false;
+            DateProperty::from(v)
+          } else {
+            dp * DateProperty::from(v)
+          };
         }
         Token::BYHOUR | Token::BYMIN | Token::BYMONTH | Token::BYMONTHDAY 
         | Token::BYSETPOS | Token::BYWEEKNO | Token::BYYEARDAY => {
