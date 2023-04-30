@@ -32,6 +32,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Complete `todolist` skeleton.
 * Error-typ proper conversion.
 * Implement VTimeZone.
+* Organize util fns.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

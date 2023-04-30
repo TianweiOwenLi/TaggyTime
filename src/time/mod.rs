@@ -40,6 +40,10 @@ pub enum TimeError {
   CeYearConstructorUnderflow(u16),
   YrToMiOverflow(u16),
   DateToMiOverflow(u16, u32, u32),
+  WorkloadParseErr(String, String, String),
+  WorkloadOverflowErr(u32),
+  ICSErr(ICSProcessError),
+  InvalidCommand(String),
 }
 
 impl From<RefinementError> for TimeError {
@@ -352,7 +356,7 @@ fn parse_u16(expr: &str) -> Result<u16, TimeError> {
 }
 
 /// Attempts to parse some expression as u32.
-fn parse_u32(expr: &str) -> Result<u32, TimeError> {
+pub fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
     _ => Err(TimeError::NanErr(expr.to_string()))

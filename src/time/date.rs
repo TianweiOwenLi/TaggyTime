@@ -131,10 +131,6 @@ impl Date {
 
   // ------------- The followings are all attribute functions.  -------------
 
-  pub fn has_property(&self, p: DateProperty) -> bool {
-    p.check(*self)
-  }
-
   /// Day in year, starts from 1.
   pub fn day_in_yr(&self) -> u32 {
     let mut ret: u32 = self.day;

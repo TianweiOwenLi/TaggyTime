@@ -1,21 +1,26 @@
 //! Types and functions for tasks on TaggyTime calendar.
 
+use std::str::FromStr;
+
 use crate::const_params::MAX_WORKLOAD;
+use crate::time::date::Date;
+use crate::time::timezone::ZoneOffset;
 use crate::util_typs::percent::Percent;
 use crate::time::*;
 
 /// A wrapper around `u32`, which represents the number of minutes needed to
 /// complete some task. Can only be from 0 to 60,000 (inclusive).
+#[derive(Debug)]
 pub struct Workload(u32);
 
 impl Workload {
   /// Construct a `Workload` instance from some number of minutes. 
   /// Returns `Err` variant of out of bounds.
-  pub fn from_num_min(num_min: u32) -> Result<Self, String> {
+  pub fn from_num_min(num_min: u32) -> Result<Self, TimeError> {
     if num_min <= MAX_WORKLOAD {
       Ok(Workload(num_min))
     } else {
-      Err("Workload cannot exceed 60,000 minutes".to_string())
+      Err(TimeError::WorkloadOverflowErr(num_min))
     }
   }
 
@@ -41,6 +46,13 @@ impl Workload {
   }
 }
 
+impl FromStr for Workload {
+  type Err = TimeError;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    Workload::from_num_min(crate::time::parse_u32(s)?)
+  }
+}
+
 /// A struct that represents some task to be done.
 ///
 /// This struct contains the following fields:
@@ -60,6 +72,7 @@ impl Workload {
 /// be cached, and only refreshed if needed.
 ///
 /// [todo] Implement recurrences for todo
+#[derive(Debug)]
 pub struct Todo {
   pub name: String,
   pub due: MinInstant,
@@ -94,6 +107,19 @@ impl Todo {
     } else {
       Percent::new(100)
     };
+  }
+
+  pub fn from_str_triplet(
+    name: &str, 
+    due: &str, 
+    load: &str, 
+    default_tz: ZoneOffset
+  ) -> Result<Self, TimeError> {
+    Ok(Todo::new(
+      name.to_string(), 
+      MinInstant::from_date(&Date::parse_from_str(due, default_tz)?)?, 
+      load.parse()?,
+    ))
   }
 }
 

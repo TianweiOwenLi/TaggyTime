@@ -10,7 +10,7 @@ use std::io::BufRead;
 
 use calendar::{Calendars, CalError, task::Todo};
 use const_params::DBG;
-use time::timezone::ZoneOffset;
+use time::{timezone::ZoneOffset, TimeError};
 
 use crate::{args::*, time::date::Date};
 
@@ -81,7 +81,7 @@ fn load_ics_to_tenv(
 fn handle_command_vec(
   cmd: Vec<String>,
   tenv: &mut TaggyEnv,
-) -> Result<(), String> {
+) -> Result<(), TimeError> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
 
   if let Some(head) = tenv.prompt_stack.pop() {
@@ -98,13 +98,13 @@ fn handle_command_vec(
     ["test", "lexer", ics_filename] => {
       match ics_parser::test_lexer(ics_filename) {
         Ok(()) => Ok(()),
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(TimeError::ICSErr(e)),
       }
     }
     ["test", "parser", ics_filename] => {
       match ics_parser::test_parser(ics_filename) {
         Ok(()) => Ok(()),
-        Err(e) => Err(e.to_string()),
+        Err(e) => Err(TimeError::ICSErr(e)),
       }
     }
     ["now"] => {
@@ -118,14 +118,9 @@ fn handle_command_vec(
       Ok(())
     }
     ["set", "tz", s] => {
-      match s.parse() {
-        Ok(tz) => {
-          tenv.tz = tz;
-          println!("[taggytime] timezone={}", tz);
-          Ok(())
-        }
-        Err(e) => Err(format!("{:?}", e))
-      }
+      tenv.tz = s.parse()?;
+      println!("[taggytime] timezone set to {}", tenv.tz);
+      Ok(())
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {
@@ -156,10 +151,12 @@ fn handle_command_vec(
       tenv.calendars.remove(name);
       Ok(())
     }
-    ["add-todo", name_str, due_str, len_str] => {
-      todo!()
+    ["add-todo", name, due, load] => {
+      let todo = Todo::from_str_triplet(name, due, load, tenv.tz)?;
+      println!("[taggytime] added todo {}", tenv.tz);
+      Ok(())
     }
-    _ => Err("Invalid command".to_string()),
+    _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd)))
   }
 }
 
@@ -191,7 +188,7 @@ fn main() {
       let v: Vec<String> =
         buf.split(' ').map(|s| s.trim().to_string()).collect();
       if let Err(e) = handle_command_vec(v, &mut tenv) {
-        eprintln!("[taggytime] Command error: {}", e)
+        eprintln!("[taggytime] Command error: {:?}", e)
       }
     },
     Mode::Cli(v) => {
