@@ -43,6 +43,11 @@ impl Calendars {
     }
   }
 
+  /// Removes some calendar.
+  pub fn remove(&mut self, name: &str) {
+    self.contents.remove(name);
+  }
+
   /// Computes the number of minutes overlapped with some `MinInterval`.
   fn overlap_miv(&self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;

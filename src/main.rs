@@ -146,6 +146,10 @@ fn handle_command_vec(
       }
       Ok(())
     }
+    ["remove", name] => {
+      tenv.calendars.remove(name);
+      Ok(())
+    }
     ["add-todo", name_str, due_str, len_str] => {
       todo!()
     }
