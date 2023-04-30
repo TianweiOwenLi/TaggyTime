@@ -12,42 +12,45 @@ pub enum CalError<'a>{
   RenameNonexist(&'a str),
 }
 
-pub struct Calendars {
-  contents: HashMap<String, Vec<Event>>
+/// A wrapper around `HashMap<String, _>`.
+pub struct NameMap<T> {
+  contents: HashMap<String, T>
 }
 
-impl Calendars {
+impl<T> NameMap<T> {
   pub fn mk_empty() -> Self {
-    Calendars { contents: HashMap::<String, Vec<Event>>::new() }
+    NameMap { contents: HashMap::<String, T>::new() }
   }
 
   /// Checks whether a particular `.ics` file has already been loaded. 
-  pub fn contains(&self, cal_name: &str) -> bool {
-    self.contents.contains_key(cal_name)
+  pub fn contains(&self, key: &str) -> bool {
+    self.contents.contains_key(key)
   }
 
   /// Inserts some `.ics` file WITHOUT checking pre-existence. 
-  pub fn force_insert(&mut self, cal_name: &str, events: Vec<Event>) {
-    self.contents.insert(cal_name.to_string(), events);
+  pub fn force_insert(&mut self, key: &str, events: T) {
+    self.contents.insert(key.to_string(), events);
   }
 
   /// Renames some loaded `.ics` file.
-  pub fn rename<'a>(&mut self, old_name: &'a str, new_name: &str) 
+  pub fn rename<'a>(&mut self, old_key: &'a str, new_key: &str) 
   -> Result<(), CalError<'a>> {
-    match self.contents.remove(old_name) {
+    match self.contents.remove(old_key) {
       Some(v) => {
-        self.contents.insert(new_name.to_string(), v);
+        self.contents.insert(new_key.to_string(), v);
         Ok(())
       }
-      None => Err(CalError::RenameNonexist(old_name))
+      None => Err(CalError::RenameNonexist(old_key))
     }
   }
 
   /// Removes some calendar.
-  pub fn remove(&mut self, name: &str) {
-    self.contents.remove(name);
+  pub fn remove(&mut self, key: &str) {
+    self.contents.remove(key);
   }
+}
 
+impl NameMap<Vec<Event>> {
   /// Computes the number of minutes overlapped with some `MinInterval`.
   fn overlap_miv(&self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;

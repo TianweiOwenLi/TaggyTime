@@ -8,7 +8,7 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{Calendars, CalError, task::Todo};
+use calendar::{NameMap, CalError, task::Todo, cal_event::Event};
 use const_params::DBG;
 use time::{timezone::ZoneOffset, TimeError};
 
@@ -19,7 +19,7 @@ use crate::{args::*, time::date::Date};
 /// [todo] Implement load from file.
 struct TaggyEnv {
   tz: ZoneOffset,
-  calendars: Calendars,
+  calendars: NameMap<Vec<Event>>,
   prompt_stack: Vec<Prompt>,
   todolist: Vec<Todo>,
 }
@@ -42,7 +42,7 @@ impl Prompt {
 fn load_env() -> Result<TaggyEnv, String> {
   Ok(TaggyEnv {
     tz: ZoneOffset::utc(),
-    calendars: Calendars::mk_empty(),
+    calendars: NameMap::mk_empty(),
     prompt_stack: vec![],
     todolist: vec![],
   })
