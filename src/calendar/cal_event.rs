@@ -67,11 +67,11 @@ pub struct Recurrence {
 }
 
 impl Recurrence {
-  pub fn once(mi: MinInterval) -> Self {
+  pub fn new(event_miv: MinInterval, patt: Pattern) -> Self {
     Self {
-      event_miv: mi,
+      event_miv,
       occurrence_count: OneOrMore::new(1).unwrap(),
-      patt: Pattern::Once,
+      patt,
     }
   }
 
@@ -121,11 +121,7 @@ impl TryFrom<Vevent> for Recurrence {
   /// 
   /// [warning] Only weekly - by weekday is implemented. 
   fn try_from(value: Vevent) -> Result<Self, Self::Error> {
-    Ok(Recurrence {
-      event_miv: value.miv,
-      occurrence_count: OneOrMore::new(1).unwrap(),
-      patt: Pattern::try_from(value.repeat)?,
-    })
+    Ok(Recurrence::new(value.miv, Pattern::try_from(value.repeat)?))
   }
 }
 
@@ -217,11 +213,7 @@ mod test {
 
     let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
 
-    let mut r = Recurrence {
-      event_miv: iv,
-      occurrence_count: OneOrMore::new(1).unwrap(),
-      patt: p
-    };
+    let mut r = Recurrence::new(iv, p);
 
     let mut last_string = String::new();
     loop {
@@ -287,11 +279,7 @@ mod test {
       DateProperty::from(vec![MO, WE, FR])
     };
     let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Never);
-    let cls_rec = Recurrence {
-      event_miv: cls,
-      occurrence_count: OneOrMore::new(1).unwrap(),
-      patt: p,
-    };
+    let cls_rec = Recurrence::new(cls, p);
     
     assert_eq!(302, cls_rec.overlap(miv));
 
