@@ -198,14 +198,16 @@ impl Date {
 impl FromStr for Date {
   type Err = DateError;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    let maybe_split = s.split_once(' ');
-    match maybe_split {
-      Some((date, time)) => {
+
+    let args: Vec<&str> = s.split(' ').map(|s| s.trim()).collect();
+    match args[..] {
+      [date, time, zone] => {
         todo!()
       }
-      None => {
-        Err(DateError::ParsingError(s.to_string()))
+      [date, time] => {
+        todo!()
       }
+      _ => Err(DateError::ParsingError(s.to_string()))
     }
   }
 }

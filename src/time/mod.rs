@@ -30,6 +30,7 @@ pub enum TimeError {
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
+  TimeParseErr(String),
   TimeZoneParseErr(String),
 }
 
@@ -319,6 +320,31 @@ impl std::fmt::Display for MinInstant {
 impl std::fmt::Display for MinInterval {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(f, "({} - {})", self.start, self.end)
+  }
+}
+
+// -------------------------------- Utilities --------------------------------
+
+/// Attempts to parse some expression as u32.
+fn parse_u32(expr: &str) -> Result<u32, TimeError> {
+  match expr.parse() {
+    Ok(n) => Ok(n),
+    _ => Err(TimeError::TimeZoneParseErr(expr.to_string()))
+  }
+}
+
+/// Given some str, parses as a pair of hour and minute. If minute does not 
+/// exist, defaults to zero.
+fn parse_hr_min(expr: &str) -> Result<(u32, u32), TimeError> {
+  let (h, m) = match expr.split_once(':') {
+    Some((hr_str, min_str)) => (parse_u32(hr_str)?, parse_u32(min_str)?),
+    None => (parse_u32(expr)?, 0) // no min field, only hours
+  };
+  
+  if h < 24 && m < 60 { 
+    Ok((h, m)) 
+  } else { 
+    Err(TimeError::TimeZoneParseErr(expr.to_string())) 
   }
 }
 
