@@ -22,6 +22,7 @@ pub struct Date {
   day: u32,
   hr: u32,
   min: u32,
+  tz: ZoneOffset,
 }
 
 // todo check overflow bounds
@@ -52,6 +53,7 @@ impl Date {
       day: 1 + t / MIN_IN_DAY,
       hr: (t % MIN_IN_DAY) / MIN_IN_HR,
       min: t % MIN_IN_HR,
+      tz: mi.offset,
     }
   }
 
@@ -60,6 +62,7 @@ impl Date {
   pub fn from_ics_time_string(
     ymd: &str,
     hms: &str,
+    tz: ZoneOffset,
   ) -> Result<Self, ICSProcessError> {
     // Return error message
     let bad = Err(ICSProcessError::ICSTimeMalformatted(
@@ -117,14 +120,7 @@ impl Date {
           return bad;
         };
 
-        let ret_date = Date {
-          yr,
-          mon,
-          day,
-          hr,
-          min,
-        };
-        Ok(ret_date)
+        Ok(Date {yr, mon, day, hr, min, tz})
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
         ymd.to_string(),
@@ -173,9 +169,11 @@ impl Date {
 
   /// Given a default timezone, parses a string as a date.
   pub fn parse_from_str(s: &str, default_tz: ZoneOffset) -> Result<Self, TimeError> {
-    let args: Vec<&str> = s.split(' ').map(|s| s.trim()).collect();
     let bad = Err(TimeError::DateParsingErr(s.to_string()));
+    let args: Vec<&str> = s.split(' ').map(|s| s.trim()).collect();
+
     if args.len() >= 3 { return bad; } // too many items
+
     let tz = match args.get(2) {
       Some(s) => s.parse()?,
       None => default_tz,
@@ -185,7 +183,7 @@ impl Date {
       [ymd_str, time] => {
         let (yr, mon, day) = parse_ymd(ymd_str)?;
         let (hr, min) = parse_hr_min(time)?;
-        Ok(Date { yr, mon, day, hr, min })
+        Ok(Date { yr, mon, day, hr, min, tz })
       }
       _ => bad
     }
@@ -197,18 +195,18 @@ impl std::fmt::Display for Date {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
       f,
-      "{}/{:?}/{} {:02}:{:02}",
+      "{}/{:?}/{} {:02}:{:02}, tz={}",
       self.yr.raw(),
       self.mon,
       self.day,
       self.hr,
       self.min,
+      self.tz,
     )
   }
 }
 
 use std::rc::Rc;
-use std::str::FromStr;
 pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
 pub struct DateProperty {
@@ -349,6 +347,7 @@ mod test {
       day: 14,
       hr: 21,
       min: 11,
+      tz: ZoneOffset::utc(),
     };
     assert_eq!(TU, Weekday::from(treeday));
   }
@@ -356,7 +355,7 @@ mod test {
   #[test]
   fn ics_string_to_date() {
     let (ymd, hms) = ("20220314", "211123");
-    let date1 = Date::from_ics_time_string(ymd, hms).unwrap();
+    let date1 = Date::from_ics_time_string(ymd, hms, ZoneOffset::utc()).unwrap();
 
     let date2 = Date {
       yr: CeYear::new(2022).unwrap(),
@@ -364,6 +363,7 @@ mod test {
       day: 14,
       hr: 21,
       min: 11,
+      tz: ZoneOffset::utc(),
     };
 
     let mi1 = MinInstant::from_date(&date1).unwrap();
@@ -380,6 +380,7 @@ mod test {
       day: 12,
       hr: 10,
       min: 05,
+      tz: ZoneOffset::utc(),
     };
 
     assert_eq!(treeday.day_in_yr(), 31 + 28 + 12);

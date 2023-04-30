@@ -6,7 +6,7 @@
 use crate::{
   const_params::ICS_DEFAULT_TIME_IN_DAY,
   ics_parser::lexer,
-  time::{date::Date, MinInstant, MinInterval},
+  time::{date::Date, MinInstant, MinInterval, timezone::ZoneOffset},
 };
 
 use super::{
@@ -275,22 +275,23 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Parses the time associated with some `DTSTART`.
-  pub fn dtstart(&mut self) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtstart(&mut self, tz: ZoneOffset) -> Result<MinInstant, ICSProcessError> {
     self.munch(Token::DTSTART)?;
-    self.dt_possible_timezone()
+    self.dt_possible_timezone(tz)
   }
 
   /// Parses the time associated with some `DTEND`.
-  pub fn dtend(&mut self) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtend(&mut self, tz: ZoneOffset) -> Result<MinInstant, ICSProcessError> {
     self.munch(Token::DTEND)?;
-    self.dt_possible_timezone()
+    self.dt_possible_timezone(tz)
   }
 
   /// Parses a datetime literal with an optional timezone prefix.
   ///
   /// ### Syntax
   /// `:[yyyymmdd]T[hhmmss]Z | ;TZID=..:[yyyymmdd]T[hhmmss]`
-  fn dt_possible_timezone(&mut self) -> Result<MinInstant, ICSProcessError> {
+  fn dt_possible_timezone(&mut self, default_tz: ZoneOffset) 
+  -> Result<MinInstant, ICSProcessError> {
     match self.token()? {
       // when timezone is specified
       Token::SEMICOLON => {
@@ -304,9 +305,9 @@ impl<'a> ICSParser<'a> {
         return self.dt_literal(true);
       }
 
-      // when timezone is not specified
+      // when timezone is not specified, use default
       Token::COLON => {
-        return self.dt_literal(false);
+        return self.dt_literal(false, default_tz);
       }
 
       x => Err(ICSProcessError::Other(format!(
@@ -451,6 +452,7 @@ impl<'a> ICSParser<'a> {
   fn dt_literal(
     &mut self,
     zone_specified: bool,
+    tz: ZoneOffset,
   ) -> Result<MinInstant, ICSProcessError> {
     let ymd = self.number()?;
 
@@ -464,11 +466,11 @@ impl<'a> ICSParser<'a> {
         self.munch(Token::Other("Z".to_string()))?;
       }
 
-      Date::from_ics_time_string(&ymd, &hms)?
+      Date::from_ics_time_string(&ymd, &hms, tz)?
     } else {
       // Handle the case where time of day is not specified.
       let hms = ICS_DEFAULT_TIME_IN_DAY;
-      Date::from_ics_time_string(&ymd, hms)?
+      Date::from_ics_time_string(&ymd, hms, tz)?
     };
 
     match MinInstant::from_date(&dt) {

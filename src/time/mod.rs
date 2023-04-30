@@ -67,7 +67,7 @@ pub fn u32_safe_sum(numbers: &[u32]) -> Option<u32> {
 #[derive(Debug, Clone, Copy)]
 pub struct MinInstant {
   pub raw: u32,
-  offset: ZoneOffset,
+  pub offset: ZoneOffset,
 }
 
 impl PartialEq for MinInstant {
@@ -78,8 +78,8 @@ impl PartialEq for MinInstant {
     let mut lhs = self.clone();
     let mut rhs = other.clone();
 
-    lhs.set_offset(ZoneOffset::utc());
-    rhs.set_offset(ZoneOffset::utc());
+    lhs.adjust_to_zone(ZoneOffset::utc());
+    rhs.adjust_to_zone(ZoneOffset::utc());
 
     lhs.raw == rhs.raw
   }
@@ -92,8 +92,8 @@ impl PartialOrd for MinInstant {
     let mut lhs = self.clone();
     let mut rhs = other.clone();
 
-    lhs.set_offset(ZoneOffset::utc());
-    rhs.set_offset(ZoneOffset::utc());
+    lhs.adjust_to_zone(ZoneOffset::utc());
+    rhs.adjust_to_zone(ZoneOffset::utc());
 
     Some(lhs.raw.cmp(&rhs.raw))
   }
@@ -148,18 +148,13 @@ impl MinInstant {
 
     Ok(Self { raw, offset: ZoneOffset::utc()})
   }
-
-  /// Returns the current offset.
-  pub fn get_offset(&self) -> ZoneOffset {
-    self.offset
-  }
-
+  
   /// Adjust by an input offset. This merely changes the timezone
   /// representation, and does not shift the represented time instance.
   ///
   /// Note that overflows are not possible due to how the types `MinInstant`
   /// and `ZoneOffset` are constructed.
-  pub fn set_offset(&mut self, tgt_offset: ZoneOffset) {
+  pub fn adjust_to_zone(&mut self, tgt_offset: ZoneOffset) {
     let diff = tgt_offset.raw() - self.offset.raw();
 
     // adjust timezone
@@ -438,7 +433,7 @@ mod test {
       offset: ZoneOffset::utc(),
     };
 
-    mi.set_offset(ZoneOffset::new(-300).unwrap());
+    mi.adjust_to_zone(ZoneOffset::new(-300).unwrap());
     assert_eq!(mi.raw, 27905591 - 300);
   }
 

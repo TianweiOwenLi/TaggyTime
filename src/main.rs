@@ -109,11 +109,11 @@ fn handle_command_vec(
     }
     ["now"] => {
       let mut mi = time::MinInstant::now();
-      mi.set_offset(tenv.tz);
+      mi.adjust_to_zone(tenv.tz);
       println!(
         "The time now is: {}, offset={}",
         Date::from_min_instant(mi),
-        mi.get_offset(),
+        mi.offset,
       );
       Ok(())
     }
