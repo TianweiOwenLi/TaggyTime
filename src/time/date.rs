@@ -1,5 +1,6 @@
 //! Structure that represents calendar days.
 
+use crate::const_params::HANDLE_WKST;
 use crate::ics_parser::ics_syntax::{Freq, FreqAndRRules, RRuleToks};
 use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
@@ -267,6 +268,11 @@ impl From<Vec<RRuleToks>> for DateProperty {
         | Token::BYSETPOS | Token::BYWEEKNO | Token::BYYEARDAY => {
           unimplemented!()
         }
+        Token::WKST => {
+          if HANDLE_WKST {
+            todo!("Needs to handle WKST tag")
+          }
+        }
         t => {
           unreachable!("Encountered unexpected rrule tag: {}", t)
         }
@@ -289,7 +295,7 @@ impl std::ops::Mul for DateProperty {
       filter_fn: Rc::new(move |x: Date| {
         (self.filter_fn)(x) && (rhs.filter_fn)(x)
       }),
-      dbg_info: format!("{}, {}", self.dbg_info, rhs.dbg_info),
+      dbg_info: format!("{} and {}", self.dbg_info, rhs.dbg_info),
     }
   }
 }

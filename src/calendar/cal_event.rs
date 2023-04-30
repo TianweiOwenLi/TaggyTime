@@ -2,6 +2,7 @@ use std::mem;
 
 use crate::ics_parser::ics_syntax::{FreqAndRRules, Vevent};
 use crate::ics_parser::ICSProcessError;
+use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
@@ -160,6 +161,39 @@ impl TryFrom<Vevent> for Event {
 
   fn try_from(value: Vevent) -> Result<Self, Self::Error> {
     Ok(Event(value.summary.clone(), Recurrence::try_from(value)?))
+  }
+}
+
+impl std::fmt::Display for Event {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}\n{}\n", self.0, self.1)
+  }
+}
+
+impl std::fmt::Display for Recurrence {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{}\n{}", self.event_miv.as_date_string(), self.patt)
+  }
+}
+
+impl std::fmt::Display for Pattern {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Pattern::Once => write!(f, "No repeat"),
+      Pattern::Many(dp, iv, t) => {
+        write!(f, "{:?}\nOccurs every {} times\n{}", dp, iv, t)
+      }
+    }
+  }
+}
+
+impl std::fmt::Display for Term {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Term::Count(n) => write!(f, "Repeat {} times", n),
+      Term::Until(mi) => write!(f, "Until {}", Date::from_min_instant(*mi)),
+      Term::Never => Ok(()),
+    }
   }
 }
 

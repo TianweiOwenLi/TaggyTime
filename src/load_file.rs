@@ -13,13 +13,5 @@ pub fn load_schedule_ics(ics_filename: &str) -> Result<Vec<Event>, ICSProcessErr
   let mut parser = ICSParser::from_ics_lexer(lex);
   let parse_result = parser.parse()?;
 
-  for ve in &parse_result.content {
-    println!("{}", ve);
-    if let Some(ref fr) = ve.repeat {
-      let ppt = crate::time::date::parse_dateproperty_week(fr);
-      println!("Parsed ppt: {:?}\n", ppt);
-    }
-  }
-
   parse_result.content.into_iter().map(Event::try_from).collect()
 }
