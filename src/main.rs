@@ -19,7 +19,22 @@ use crate::{args::*, time::date::Date};
 /// [todo] Implement load from file.
 struct TaggyEnv {
   tz: ZoneOffset,
-  calendars: Calendars
+  calendars: Calendars,
+  prompt_stack: Vec<Prompt>,
+}
+
+/// A user-promptable lambda.
+struct Prompt {
+  pub description: String,
+  pub lambda: Box<dyn FnOnce()>
+}
+
+impl Prompt {
+  /// Given a user response of yes or no, consumes the prompt; executes it if 
+  /// user choosed yes.
+  fn consume(self, usr_choice: bool) {
+    if usr_choice { (self.lambda)() }
+  }
 }
 
 /// Loads the interactive environment.
@@ -27,6 +42,7 @@ fn load_env() -> Result<TaggyEnv, String> {
   Ok(TaggyEnv {
     tz: ZoneOffset::utc(),
     calendars: Calendars::mk_empty(),
+    prompt_stack: vec![],
   })
 }
 
@@ -65,6 +81,17 @@ fn handle_command_vec(
   tenv: &mut TaggyEnv,
 ) -> Result<(), String> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
+
+  if let Some(head) = tenv.prompt_stack.pop() {
+    println!("[taggytime] {} (y/n)", head.description);
+    match cmd[..] {
+      ["y"] => head.consume(true),
+      ["n"] => head.consume(false),
+      _ => println!("[taggytime] Please answer prompt with (y/n).")
+    }
+    return Ok(());
+  }
+
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
       match ics_parser::test_lexer(ics_filename) {
