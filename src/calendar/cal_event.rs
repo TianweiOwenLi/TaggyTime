@@ -203,7 +203,7 @@ mod test {
 
   #[test]
   fn rec_next() {
-    let mi = MinInstant::from_raw(27988182).unwrap();
+    let mi = MinInstant::from_raw_utc(27988182).unwrap();
     let mi2 = mi.advance(60).unwrap();
     let iv = MinInterval::new(mi, mi2);
 
@@ -232,7 +232,7 @@ mod test {
 
   #[test]
   fn rec_iter() {
-    let mi = MinInstant::from_raw(27988182).unwrap();
+    let mi = MinInstant::from_raw_utc(27988182).unwrap();
     let mi2 = mi.advance(60).unwrap();
     let iv = MinInterval::new(mi, mi2);
 
@@ -267,11 +267,11 @@ mod test {
 
   #[test]
   fn rec_overlap() {
-    let mi = MinInstant::from_raw(28038182).unwrap(); // sunday
+    let mi = MinInstant::from_raw_utc(28038182).unwrap(); // sunday
     let mi2 = mi.advance(MIN_IN_DAY * 5 - 720).unwrap(); // friday
     let miv = MinInterval::new(mi, mi2); // 2023/04/23 23:02 - 04/28 11:02
 
-    let cls_start = MinInstant::from_raw(27900600).unwrap(); 
+    let cls_start = MinInstant::from_raw_utc(27900600).unwrap(); 
     let cls_end = cls_start.advance(120).unwrap();
     let cls = MinInterval::new(cls_start, cls_end); // 2023/01/18 10:00-12:00
     let dp = {

@@ -131,7 +131,7 @@ impl MinInstant {
     }
   }
 
-  pub fn from_raw(raw: u32) -> Result<Self, TimeError> {
+  pub fn from_raw_utc(raw: u32) -> Result<Self, TimeError> {
     if i64::from(raw) > MINUTE_UPPERBOUND {
       return Err(TimeError::MinInstantConstructionOverflow(raw));
     };
@@ -345,7 +345,7 @@ impl std::fmt::Display for MinInterval {
 fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
-    _ => Err(TimeError::TimeZoneParseErr(expr.to_string()))
+    _ => Err(TimeError::TimeParseErr(expr.to_string()))
   }
 }
 
@@ -375,7 +375,7 @@ fn parse_hr_min(expr: &str) -> Result<(u32, u32), TimeError> {
   if h < HR_IN_DAY && m < MIN_IN_HR { 
     Ok((h, m)) 
   } else { 
-    Err(TimeError::TimeZoneParseErr(expr.to_string())) 
+    Err(TimeError::TimeParseErr(expr.to_string())) 
   }
 }
 
