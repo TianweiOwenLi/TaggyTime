@@ -74,7 +74,6 @@ impl FromStr for Workload {
 /// [todo] Implement recurrences for todo
 #[derive(Debug)]
 pub struct Todo {
-  pub name: String,
   pub due: MinInstant,
   pub length: Workload,
   pub completion: Percent,
@@ -84,8 +83,8 @@ pub struct Todo {
 impl Todo {
 
   /// Constructs a new instance with zero completion.
-  pub fn new(name: String, due: MinInstant, length: Workload) -> Self {
-    Todo { name, due, length, completion: Percent::zero(), cached_impact: None }
+  pub fn new(due: MinInstant, length: Workload) -> Self {
+    Todo { due, length, completion: Percent::zero(), cached_impact: None }
   }
 
   /// Computes the remaining workload of this `Todo` item, considering its
@@ -108,32 +107,17 @@ impl Todo {
       Percent::new(100)
     };
   }
-
-  pub fn from_str_triplet(
-    name: &str, 
-    due: &str, 
-    load: &str, 
-    default_tz: ZoneOffset
-  ) -> Result<Self, TimeError> {
-    Ok(Todo::new(
-      name.to_string(), 
-      MinInstant::from_date(&Date::parse_from_str(due, default_tz)?)?, 
-      load.parse()?,
-    ))
-  }
 }
 
-#[allow(unused_imports)]
-mod test {
-  use super::*;
-
-  fn nada() {
-    let td = Todo {
-      name: "Name".to_string(),
-      due: MinInstant::now(),
-      length: Workload::from_num_min(60).unwrap(),
-      completion: Percent::new(0),
-      cached_impact: None,
-    };
+impl std::fmt::Display for Todo {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f, 
+      "due {}\nload: {} min\nprogress: {}\ncache: {:?}", 
+      self.due.as_date_string(),
+      self.length.0,
+      self.completion,
+      self.cached_impact
+    )
   }
 }

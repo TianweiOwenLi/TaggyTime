@@ -8,9 +8,9 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{NameMap, CalError, task::Todo, cal_event::Event};
+use calendar::{NameMap, CalError, task::{Todo, Workload}, cal_event::Event};
 use const_params::DBG;
-use time::{timezone::ZoneOffset, TimeError};
+use time::{timezone::ZoneOffset, TimeError, MinInstant};
 
 use crate::{args::*, time::date::Date};
 
@@ -21,7 +21,7 @@ struct TaggyEnv {
   tz: ZoneOffset,
   calendars: NameMap<Vec<Event>>,
   prompt_stack: Vec<Prompt>,
-  todolist: Vec<Todo>,
+  todolist: NameMap<Todo>,
 }
 
 /// A user-promptable lambda.
@@ -44,7 +44,7 @@ fn load_env() -> Result<TaggyEnv, String> {
     tz: ZoneOffset::utc(),
     calendars: NameMap::mk_empty(),
     prompt_stack: vec![],
-    todolist: vec![],
+    todolist: NameMap::mk_empty(),
   })
 }
 
@@ -59,7 +59,7 @@ fn load_ics_to_tenv(
   newname_opt: Option<&str>
 ) {
   if tenv.calendars.contains(filename) {
-    println!("[taggytime] Calendar {} already exists! ", filename);
+    println!("[taggytime] Calendar `{}` already exists! ", filename);
   } else {
     let events = load_file::load_schedule_ics(filename, tenv.tz)
       .expect("[taggytime] Failed to .ics file");
@@ -71,10 +71,22 @@ fn load_ics_to_tenv(
     match newname_opt {
       Some(newname) => {
         tenv.calendars.rename(filename, newname).expect("Just inserted");
-        println!("[taggytime] Successfully loaded {} as {}", filename, newname);
+        println!("[taggytime] Successfully loaded `{}` as `{}`", filename, newname);
       }
-      None => println!("[taggytime] Successfully loaded {}", filename)
+      None => println!("[taggytime] Successfully loaded `{}`", filename)
     }
+  }
+}
+
+fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Todo) {
+  if tenv.todolist.contains(name) {
+    println!("[taggytime] Task `{}` already exists! ", name);
+  } else {
+    if DBG {
+      println!("{}", &todo);
+    }
+    tenv.todolist.force_insert(name, todo);
+    println!("[taggytime] Successfully added task `{}`", name);
   }
 }
 
@@ -151,9 +163,11 @@ fn handle_command_vec(
       tenv.calendars.remove(name);
       Ok(())
     }
-    ["add-todo", name, due, load] => {
-      let todo = Todo::from_str_triplet(name, due, load, tenv.tz)?;
-      println!("[taggytime] added todo {}", tenv.tz);
+    ["add-todo", name, load, ..] => {
+      let load: Workload = load.parse()?;
+      let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
+      let todo = Todo::new(due, load);
+      load_todo_to_tenv(tenv, name, todo);
       Ok(())
     }
     _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd)))

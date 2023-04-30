@@ -220,6 +220,11 @@ impl MinInstant {
     }
   }
 
+  /// Given a default timezone, parses a string as some `MinInstant`.
+  pub fn parse_from_str(args: &[&str], default_tz: ZoneOffset) -> Result<Self, TimeError> {
+    MinInstant::from_date(&Date::parse_from_str(args, default_tz)?)
+  }
+
   /// Advances the `MinInstant` by given number of minutes. Checks bounds while
   /// advancing, and returns an error if overflows.
   pub fn advance(&self, num_min: u32) -> Result<MinInstant, TimeError> {
@@ -241,6 +246,12 @@ impl MinInstant {
       num_min,
     ))
   }
+
+  /// Converts to `Date` and prints accordingly
+  pub fn as_date_string(self) -> String {
+    format!("{}", Date::from_min_instant(self))
+  }
+
 }
 
 impl MinInterval {

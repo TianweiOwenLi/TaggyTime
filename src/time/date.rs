@@ -145,11 +145,10 @@ impl Date {
   }
 
   /// Given a default timezone, parses a string as a date.
-  pub fn parse_from_str(s: &str, default_tz: ZoneOffset) -> Result<Self, TimeError> {
-    let bad = Err(TimeError::DateParsingErr(s.to_string()));
-    let args: Vec<&str> = s.split(' ').map(|s| s.trim()).collect();
+  pub fn parse_from_str(args: &[&str], default_tz: ZoneOffset) -> Result<Self, TimeError> {
+    let bad = Err(TimeError::DateParsingErr(format!("{:?}", args)));
 
-    if args.len() >= 3 { return bad; } // too many items
+    if args.len() > 3 || args.len() < 2 { return bad; } // too many items
 
     let tz = match args.get(2) {
       Some(s) => s.parse()?,
