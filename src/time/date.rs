@@ -32,27 +32,10 @@ impl Date {
   /// Note that such a conversion takes into account the timezone offset of
   /// the provided MinInstant.
   pub fn from_min_instant(mi: MinInstant) -> Self {
-    let (mut curr_year, mut curr_month) = (
-      UnixYear::new(0).expect("Should be able to construct unix year 0"),
-      Month::Jan,
-    );
-    let mut t = mi.raw();
-
-    // strip year from t
-    loop {
-      let x = curr_year.num_min();
-      if t >= x {
-        (curr_year, t) = (
-          curr_year
-            .next()
-            .expect("Year should not run out before MinInstant"),
-          t - x,
-        )
-      } else {
-        break;
-      }
-    }
-
+  
+    let (curr_year, mut t) = mi.decomp_yr_min();
+    
+    let mut curr_month = Month::Jan;
     loop {
       // strip month from t
       let x = curr_month.num_min(&curr_year);
@@ -386,7 +369,7 @@ mod test {
     let mi1 = MinInstant::from_date(&date1).unwrap();
     let mi2 = MinInstant::from_date(&date2).unwrap();
 
-    assert_eq!(mi1.raw(), mi2.raw());
+    assert_eq!(mi1.raw, mi2.raw);
   }
 
   #[test]

@@ -59,7 +59,7 @@ pub fn u32_safe_sum(numbers: &[u32]) -> Option<u32> {
 /// the actual time instant being represented.
 #[derive(Debug, Clone, Copy)]
 pub struct MinInstant {
-  raw: u32,
+  pub raw: u32,
   offset: ZoneOffset,
 }
 
@@ -166,10 +166,25 @@ impl MinInstant {
     }
   }
 
-  /// Returns the raw value of such a MinInstant, ie. a `u32` representing the
-  /// number of minutes since Unix Epoch.
-  pub fn raw(self) -> u32 {
-    self.raw
+  /// Decomposes the `MinInstant` into whole year plus number of minutes.
+  pub fn decomp_yr_min(&self) -> (UnixYear, u32) {
+    let mut curr_yr = UnixYear::new(0).expect("year 1970 is valid");
+    let mut t = self.raw;
+
+    // strip year from t
+    loop {
+      let x = curr_yr.num_min();
+      if t >= x {
+        (curr_yr, t) = (
+          curr_yr
+            .next()
+            .expect("Year should not run out before MinInstant"),
+          t - x,
+        )
+      } else {
+        break (curr_yr, t);
+      }
+    }
   }
 
   /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
@@ -345,6 +360,7 @@ fn parse_ymd(expr: &str)
     [m, d] => {
       todo!()
     }
+    _ => todo!()
   }
 }
 
@@ -396,7 +412,7 @@ mod test {
     };
 
     mi.set_offset(ZoneOffset::new(-300).unwrap());
-    assert_eq!(mi.raw(), 27905591 - 300);
+    assert_eq!(mi.raw, 27905591 - 300);
   }
 
   #[test]
