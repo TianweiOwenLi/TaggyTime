@@ -78,7 +78,7 @@ impl Date {
     let min_str = &hms[2..4];
 
     let yr_res: Result<u16, _> = yr_str.parse();
-    let mon_res: Result<usize, _> = mon_str.parse();
+    let mon_res: Result<u32, _> = mon_str.parse();
     let day_res: Result<u32, _> = day_str.parse();
     let hr_res: Result<u32, _> = hr_str.parse();
     let min_res: Result<u32, _> = min_str.parse();

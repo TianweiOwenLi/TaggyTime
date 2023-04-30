@@ -1,45 +1,7 @@
-use super::fact::*;
+use super::{fact::*, TimeError};
 
 const UNIX_YEAR_MAX: u16 = u16::MAX - UNIX_EPOCH_YR_RAW;
 const CE_YEAR_MIN: u16 = u16::MIN + UNIX_EPOCH_YR_RAW;
-
-pub enum YearError {
-  UnixYearConstructorOverflow(u16),
-  CeYearConstructorUnderflow(u16),
-  YrToMinInstantOverflow(u16),
-  DateToMinInstantOverFlow(u16, u32, u32),
-}
-
-impl std::fmt::Debug for YearError {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    match self {
-      YearError::UnixYearConstructorOverflow(n) => {
-        write!(f, "Unix year new() overflowed with {}", n)
-      }
-      YearError::CeYearConstructorUnderflow(n) => {
-        write!(f, "Ce year new() underflowed with {}", n)
-      }
-      YearError::YrToMinInstantOverflow(y) => {
-        write!(
-          f,
-          "Year -> MinInstant conversion caused u32 overflow \
-          with year {}",
-          y
-        )
-      }
-      YearError::DateToMinInstantOverFlow(y, m, d) => {
-        write!(
-          f,
-          "Date -> MinInstant conversion caused u32 overflow \
-          with date {}/{}/{}",
-          y, m, d
-        )
-      }
-    }
-  }
-}
-
-pub type Result<T> = core::result::Result<T, YearError>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum YearLength {
@@ -94,9 +56,9 @@ pub struct UnixYear(u16);
 pub struct CeYear(u16);
 
 impl UnixYear {
-  pub fn new(n: u16) -> Result<Self> {
+  pub fn new(n: u16) -> Result<Self, TimeError> {
     if n > UNIX_YEAR_MAX {
-      Err(YearError::UnixYearConstructorOverflow(n))
+      Err(TimeError::UnixYearConstructorOverflow(n))
     } else {
       Ok(UnixYear(n))
     }
@@ -105,7 +67,7 @@ impl UnixYear {
   /// get the number of minutes from unix epoch to beginning of year.
   ///
   /// [todo] Improve efficiency.
-  pub fn num_min_since_epoch(&self) -> Result<u32> {
+  pub fn num_min_since_epoch(&self) -> Result<u32, TimeError> {
     match self.prev() {
       Some(prev_yr) => {
         let maybe_overflow = prev_yr
@@ -113,7 +75,7 @@ impl UnixYear {
           .checked_add(prev_yr.num_min());
         match maybe_overflow {
           Some(n) => Ok(n),
-          None => Err(YearError::YrToMinInstantOverflow(self.to_ce().raw())),
+          None => Err(TimeError::YrToMiOverflow(self.to_ce().raw())),
         }
       }
       None => Ok(0),
@@ -135,9 +97,9 @@ impl UnixYear {
 }
 
 impl CeYear {
-  pub fn new(n: u16) -> Result<Self> {
+  pub fn new(n: u16) -> Result<Self, TimeError> {
     if n < CE_YEAR_MIN {
-      Err(YearError::CeYearConstructorUnderflow(n))
+      Err(TimeError::CeYearConstructorUnderflow(n))
     } else {
       Ok(CeYear(n))
     }

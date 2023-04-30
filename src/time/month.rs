@@ -1,4 +1,4 @@
-use super::fact::*;
+use super::{fact::*, TimeError};
 use super::year::{Year, YearLength};
 
 use Month::*;
@@ -63,14 +63,25 @@ impl Month {
   }
 }
 
-impl TryFrom<usize> for Month {
-  type Error = String;
+impl TryFrom<u32> for Month {
+  type Error = TimeError;
 
   /// Tries to convert a usize to corresponding month, starting with zero.
-  fn try_from(value: usize) -> Result<Self, Self::Error> {
-    match MONTH_LIST.get(value) {
-      Some(m) => Ok(*m),
-      None => Err(format!("Cannot convert `{}` to Month", value)),
+  fn try_from(value: u32) -> Result<Self, Self::Error> {
+    match value {
+      0 => Ok(Jan), 
+      1 => Ok(Feb), 
+      2 => Ok(Mar), 
+      3 => Ok(Apr), 
+      4 => Ok(May), 
+      5 => Ok(Jun), 
+      6 => Ok(Jul), 
+      7 => Ok(Aug), 
+      8 => Ok(Sep), 
+      9 => Ok(Oct), 
+      10 => Ok(Nov), 
+      11 => Ok(Dec), 
+      n => Err(TimeError::MonthParseErr(value))
     }
   }
 }

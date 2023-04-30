@@ -3,7 +3,7 @@ use std::cmp::{min, max};
 use datetime::Instant;
 
 mod year;
-use year::{UnixYear, Year, YearError};
+use year::{UnixYear, Year};
 
 mod month;
 
@@ -30,9 +30,16 @@ pub enum TimeError {
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
+  NanErr(String),
+  MonthParseErr(u32),
+  NumOutOfBoundsErr(u32),
   TimeParseErr(String),
   TimeZoneParseErr(String),
-  DateParsingErr(String)
+  DateParsingErr(String),
+  UnixYearConstructorOverflow(u16),
+  CeYearConstructorUnderflow(u16),
+  YrToMiOverflow(u16),
+  DateToMiOverflow(u16, u32, u32),
 }
 
 impl From<RefinementError> for TimeError {
@@ -189,7 +196,7 @@ impl MinInstant {
 
   /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
   /// Returns an error on u32 overflow.
-  pub fn from_date(date: &Date) -> year::Result<Self> {
+  pub fn from_date(date: &Date) -> Result<Self, TimeError> {
     let yrs_min = date.get_yr().to_unix().num_min_since_epoch()?;
     let mons_min = date
       .get_mon()
@@ -206,7 +213,7 @@ impl MinInstant {
         raw: n,
         offset: ZoneOffset::utc(),
       }),
-      None => Err(YearError::DateToMinInstantOverFlow(
+      None => Err(TimeError::DateToMiOverflow(
         date.get_yr().to_ce().raw(),
         date.get_mon() as u32,
         date.day_in_mon(),
@@ -341,12 +348,26 @@ impl std::fmt::Display for MinInterval {
 
 // -------------------------------- Utilities --------------------------------
 
+/// Attempts to parse some expression as u16.
+fn parse_u16(expr: &str) -> Result<u16, TimeError> {
+  match expr.parse() {
+    Ok(n) => Ok(n),
+    _ => Err(TimeError::NanErr(expr.to_string()))
+  }
+}
+
 /// Attempts to parse some expression as u32.
 fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
-    _ => Err(TimeError::TimeParseErr(expr.to_string()))
+    _ => Err(TimeError::NanErr(expr.to_string()))
   }
+}
+
+/// Parses some dynamically-ranged u32. Note that `lb` and `ub` are inclusive.
+fn parse_u32_bound(expr: &str, lb: u32, ub: u32) -> Result<u32, TimeError> {
+  let n = parse_u32(expr)?;
+  if n >= lb && n <= ub { Ok(n) } else {Err(TimeError::NumOutOfBoundsErr(n))}
 }
 
 /// Parses some str as year, month, and day.
@@ -355,10 +376,16 @@ fn parse_ymd(expr: &str)
   let args: Vec<&str> = expr.split("/").map(|s| s.trim()).collect();
   match args[..] {
     [y, m, d] => {
-      todo!()
+      let y : CeYear = CeYear::new(parse_u16(y)?)?;
+      let m = Month::try_from(parse_u32(m)?)?;
+      let d = parse_u32_bound(d, 1, m.num_days(&y))?;
+      Ok((y, m, d))
     }
     [m, d] => {
-      todo!()
+      let y : CeYear = MinInstant::now().decomp_yr_min().0.to_ce();
+      let m = Month::try_from(parse_u32(m)?)?;
+      let d = parse_u32_bound(d, 1, m.num_days(&y))?;
+      Ok((y, m, d))
     }
     _ => todo!()
   }
