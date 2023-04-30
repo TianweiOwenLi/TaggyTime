@@ -225,7 +225,7 @@ mod test {
     };
 
     assert_eq!(
-      String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
+      String::from("2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"), 
       last_string
     );
   }
@@ -260,7 +260,7 @@ mod test {
     };
 
     assert_eq!(
-      String::from("2023/Apr/14 05:42 - 2023/Apr/14 06:42"), 
+      String::from("2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"), 
       last_string
     );
   }

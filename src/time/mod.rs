@@ -148,7 +148,7 @@ impl MinInstant {
 
     Ok(Self { raw, offset: ZoneOffset::utc()})
   }
-  
+
   /// Adjust by an input offset. This merely changes the timezone
   /// representation, and does not shift the represented time instance.
   ///
@@ -414,7 +414,7 @@ mod test {
       offset: ZoneOffset::utc(),
     };
     assert_eq!(
-      "2023/Jan/21 21:11",
+      "2023/Jan/21 21:11, tz=+00:00",
       format!("{}", Date::from_min_instant(mi))
     );
   }

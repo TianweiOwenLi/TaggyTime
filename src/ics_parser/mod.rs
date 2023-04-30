@@ -1,6 +1,6 @@
 use std::fs::File;
 
-use crate::{time::MinInstant, util_typs::RefinementError};
+use crate::{time::{MinInstant, timezone::ZoneOffset}, util_typs::RefinementError};
 
 use self::{
   ics_syntax::ICSParser,
@@ -98,7 +98,7 @@ pub fn test_parser(ics_filename: &str) -> Result<(), ICSProcessError> {
 
   let lex = IcsLexer::new(ics_filename, &content);
   let mut parser = ICSParser::from_ics_lexer(lex);
-  let parse_result = parser.parse()?;
+  let parse_result = parser.parse(ZoneOffset::new(-240).unwrap())?;
 
   let mut out_file = File::create(format!("{}.parsed", ics_filename))
     .expect("Cannot open test parser file");

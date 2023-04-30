@@ -4,7 +4,7 @@
 //! are less relevant to workload calculation.
 
 use crate::{
-  const_params::ICS_DEFAULT_TIME_IN_DAY,
+  const_params::{ICS_DEFAULT_TIME_IN_DAY, PARSE_DT_LITERAL_TZID},
   ics_parser::lexer,
   time::{date::Date, MinInstant, MinInterval, timezone::ZoneOffset},
 };
@@ -160,7 +160,8 @@ impl<'a> ICSParser<'a> {
 
   // --------------------------- Main Functionality ---------------------------
 
-  pub fn parse(&mut self) -> Result<ICalendar, ICSProcessError> {
+  pub fn parse(&mut self, calendar_tz: ZoneOffset) 
+  -> Result<ICalendar, ICSProcessError> {
     let mut vevents = Vec::<Vevent>::new();
 
     self.munch(Token::BEGIN)?;
@@ -171,7 +172,7 @@ impl<'a> ICSParser<'a> {
       self.skip_until_lambda(|c| c == &Token::BEGIN || c == &Token::END)?;
       match (self.peek_copy(0)?, self.peek_copy(1)?, self.peek_copy(2)?) {
         (Token::BEGIN, Token::COLON, Token::VEVENT) => {
-          vevents.push(self.vevent()?);
+          vevents.push(self.vevent(calendar_tz)?);
         }
         (Token::END, Token::COLON, Token::VCALENDAR) => {
           break self.end(vevents)
@@ -208,7 +209,7 @@ impl<'a> ICSParser<'a> {
   /// Parses some `VEVENT` from calendar. Note that only `DTSTART`, `DTEND`,
   /// `SUMMARY`, and `RRULE` will be processed; all other components are
   /// simply discarded.
-  pub fn vevent(&mut self) -> Result<Vevent, ICSProcessError> {
+  pub fn vevent(&mut self, tz: ZoneOffset) -> Result<Vevent, ICSProcessError> {
     self.munch(Token::BEGIN)?;
     self.munch(Token::COLON)?;
     self.munch(Token::VEVENT)?;
@@ -221,10 +222,10 @@ impl<'a> ICSParser<'a> {
     loop {
       match self.peek(0)? {
         Token::DTSTART => {
-          dtstart = Some(self.dtstart()?);
+          dtstart = Some(self.dtstart(tz)?);
         }
         Token::DTEND => {
-          dtend = Some(self.dtend()?);
+          dtend = Some(self.dtend(tz)?);
         }
         Token::SUMMARY => {
           self.munch(Token::SUMMARY)?;
@@ -232,7 +233,7 @@ impl<'a> ICSParser<'a> {
           summary = self.string_until(lexer::not_in_summary)?;
         }
         Token::RRULE => {
-          recur = Some(self.rrules()?);
+          recur = Some(self.rrules(tz)?);
         }
         Token::END => {
           self.munch(Token::END)?;
@@ -302,7 +303,11 @@ impl<'a> ICSParser<'a> {
 
         // TODO: implement zones.
 
-        return self.dt_literal(true);
+        if PARSE_DT_LITERAL_TZID {
+          todo!("Cannot yet parse TZID in dt literat")
+        } else {
+          return self.dt_literal(true, default_tz);
+        }
       }
 
       // when timezone is not specified, use default
@@ -318,7 +323,7 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Parses recurrence rules.
-  fn rrules(&mut self) -> Result<FreqAndRRules, ICSProcessError> {
+  fn rrules(&mut self, tz: ZoneOffset) -> Result<FreqAndRRules, ICSProcessError> {
     self.munch(Token::RRULE)?;
     self.munch(Token::COLON)?;
 
@@ -387,7 +392,7 @@ impl<'a> ICSParser<'a> {
         Token::UNTIL => {
           self.skip()?;
           self.munch(Token::EQ)?;
-          until = Some(self.dt_literal(false)?)
+          until = Some(self.dt_literal(false, tz)?)
         }
         t => {
           if ready_to_rrule {

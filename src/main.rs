@@ -61,7 +61,7 @@ fn load_ics_to_tenv(
   if tenv.calendars.contains(filename) {
     println!("[taggytime] Calendar {} already exists! ", filename);
   } else {
-    let events = load_file::load_schedule_ics(filename)
+    let events = load_file::load_schedule_ics(filename, tenv.tz)
       .expect("[taggytime] Failed to .ics file");
     if DBG {
       for event in &events { println!("{}", event); }

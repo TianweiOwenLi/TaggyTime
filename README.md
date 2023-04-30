@@ -31,7 +31,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * `MinInterval` bounds chk
 * Complete `todolist` skeleton.
 * Error-typ proper conversion.
-* Add timezone field to Date.
+* Implement VTimeZone.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
