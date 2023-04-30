@@ -24,11 +24,6 @@ pub struct Date {
   min: u32,
 }
 
-#[derive(Debug)]
-pub enum DateError {
-  ParsingError(String)
-}
-
 // todo check overflow bounds
 // todo fix timezone type defn
 impl Date {
@@ -192,25 +187,28 @@ impl Date {
   pub fn get_min(&self) -> u32 {
     self.min
   }
-}
 
-// parses a string for date
-impl FromStr for Date {
-  type Err = DateError;
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
-
+  /// Given a default timezone, parses a string as a date.
+  pub fn parse_from_str(s: &str, default_tz: ZoneOffset) -> Result<Self, TimeError> {
     let args: Vec<&str> = s.split(' ').map(|s| s.trim()).collect();
-    match args[..] {
-      [date, time, zone] => {
-        todo!()
+    let bad = Err(TimeError::DateParsingErr(s.to_string()));
+    if args.len() >= 3 { return bad; } // too many items
+    let tz = match args.get(2) {
+      Some(s) => s.parse()?,
+      None => default_tz,
+    };
+
+    match args[..2] {
+      [ymd_str, time] => {
+        let (yr, mon, day) = parse_ymd(ymd_str)?;
+        let (hr, min) = parse_hr_min(time)?;
+        Ok(Date { yr, mon, day, hr, min })
       }
-      [date, time] => {
-        todo!()
-      }
-      _ => Err(DateError::ParsingError(s.to_string()))
+      _ => bad
     }
   }
 }
+
 
 impl std::fmt::Display for Date {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

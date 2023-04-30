@@ -18,7 +18,7 @@ pub mod timezone;
 
 use crate::{ics_parser::ICSProcessError, util_typs::RefinementError};
 
-use self::{fact::*, timezone::ZoneOffset, year::CeYear};
+use self::{fact::*, timezone::ZoneOffset, year::CeYear, month::Month};
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
@@ -32,6 +32,7 @@ pub enum TimeError {
   RefinementErr(RefinementError),
   TimeParseErr(String),
   TimeZoneParseErr(String),
+  DateParsingErr(String)
 }
 
 impl From<RefinementError> for TimeError {
@@ -333,15 +334,29 @@ fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   }
 }
 
+/// Parses some str as year, month, and day.
+fn parse_ymd(expr: &str) 
+-> Result<(CeYear, Month, u32), TimeError> {
+  let args: Vec<&str> = expr.split("/").map(|s| s.trim()).collect();
+  match args[..] {
+    [y, m, d] => {
+      todo!()
+    }
+    [m, d] => {
+      todo!()
+    }
+  }
+}
+
 /// Given some str, parses as a pair of hour and minute. If minute does not 
-/// exist, defaults to zero.
+/// exist, defaults to zero. If fails to parse or out-of-bound, returns error.
 fn parse_hr_min(expr: &str) -> Result<(u32, u32), TimeError> {
   let (h, m) = match expr.split_once(':') {
     Some((hr_str, min_str)) => (parse_u32(hr_str)?, parse_u32(min_str)?),
     None => (parse_u32(expr)?, 0) // no min field, only hours
   };
-  
-  if h < 24 && m < 60 { 
+
+  if h < HR_IN_DAY && m < MIN_IN_HR { 
     Ok((h, m)) 
   } else { 
     Err(TimeError::TimeZoneParseErr(expr.to_string())) 
