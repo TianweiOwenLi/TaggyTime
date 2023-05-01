@@ -78,7 +78,7 @@ impl Task {
 
   /// Constructs a new instance with zero completion.
   pub fn new(due: MinInstant, length: Workload) -> Self {
-    Task { due, length, completion: Percent::zero(), cached_impact: None }
+    Task { due, length, completion: Percent(0), cached_impact: None }
   }
 
   /// Computes the remaining workload of this `Todo` item, considering its
@@ -95,10 +95,10 @@ impl Task {
   /// Sets progress to `tgt_progress`, which is automatically constrained down
   /// to <= 100.
   pub fn set_progress(&mut self, tgt_progress: Percent) {
-    self.completion = if tgt_progress <= Percent::one() {
-      tgt_progress
+    self.completion = if tgt_progress.is_overflow() {
+      Percent(100)
     } else {
-      Percent::new(100)
+      tgt_progress
     };
   }
 }

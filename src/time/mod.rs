@@ -16,7 +16,7 @@ pub mod fact;
 
 pub mod timezone;
 
-use crate::{ics_parser::ICSProcessError, util_typs::RefinementError};
+use crate::{ics_parser::ICSProcessError, util_typs::{RefinementError, PercentError}};
 
 use self::{fact::*, timezone::ZoneOffset, year::CeYear, month::Month};
 
@@ -30,7 +30,9 @@ pub enum TimeError {
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
+  PercentErr(PercentError),
   NanErr(String),
+  NafErr(String), // not a float
   MonthBoundErr(u32),
   MonthParseErr(String),
   NumOutOfBoundsErr(u32),
@@ -47,9 +49,21 @@ pub enum TimeError {
   InvalidCommand(String),
 }
 
+impl From<ICSProcessError> for TimeError {
+  fn from(value: ICSProcessError) -> Self {
+    Self::ICSErr(value)
+  }
+}
+
 impl From<RefinementError> for TimeError {
   fn from(value: RefinementError) -> Self {
     Self::RefinementErr(value)
+  }
+}
+
+impl From<PercentError> for TimeError {
+  fn from(value: PercentError) -> Self {
+    Self::PercentErr(value)
   }
 }
 
@@ -364,6 +378,14 @@ pub fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
     _ => Err(TimeError::NanErr(expr.to_string()))
+  }
+}
+
+/// Attempts to parse some expression as f32.
+pub fn parse_f32(expr: &str) -> Result<f32, TimeError> {
+  match expr.parse() {
+    Ok(n) => Ok(n),
+    _ => Err(TimeError::NafErr(expr.to_string()))
   }
 }
 

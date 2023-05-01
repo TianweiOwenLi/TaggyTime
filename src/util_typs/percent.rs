@@ -1,5 +1,9 @@
 //! a module encapsulating the `Percent` type.
 
+use std::str::FromStr;
+
+use crate::time::{parse_f32, TimeError};
+
 use super::PercentError;
 
 #[derive(Debug)]
@@ -18,14 +22,10 @@ pub enum Error {
 ///
 /// assert_eq!(p.one_minus(), q);
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Debug)]
-pub struct Percent(u16);
+#[derive(PartialEq, Eq, PartialOrd, Debug, Clone, Copy)]
+pub struct Percent(pub u16);
 
 impl Percent {
-  /// Constructs an instance of `Percent` from some `u16` argument.
-  pub fn new(n: u16) -> Self {
-    Percent(n)
-  }
 
   /// Returns a `Percent` instance that represents 100% minus oneself. If
   /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
@@ -39,16 +39,6 @@ impl Percent {
   /// Gets the raw `u16` value of self.
   pub fn raw(&self) -> u16 {
     self.0
-  }
-
-  /// A precentage representing `0%`
-  pub fn zero() -> Self {
-    Percent(0)
-  }
-
-  /// A precentage representing `100%`
-  pub fn one() -> Self {
-    Percent(100)
   }
 
   /// Checks whether this percent value is beyond `100%`.
@@ -67,6 +57,18 @@ impl TryFrom<f32> for Percent {
       return Err(PercentError::PercentF32Overflow(value));
     }
     Ok(Percent(rounded as u16))
+  }
+}
+
+impl FromStr for Percent {
+  type Err = TimeError;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let n = s.len();
+    Ok(if s.ends_with("%") {
+      Percent::try_from(0.01 * parse_f32(&s[..(n-1)])?)?
+    } else {
+      Percent::try_from(parse_f32(s)?)?
+    })
   }
 }
 
@@ -112,8 +114,8 @@ mod test {
 
   #[test]
   fn instantiate_variant() {
-    assert_eq!(Percent::new(3), Percent(3));
-    assert_eq!(Percent::new(15251), Percent(15251));
+    assert_eq!(Percent(3), Percent(3));
+    assert_eq!(Percent(15251), Percent(15251));
     assert!(Percent(15251).is_overflow());
     assert!(!Percent(3).is_overflow());
   }
@@ -128,13 +130,13 @@ mod test {
 
   #[test]
   fn errors() {
-    assert!(Percent::new(100).complement().is_ok());
-    assert!(Percent::new(101).complement().is_err());
+    assert!(Percent(100).complement().is_ok());
+    assert!(Percent(101).complement().is_err());
   }
 
   #[test]
   fn raw() {
-    assert_eq!(Percent::new(15411).raw(), 15411 as u16);
+    assert_eq!(Percent(15411).raw(), 15411 as u16);
   }
 
   #[test]
@@ -146,6 +148,6 @@ mod test {
 
   #[test]
   fn cast_f32() {
-    assert_eq!(Percent(233), Percent::try_from(233.33333).unwrap())
+    assert_eq!(Percent(23333), Percent::try_from(233.33333).unwrap())
   }
 }

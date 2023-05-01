@@ -12,7 +12,7 @@ use calendar::{NameMap, CalError, task::{Task, Workload}, cal_event::Event};
 use const_params::DBG;
 use time::{timezone::ZoneOffset, TimeError, MinInstant};
 
-use crate::{args::*, time::date::Date};
+use crate::{args::*, util_typs::percent::Percent};
 
 /// Stores global variables for such interaction.
 ///
@@ -108,16 +108,12 @@ fn handle_command_vec(
 
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
-      match ics_parser::test_lexer(ics_filename) {
-        Ok(()) => Ok(()),
-        Err(e) => Err(TimeError::ICSErr(e)),
-      }
+      ics_parser::test_lexer(ics_filename)?;
+      Ok(())
     }
     ["test", "parser", ics_filename] => {
-      match ics_parser::test_parser(ics_filename) {
-        Ok(()) => Ok(()),
-        Err(e) => Err(TimeError::ICSErr(e)),
-      }
+      ics_parser::test_parser(ics_filename)?;
+      Ok(())
     }
     ["now"] => {
       let mut mi = time::MinInstant::now();
@@ -164,6 +160,18 @@ fn handle_command_vec(
       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
       let todo = Task::new(due, load);
       load_todo_to_tenv(tenv, name, todo);
+      Ok(())
+    }
+    ["set-progress", name, progress] => {
+      let task_opt = tenv.todolist.get_mut(name);
+      match task_opt {
+        Some(task) => {
+          let prog: Percent = progress.parse()?;
+          task.set_progress(prog);
+          println!("[taggytime] Progress set to {}", prog);
+        }
+        None => println!("[taggytime] Task `{}` does not exist", name)
+      }
       Ok(())
     }
     ["impact", name] => {

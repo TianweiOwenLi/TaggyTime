@@ -5,7 +5,6 @@ use std::fmt::Display;
 use super::{RefinementError, RefineResult};
 
 pub const I64_MAX: i64 = i64::MAX;
-pub const I64_MIN: i64 = i64::MIN;
 
 /// Ranged `i64` type, behaves exactly like `i64`, except that elements out
 /// of range can never be used to instantiate.
@@ -68,7 +67,6 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
 }
 
 pub type LowerBoundI64<const MIN: i64> = RangedI64<MIN, I64_MAX>;
-pub type UpperBoundI64<const MAX: i64> = RangedI64<I64_MIN, MAX>;
 
 impl<const MIN: i64, const MAX: i64> std::fmt::Display for RangedI64<MIN, MAX> {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

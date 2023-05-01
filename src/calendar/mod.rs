@@ -44,9 +44,14 @@ impl<T> NameMap<T> {
     }
   }
 
-  /// Gets some item.
+  /// Gets immutable ref.
   pub fn get_ref(&self, key: &str) -> Option<&T> {
     self.contents.get(key)
+  }
+
+  /// Gets mutable ref.
+  pub fn get_mut(&mut self, key: &str) -> Option<&mut T> {
+    self.contents.get_mut(key)
   }
 
   /// Removes some item.
