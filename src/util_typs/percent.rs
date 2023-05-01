@@ -59,8 +59,10 @@ impl Percent {
 
 impl TryFrom<f32> for Percent {
   type Error = PercentError;
+
+  /// Converts some float-point to `Percent`, where 1.00 stands for 100%.
   fn try_from(value: f32) -> Result<Self, Self::Error> {
-    let rounded = value.round();
+    let rounded = (100.0 * value).round();
     if rounded < 0.0 || rounded > (u16::MAX as f32) {
       return Err(PercentError::PercentF32Overflow(value));
     }

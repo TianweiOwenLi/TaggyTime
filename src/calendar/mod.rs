@@ -73,7 +73,6 @@ impl NameMap<Vec<Event>> {
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);
     let available_time = total_time - occupied_time;
-    println!("{} {} {}", total_time, occupied_time, available_time);
     let needed_time = todo.get_remaining_workload().num_min();
 
     Percent::try_from((needed_time as f32) / (available_time as f32))
