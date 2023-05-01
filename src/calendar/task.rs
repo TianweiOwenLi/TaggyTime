@@ -3,8 +3,6 @@
 use std::str::FromStr;
 
 use crate::const_params::MAX_WORKLOAD;
-use crate::time::date::Date;
-use crate::time::timezone::ZoneOffset;
 use crate::util_typs::percent::Percent;
 use crate::time::*;
 
@@ -73,18 +71,18 @@ impl FromStr for Workload {
 ///
 /// [todo] Implement recurrences for todo
 #[derive(Debug)]
-pub struct Todo {
+pub struct Task {
   pub due: MinInstant,
   pub length: Workload,
   pub completion: Percent,
   cached_impact: Option<Percent>,
 }
 
-impl Todo {
+impl Task {
 
   /// Constructs a new instance with zero completion.
   pub fn new(due: MinInstant, length: Workload) -> Self {
-    Todo { due, length, completion: Percent::zero(), cached_impact: None }
+    Task { due, length, completion: Percent::zero(), cached_impact: None }
   }
 
   /// Computes the remaining workload of this `Todo` item, considering its
@@ -109,7 +107,7 @@ impl Todo {
   }
 }
 
-impl std::fmt::Display for Todo {
+impl std::fmt::Display for Task {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
       f, 

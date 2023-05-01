@@ -4,7 +4,6 @@ use super::PercentError;
 
 #[derive(Debug)]
 pub enum Error {
-  CreationOutOfBound(u16),
   ComplementOutOfBound(u16),
   ArithmeticOutOfBound(u16, String, u16),
 }
@@ -90,12 +89,6 @@ impl std::fmt::Display for Percent {
 impl std::fmt::Display for Error {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::CreationOutOfBound(n) => write!(
-        f,
-        "Cannot create a \
-          percentage greater than 100%: value used is {}.",
-        n
-      ),
       Self::ComplementOutOfBound(n) => write!(
         f,
         "Cannot take the 

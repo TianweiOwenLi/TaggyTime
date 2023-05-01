@@ -117,8 +117,8 @@ impl Ord for MinInstant {
 /// by `MinInstant`. This interval must be non-negative.
 #[derive(Clone, Copy)]
 pub struct MinInterval {
-  start: MinInstant,
-  end: MinInstant,
+  pub start: MinInstant,
+  pub end: MinInstant,
 }
 
 // TODO still contains magic number
@@ -304,13 +304,13 @@ impl MinInterval {
     let mut new_miv = self.clone();
     match until_opt {
       Some(until) => {
-        while !dp.check(Date::from_min_instant(new_miv.get_start())) {
+        while !dp.check(Date::from_min_instant(new_miv.start)) {
           new_miv = new_miv.advance(MIN_IN_DAY)?;
           if new_miv.start > until { return Ok(None); }
         }
       }
       None => {
-        while !dp.check(Date::from_min_instant(new_miv.get_start())) {
+        while !dp.check(Date::from_min_instant(new_miv.start)) {
           new_miv = new_miv.advance(MIN_IN_DAY)?;
         }
       }
@@ -328,14 +328,6 @@ impl MinInterval {
     until_opt: Option<MinInstant>,
   ) -> Option<MinInterval> {
     self.advance_until(dp, until_opt).unwrap()
-  }
-
-  pub fn get_start(&self) -> MinInstant {
-    self.start
-  }
-
-  pub fn get_end(&self) -> MinInstant {
-    self.end
   }
 
   pub fn num_min(&self) -> u32 {

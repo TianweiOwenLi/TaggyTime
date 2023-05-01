@@ -1,7 +1,7 @@
 //! Structure that represents calendar days.
 
 use crate::const_params::HANDLE_WKST;
-use crate::ics_parser::ics_syntax::{Freq, FreqAndRRules, RRuleToks};
+use crate::ics_parser::ics_syntax::{RRuleToks};
 use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
 
@@ -280,31 +280,6 @@ impl std::ops::Mul for DateProperty {
       }),
       dbg_info: format!("{} and {}", self.dbg_info, rhs.dbg_info),
     }
-  }
-}
-
-/// Strips the `BYDAY` property, ie. which days of a week, from some
-/// `FreqAndRules` that is of variant `Freq::Weekly`.
-///
-/// [todo] Needs to be reimplemented sometime.
-///
-/// [todo] Does not yet faithfully show the rrule of weekly-no-pattern event.
-pub fn parse_dateproperty_week(fr: &FreqAndRRules) -> DateProperty {
-  let mut weekday_vec = Vec::<Weekday>::new();
-
-  match fr.freq {
-    Freq::Weekly => {
-      'iter_recur_rules: for item in &fr.content {
-        if let Token::BYDAY = &item.tag {
-          for s in &item.content {
-            weekday_vec.push(Weekday::from(s.as_str()));
-          }
-          break 'iter_recur_rules;
-        }
-      }
-      return DateProperty::from(weekday_vec);
-    }
-    _ => unimplemented!(),
   }
 }
 

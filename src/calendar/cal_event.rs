@@ -104,8 +104,8 @@ impl Recurrence {
     let mut ret: u32 = 0;
     'a : for rec_miv in self {
       // skip the non-interacting min-intervals.
-      if rec_miv.get_end() <= miv.get_start() { continue 'a; }
-      if rec_miv.get_start() >= miv.get_end() { break 'a; }
+      if rec_miv.end <= miv.start { continue 'a; }
+      if rec_miv.start >= miv.end { break 'a; }
 
       ret = ret.checked_add(rec_miv.overlap_duration(miv))
         .expect("Overflowed while computing recurrence and miv overlap");

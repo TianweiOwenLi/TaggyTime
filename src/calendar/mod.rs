@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use crate::{time::MinInterval, util_typs::percent::Percent};
 
-use self::{cal_event::Event, task::Todo};
+use self::{cal_event::Event, task::Task};
 
 pub mod cal_event;
 pub mod task;
@@ -62,7 +62,7 @@ impl NameMap<Vec<Event>> {
     ret
   }
 
-  pub fn impact(&self, todo: Todo) -> Percent {
+  pub fn impact(&self, todo: Task) -> Percent {
     let miv = MinInterval::from_now_till(todo.due);
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);

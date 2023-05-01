@@ -8,7 +8,7 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{NameMap, CalError, task::{Todo, Workload}, cal_event::Event};
+use calendar::{NameMap, CalError, task::{Task, Workload}, cal_event::Event};
 use const_params::DBG;
 use time::{timezone::ZoneOffset, TimeError, MinInstant};
 
@@ -21,7 +21,7 @@ struct TaggyEnv {
   tz: ZoneOffset,
   calendars: NameMap<Vec<Event>>,
   prompt_stack: Vec<Prompt>,
-  todolist: NameMap<Todo>,
+  todolist: NameMap<Task>,
 }
 
 /// A user-promptable lambda.
@@ -78,7 +78,7 @@ fn load_ics_to_tenv(
   }
 }
 
-fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Todo) {
+fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) {
   if tenv.todolist.contains(name) {
     println!("[taggytime] Task `{}` already exists! ", name);
   } else {
@@ -166,7 +166,7 @@ fn handle_command_vec(
     ["add-todo", name, load, ..] => {
       let load: Workload = load.parse()?;
       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
-      let todo = Todo::new(due, load);
+      let todo = Task::new(due, load);
       load_todo_to_tenv(tenv, name, todo);
       Ok(())
     }
