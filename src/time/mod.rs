@@ -31,7 +31,8 @@ pub enum TimeError {
   MinInstantConstructionUnderflow(u32),
   RefinementErr(RefinementError),
   NanErr(String),
-  MonthParseErr(u32),
+  MonthBoundErr(u32),
+  MonthParseErr(String),
   NumOutOfBoundsErr(u32),
   TimeParseErr(String),
   TimeZoneParseErr(String),
@@ -379,13 +380,13 @@ fn parse_ymd(expr: &str)
   match args[..] {
     [y, m, d] => {
       let y : CeYear = CeYear::new(parse_u16(y)?)?;
-      let m = Month::try_from(parse_u32(m)?)?;
+      let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
     }
     [m, d] => {
       let y : CeYear = MinInstant::now().decomp_yr_min().0.to_ce();
-      let m = Month::try_from(parse_u32(m)?)?;
+      let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
     }

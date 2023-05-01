@@ -1,4 +1,6 @@
-use super::{fact::*, TimeError};
+use std::str::FromStr;
+
+use super::{fact::*, TimeError, parse_u32, parse_u32_bound};
 use super::year::{Year, YearLength};
 
 use Month::*;
@@ -81,8 +83,20 @@ impl TryFrom<u32> for Month {
       9 => Ok(Oct), 
       10 => Ok(Nov), 
       11 => Ok(Dec), 
-      n => Err(TimeError::MonthParseErr(value))
+      _ => Err(TimeError::MonthBoundErr(value))
     }
+  }
+}
+
+impl FromStr for Month {
+  type Err = TimeError;
+  fn from_str(s: &str) -> Result<Self, Self::Err> {
+    let n = parse_u32_bound(s, 1, u32::MAX);
+    match n {
+      Ok(n) => Ok(Month::try_from(n - 1)?),
+      Err(_) => Err(TimeError::MonthParseErr(s.to_string()))
+    }
+
   }
 }
 

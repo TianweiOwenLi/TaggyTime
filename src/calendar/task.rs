@@ -55,15 +55,11 @@ impl FromStr for Workload {
 ///
 /// This struct contains the following fields:
 ///
-/// `name`: a `String` representing the name of the task.
-///
 /// `due`: the due date of such a task, represented as a `Recurrence`.
 ///
 /// `length`: number of minutes needed to complete such a task from scratch.
 ///
 /// `completion`: the progress of such a task, in percentage.
-///
-/// `repeat`: the recurrence pattern of this task.
 ///
 /// `cached_impact`: the ratio of completion time, relative to available time
 /// before deadline. Can only be updated with an external schedule. This shall

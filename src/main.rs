@@ -122,11 +122,7 @@ fn handle_command_vec(
     ["now"] => {
       let mut mi = time::MinInstant::now();
       mi.adjust_to_zone(tenv.tz);
-      println!(
-        "The time now is: {}, offset={}",
-        Date::from_min_instant(mi),
-        mi.offset,
-      );
+      println!("[taggytime] now is: {}",mi.as_date_string());
       Ok(())
     }
     ["set", "tz", s] => {
@@ -168,6 +164,16 @@ fn handle_command_vec(
       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
       let todo = Task::new(due, load);
       load_todo_to_tenv(tenv, name, todo);
+      Ok(())
+    }
+    ["impact", name] => {
+      let task_opt = tenv.todolist.get_ref(name);
+      match task_opt {
+        Some(task) => {
+          println!("[taggytime] Impact = {}", tenv.calendars.impact(task))
+        }
+        None => println!("[taggytime] Task `{}` does not exist", name)
+      }
       Ok(())
     }
     _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd)))

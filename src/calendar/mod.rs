@@ -22,17 +22,17 @@ impl<T> NameMap<T> {
     NameMap { contents: HashMap::<String, T>::new() }
   }
 
-  /// Checks whether a particular `.ics` file has already been loaded. 
+  /// Checks whether some item has already been loaded. 
   pub fn contains(&self, key: &str) -> bool {
     self.contents.contains_key(key)
   }
 
-  /// Inserts some `.ics` file WITHOUT checking pre-existence. 
+  /// Inserts WITHOUT checking pre-existence. 
   pub fn force_insert(&mut self, key: &str, events: T) {
     self.contents.insert(key.to_string(), events);
   }
 
-  /// Renames some loaded `.ics` file.
+  /// Renames some item. 
   pub fn rename<'a>(&mut self, old_key: &'a str, new_key: &str) 
   -> Result<(), CalError<'a>> {
     match self.contents.remove(old_key) {
@@ -44,7 +44,12 @@ impl<T> NameMap<T> {
     }
   }
 
-  /// Removes some calendar.
+  /// Gets some item.
+  pub fn get_ref(&self, key: &str) -> Option<&T> {
+    self.contents.get(key)
+  }
+
+  /// Removes some item.
   pub fn remove(&mut self, key: &str) {
     self.contents.remove(key);
   }
@@ -62,11 +67,13 @@ impl NameMap<Vec<Event>> {
     ret
   }
 
-  pub fn impact(&self, todo: Task) -> Percent {
+  /// Givent the collection of events, compute the relative impact of a task.
+  pub fn impact(&self, todo: &Task) -> Percent {
     let miv = MinInterval::from_now_till(todo.due);
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);
     let available_time = total_time - occupied_time;
+    println!("{} {} {}", total_time, occupied_time, available_time);
     let needed_time = todo.get_remaining_workload().num_min();
 
     Percent::try_from((needed_time as f32) / (available_time as f32))
