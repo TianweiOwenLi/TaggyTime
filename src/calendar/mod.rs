@@ -8,8 +8,8 @@ pub mod cal_event;
 pub mod task;
 
 #[derive(Debug)]
-pub enum CalError<'a>{
-  RenameNonexist(&'a str),
+pub enum CalError{
+  RenameNonexist(String),
 }
 
 /// A wrapper around `HashMap<String, _>`.
@@ -34,13 +34,13 @@ impl<T> NameMap<T> {
 
   /// Renames some item. 
   pub fn rename<'a>(&mut self, old_key: &'a str, new_key: &str) 
-  -> Result<(), CalError<'a>> {
+  -> Result<(), CalError> {
     match self.contents.remove(old_key) {
       Some(v) => {
         self.contents.insert(new_key.to_string(), v);
         Ok(())
       }
-      None => Err(CalError::RenameNonexist(old_key))
+      None => Err(CalError::RenameNonexist(new_key.to_string()))
     }
   }
 

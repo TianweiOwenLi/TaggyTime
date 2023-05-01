@@ -16,7 +16,7 @@ pub mod fact;
 
 pub mod timezone;
 
-use crate::{ics_parser::ICSProcessError, util_typs::{RefinementError, PercentError}};
+use crate::{ics_parser::ICSProcessError, util_typs::{RefinementError, PercentError}, calendar::CalError};
 
 use self::{fact::*, timezone::ZoneOffset, year::CeYear, month::Month};
 
@@ -46,12 +46,19 @@ pub enum TimeError {
   WorkloadParseErr(String, String, String),
   WorkloadOverflowErr(u32),
   ICSErr(ICSProcessError),
+  CalErr(CalError),
   InvalidCommand(String),
 }
 
 impl From<ICSProcessError> for TimeError {
   fn from(value: ICSProcessError) -> Self {
     Self::ICSErr(value)
+  }
+}
+
+impl From<CalError> for TimeError {
+  fn from(value: CalError) -> Self {
+    Self::CalErr(value)
   }
 }
 

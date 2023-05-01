@@ -8,7 +8,7 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{NameMap, CalError, task::{Task, Workload}, cal_event::Event};
+use calendar::{NameMap, task::{Task, Workload}, cal_event::Event};
 use const_params::DBG;
 use time::{timezone::ZoneOffset, TimeError, MinInstant};
 
@@ -143,12 +143,7 @@ fn handle_command_vec(
       Ok(())
     }
     ["rename", old_name, new_name] => {
-      match tenv.calendars.rename(old_name, new_name) {
-        Ok(()) => {}
-        Err(CalError::RenameNonexist(_)) => {
-          println!("[taggytime] Calendar `{}` does not exist", old_name);
-        }
-      }
+      tenv.calendars.rename(old_name, new_name)?;
       Ok(())
     }
     ["remove", name] => {
