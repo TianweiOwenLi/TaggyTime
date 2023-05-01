@@ -9,7 +9,9 @@ pub mod task;
 
 #[derive(Debug)]
 pub enum CalError{
-  RenameNonexist(String),
+  KeyNotFound(String),
+  DoubleInsert(String),
+  NewnameUnavailable(String),
 }
 
 /// A wrapper around `HashMap<String, _>`.
@@ -27,9 +29,18 @@ impl<T> NameMap<T> {
     self.contents.contains_key(key)
   }
 
+  pub fn try_insert(&mut self, key: &str, val: T) -> Result<(), CalError> {
+    if self.contains(key) {
+      Err(CalError::DoubleInsert(key.to_string()))
+    } else {
+      self.contents.insert(key.to_string(), val);
+      Ok(())
+    }
+  }
+
   /// Inserts WITHOUT checking pre-existence. 
-  pub fn force_insert(&mut self, key: &str, events: T) {
-    self.contents.insert(key.to_string(), events);
+  pub fn force_insert(&mut self, key: &str, val: T) {
+    self.contents.insert(key.to_string(), val);
   }
 
   /// Renames some item. 
@@ -37,10 +48,13 @@ impl<T> NameMap<T> {
   -> Result<(), CalError> {
     match self.contents.remove(old_key) {
       Some(v) => {
+        if self.contains(new_key) {
+          return Err(CalError::NewnameUnavailable(new_key.to_string()));
+        }
         self.contents.insert(new_key.to_string(), v);
         Ok(())
       }
-      None => Err(CalError::RenameNonexist(new_key.to_string()))
+      None => Err(CalError::KeyNotFound(new_key.to_string()))
     }
   }
 
