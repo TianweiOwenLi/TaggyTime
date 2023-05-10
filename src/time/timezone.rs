@@ -15,7 +15,7 @@ impl ZoneOffset {
   /// Creates a new ZoneOffset object according to the input offset in minutes.
   /// Only allows an offset between -12:00 and +14:00 inclusive (which is
   /// between -720 and +840 minutes).
-  pub fn new(n: i64) -> Result<Self, String> {
+  pub fn new(n: i64) -> Result<Self, TimeError> {
     // Valid UTC offsets must be between -12:00 and +14:00, inclusive.
     if n < UTC_LB || n > UTC_UB {
       Err(

@@ -53,6 +53,8 @@ fn store_env() -> Result<(), String> {
   Ok(())
 }
 
+/// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is 
+/// provided, the loaded calendar will be renamed accordingly. 
 fn load_ics_to_tenv(
   tenv: &mut TaggyEnv, 
   filename: &str, 

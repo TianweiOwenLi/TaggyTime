@@ -29,6 +29,8 @@ pub enum TimeError {
   MinInstantAdvanceOverflow(u32, ZoneOffset, u32),
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
+  ZoneOffsetConstructionUnderflow(i64),
+  ZoneOffsetConstructionOverflow(i64),
   RefinementErr(RefinementError),
   PercentErr(PercentError),
   NanErr(String),
