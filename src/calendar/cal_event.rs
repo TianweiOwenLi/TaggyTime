@@ -6,7 +6,7 @@ use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub type OneOrMore = LowerBoundI64<1>;
 
@@ -219,7 +219,7 @@ mod test {
     let iv = MinInterval::new(mi, mi2);
 
     use crate::time::week::Weekday;
-    let weeks = vec![Weekday::MO,Weekday::WE,Weekday::FR];
+    let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
     let dp = DateProperty::or_vec(weeks);
 
     let p = Pattern::Many(

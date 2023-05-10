@@ -2,7 +2,7 @@ use super::{year::*, Date};
 
 use crate::time::DatePropertyElt;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use Weekday::*;
 const WEEKDAY_LIST: [Weekday; 7] = [MO, TU, WE, TH, FR, SA, SU];

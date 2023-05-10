@@ -7,9 +7,7 @@ use crate::time::{month::Month, week::Weekday};
 
 use crate::time::*;
 
-use std::collections::HashSet;
 use std::fmt::Debug;
-use std::hash::Hash;
 
 /// A struct that represents some time instance in human-readable form. Namely,
 /// it has fields like year, month, day, hour, and minute.
@@ -203,17 +201,13 @@ impl std::fmt::Display for Date {
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum DatePropertyElt {
-  Wd(Weekday)
+  Wd(Weekday),
 }
 
 impl DatePropertyElt {
-  pub fn from_vec<T: Into<DatePropertyElt>>(v: Vec<T>) -> Vec<Self> {
-    v.into_iter().map(|x| x.into()).collect()
-  }
-
   pub fn chk(&self, d: Date) -> bool {
     match self {
-      Self::Wd(wd) => wd == &Weekday::from(d)
+      Self::Wd(wd) => wd == &Weekday::from(d),
     }
   }
 }
@@ -237,9 +231,11 @@ impl DateProperty {
       Or(v) | And(v) => {
         let shortcut_value = if let Or(..) = self { true } else { false };
         for item in v {
-          if item.check(d) == shortcut_value { return shortcut_value; }
+          if item.check(d) == shortcut_value {
+            return shortcut_value;
+          }
         }
-        ! shortcut_value
+        !shortcut_value
       }
     }
   }
@@ -292,18 +288,6 @@ impl From<Vec<RRuleToks>> for DateProperty {
     dp
   }
 }
-
-// impl std::ops::Mul for DateProperty {
-//   type Output = Self;
-//   fn mul(self, rhs: Self) -> Self::Output {
-//     DateProperty {
-//       filter_fn: Rc::new(move |x: Date| {
-//         (self.filter_fn)(x) && (rhs.filter_fn)(x)
-//       }),
-//       dbg_info: format!("{} and {}", self.dbg_info, rhs.dbg_info),
-//     }
-//   }
-// }
 
 #[allow(dead_code, unused_imports)]
 mod test {

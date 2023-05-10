@@ -24,7 +24,7 @@ use crate::{
 
 use self::{fact::*, month::Month, timezone::ZoneOffset, year::CeYear};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;

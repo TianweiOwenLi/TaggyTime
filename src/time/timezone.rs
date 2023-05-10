@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use super::{fact::MIN_IN_HR, parse_hr_min, TimeError};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub const UTC_LB: i64 = -720;
 pub const UTC_UB: i64 = 840;

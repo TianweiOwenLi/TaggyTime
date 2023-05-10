@@ -3,7 +3,7 @@
 use std::fmt::Display;
 
 use super::{RefineResult, RefinementError};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub const I64_MAX: i64 = i64::MAX;
 
@@ -18,7 +18,9 @@ pub const I64_MAX: i64 = i64::MAX;
 /// assert!(m.is_ok());
 /// assert!(n.is_err());
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Serialize, Deserialize)]
+#[derive(
+  PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Serialize, Deserialize,
+)]
 pub struct RangedI64<const MIN: i64, const MAX: i64>(i64);
 
 impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {

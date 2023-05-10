@@ -4,7 +4,7 @@ use crate::{time::MinInterval, util_typs::percent::Percent};
 
 use self::{cal_event::Event, task::Task};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 pub mod cal_event;
 pub mod task;

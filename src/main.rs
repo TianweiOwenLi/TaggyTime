@@ -8,7 +8,7 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 use calendar::{
   cal_event::Event,
@@ -27,24 +27,7 @@ use crate::{args::*, util_typs::percent::Percent};
 struct TaggyEnv {
   tz: ZoneOffset,
   calendars: NameMap<Vec<Event>>,
-  // prompt_stack: Vec<Prompt>,
   todolist: NameMap<Task>,
-}
-
-/// A user-promptable lambda.
-struct Prompt {
-  pub description: String,
-  pub lambda: Box<dyn FnOnce()>,
-}
-
-impl Prompt {
-  /// Given a user response of yes or no, consumes the prompt; executes it if
-  /// user choosed yes.
-  fn consume(self, usr_choice: bool) {
-    if usr_choice {
-      (self.lambda)()
-    }
-  }
 }
 
 /// Loads the interactive environment.
@@ -114,16 +97,6 @@ fn handle_command_vec(
   tenv: &mut TaggyEnv,
 ) -> Result<(), TimeError> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
-
-  // if let Some(head) = tenv.prompt_stack.pop() {
-  //   println!("[taggytime] {} (y/n)", head.description);
-  //   match cmd[..] {
-  //     ["y"] => head.consume(true),
-  //     ["n"] => head.consume(false),
-  //     _ => println!("[taggytime] Please answer prompt with (y/n)."),
-  //   }
-  //   return Ok(());
-  // }
 
   match cmd[..] {
     ["test", "lexer", ics_filename] => {

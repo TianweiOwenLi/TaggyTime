@@ -6,7 +6,7 @@ use crate::const_params::MAX_WORKLOAD;
 use crate::time::*;
 use crate::util_typs::percent::Percent;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// A wrapper around `u32`, which represents the number of minutes needed to
 /// complete some task. Can only be from 0 to 60,000 (inclusive).
