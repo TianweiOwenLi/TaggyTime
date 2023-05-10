@@ -199,53 +199,60 @@ impl std::fmt::Display for Date {
   }
 }
 
-use std::rc::Rc;
-pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
+// pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum DatePropertyElt {
+  Wd(Weekday)
+}
+
+impl DatePropertyElt {
+  pub fn from_vec<T: Into<DatePropertyElt>>(v: Vec<T>) -> Vec<Self> {
+    v.into_iter().map(|x| x.into()).collect()
+  }
+
+  pub fn chk(&self, d: Date) -> bool {
+    match self {
+      Self::Wd(wd) => wd == &Weekday::from(d)
+    }
+  }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DateProperty {
   Always,
   Never,
-  OneOf(HashSet<Box<dyn DatePropertyElt>>),
-}
-
-impl Clone for DateProperty {
-  /// Makes a clone while shallow-copying the filter function.
-  fn clone(&self) -> Self {
-    DateProperty {
-      filter_fn: Rc::clone(&self.filter_fn),
-      dbg_info: self.dbg_info.clone(),
-    }
-  }
+  Atomic(DatePropertyElt),
+  Or(Vec<DateProperty>),
+  And(Vec<DateProperty>),
 }
 
 impl DateProperty {
   pub fn check(&self, d: Date) -> bool {
-    (self.filter_fn)(d)
-  }
-
-  pub fn always() -> Self {
-    DateProperty {
-      filter_fn: Rc::new(|_| true),
-      dbg_info: String::from("[true]"),
+    use DateProperty::*;
+    match self {
+      Always => true,
+      Never => false,
+      Atomic(dpe) => dpe.chk(d),
+      Or(v) | And(v) => {
+        let shortcut_value = if let Or(..) = self { true } else { false };
+        for item in v {
+          if item.check(d) == shortcut_value { return shortcut_value; }
+        }
+        ! shortcut_value
+      }
     }
   }
-}
 
-impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
-  fn from(value: Vec<T>) -> Self {
-    let dbg_info = format!("{:?}", &value);
-    let property_set = HashSet::<T>::from_iter(value.into_iter());
-    DateProperty {
-      filter_fn: Rc::new(move |d: Date| property_set.contains(&T::from(d))),
-      dbg_info,
-    }
+  pub fn or_vec<T: Into<DatePropertyElt>>(v: Vec<T>) -> Self {
+    Self::Or(v.into_iter().map(|x| Self::Atomic(x.into())).collect())
   }
 }
 
 impl From<Vec<RRuleToks>> for DateProperty {
   /// [todo] consider restriction constraints as per RFC 5545.
   fn from(value: Vec<RRuleToks>) -> Self {
-    let mut dp = DateProperty::always();
+    let mut dp = DateProperty::Always;
     let mut dp_is_always = true;
 
     for rrt in value {
@@ -258,9 +265,9 @@ impl From<Vec<RRuleToks>> for DateProperty {
             .collect();
           dp = if dp_is_always {
             dp_is_always = false;
-            DateProperty::from(v)
+            DateProperty::or_vec(v)
           } else {
-            dp * DateProperty::from(v)
+            todo!("Did not yet impl anything other than BYDAY")
           };
         }
         Token::BYHOUR
@@ -286,23 +293,17 @@ impl From<Vec<RRuleToks>> for DateProperty {
   }
 }
 
-impl std::fmt::Debug for DateProperty {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}", self.dbg_info)
-  }
-}
-
-impl std::ops::Mul for DateProperty {
-  type Output = Self;
-  fn mul(self, rhs: Self) -> Self::Output {
-    DateProperty {
-      filter_fn: Rc::new(move |x: Date| {
-        (self.filter_fn)(x) && (rhs.filter_fn)(x)
-      }),
-      dbg_info: format!("{} and {}", self.dbg_info, rhs.dbg_info),
-    }
-  }
-}
+// impl std::ops::Mul for DateProperty {
+//   type Output = Self;
+//   fn mul(self, rhs: Self) -> Self::Output {
+//     DateProperty {
+//       filter_fn: Rc::new(move |x: Date| {
+//         (self.filter_fn)(x) && (rhs.filter_fn)(x)
+//       }),
+//       dbg_info: format!("{} and {}", self.dbg_info, rhs.dbg_info),
+//     }
+//   }
+// }
 
 #[allow(dead_code, unused_imports)]
 mod test {

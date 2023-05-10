@@ -2,10 +2,12 @@ use super::{year::*, Date};
 
 use crate::time::DatePropertyElt;
 
+use serde::{Serialize, Deserialize};
+
 use Weekday::*;
 const WEEKDAY_LIST: [Weekday; 7] = [MO, TU, WE, TH, FR, SA, SU];
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
 pub enum Weekday {
   MO,
   TU,
@@ -65,7 +67,11 @@ impl From<Date> for Weekday {
   }
 }
 
-impl DatePropertyElt for Weekday {}
+impl Into<DatePropertyElt> for Weekday {
+  fn into(self) -> DatePropertyElt {
+    DatePropertyElt::Wd(self)
+  }
+}
 
 #[allow(dead_code, unused_imports)]
 mod test {

@@ -208,6 +208,8 @@ impl std::fmt::Display for Term {
 
 #[allow(dead_code, unused_imports)]
 mod test {
+  use crate::time::date::DatePropertyElt;
+
   use super::*;
 
   #[test]
@@ -217,8 +219,8 @@ mod test {
     let iv = MinInterval::new(mi, mi2);
 
     use crate::time::week::Weekday;
-    let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
-    let dp = DateProperty::from(weeks);
+    let weeks = vec![Weekday::MO,Weekday::WE,Weekday::FR];
+    let dp = DateProperty::or_vec(weeks);
 
     let p = Pattern::Many(
       dp,
@@ -251,9 +253,10 @@ mod test {
     let mi2 = mi.advance(60).unwrap();
     let iv = MinInterval::new(mi, mi2);
 
-    use crate::time::week::Weekday;
-    let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
-    let dp = DateProperty::from(weeks);
+    let dp = {
+      use crate::time::week::Weekday::*;
+      DateProperty::or_vec(vec![MO, WE, FR])
+    };
 
     let p = Pattern::Many(
       dp,
@@ -297,7 +300,7 @@ mod test {
     let cls = MinInterval::new(cls_start, cls_end); // 2023/01/18 10:00-12:00
     let dp = {
       use crate::time::week::Weekday::*;
-      DateProperty::from(vec![MO, WE, FR])
+      DateProperty::or_vec(vec![MO, WE, FR])
     };
     let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Never);
     let cls_rec = Recurrence::new(cls, p);
