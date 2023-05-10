@@ -6,6 +6,7 @@ use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
+use serde::{Serialize, Deserialize};
 
 pub type OneOrMore = LowerBoundI64<1>;
 
@@ -13,7 +14,7 @@ pub type OneOrMore = LowerBoundI64<1>;
 pub type Interval = OneOrMore;
 
 /// Recurrence pattern, ie. biweekly on TU, TH
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub enum Pattern {
   Once,
   Many(DateProperty, Interval, Term),
@@ -44,7 +45,7 @@ impl TryFrom<Option<FreqAndRRules>> for Pattern {
 
 /// Recurrence event termination condition, which is either a number of
 /// occurrences, a "finished" time instance, or never.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum Term {
   Count(OneOrMore),
   Until(MinInstant),
@@ -54,7 +55,7 @@ pub enum Term {
 /// Describes when shall some recurring events happen. This can correspond
 /// to some mapping from `MinInstant` to `bool`, indicating precisely if a
 /// recurring event is happening.
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Recurrence {
   /// Actual time interval of event, ie. 08:30 - 09:50
   event_miv: MinInterval,
@@ -161,6 +162,7 @@ impl IntoIterator for Recurrence {
 }
 
 /// A struct that pairs the summary of some event with its `Recurrence`.
+#[derive(Serialize, Deserialize)]
 pub struct Event(pub String, pub Recurrence);
 
 impl TryFrom<Vevent> for Event {

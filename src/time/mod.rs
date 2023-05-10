@@ -24,6 +24,8 @@ use crate::{
 
 use self::{fact::*, month::Month, timezone::ZoneOffset, year::CeYear};
 
+use serde::{Serialize, Deserialize};
+
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
 const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
@@ -96,7 +98,7 @@ pub fn u32_safe_sum(numbers: &[u32]) -> Option<u32> {
 /// minutes since Unix Epoch. This can be casted to a different timezone
 /// by incrementing both raw and offset at the same time, without changing
 /// the actual time instant being represented.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct MinInstant {
   pub raw: u32,
   pub offset: ZoneOffset,
@@ -143,7 +145,7 @@ impl Ord for MinInstant {
 
 /// An [inslusive, exclusive) time interval, with its `start` and `end` marked
 /// by `MinInstant`. This interval must be non-negative.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct MinInterval {
   pub start: MinInstant,
   pub end: MinInstant,

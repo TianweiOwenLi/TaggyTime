@@ -6,9 +6,11 @@ use crate::const_params::MAX_WORKLOAD;
 use crate::time::*;
 use crate::util_typs::percent::Percent;
 
+use serde::{Serialize, Deserialize};
+
 /// A wrapper around `u32`, which represents the number of minutes needed to
 /// complete some task. Can only be from 0 to 60,000 (inclusive).
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Workload(u32);
 
 impl Workload {
@@ -66,7 +68,7 @@ impl FromStr for Workload {
 /// be cached, and only refreshed if needed.
 ///
 /// [todo] Implement recurrences for todo
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Task {
   pub due: MinInstant,
   pub length: Workload,

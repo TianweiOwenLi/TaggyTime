@@ -202,9 +202,10 @@ impl std::fmt::Display for Date {
 use std::rc::Rc;
 pub trait DatePropertyElt: From<Date> + Eq + Hash + std::fmt::Debug {}
 
-pub struct DateProperty {
-  filter_fn: Rc<dyn Fn(Date) -> bool>,
-  dbg_info: String,
+pub enum DateProperty {
+  Always,
+  Never,
+  OneOf(HashSet<Box<dyn DatePropertyElt>>),
 }
 
 impl Clone for DateProperty {

@@ -2,13 +2,15 @@ use std::str::FromStr;
 
 use super::{fact::MIN_IN_HR, parse_hr_min, TimeError};
 
+use serde::{Serialize, Deserialize};
+
 pub const UTC_LB: i64 = -720;
 pub const UTC_UB: i64 = 840;
 const OFFSET_MIN_IN_HR: i64 = 60;
 
 /// A representation of a timezone offset, in terms of difference in minutes
 /// as compared to UTC.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct ZoneOffset(i64);
 
 impl ZoneOffset {

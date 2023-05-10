@@ -2,6 +2,8 @@
 
 use std::str::FromStr;
 
+use serde::{Serialize, Deserialize};
+
 use crate::time::{parse_f32, TimeError};
 
 use super::PercentError;
@@ -22,7 +24,7 @@ pub enum Error {
 ///
 /// assert_eq!(p.one_minus(), q);
 /// ```
-#[derive(PartialEq, Eq, PartialOrd, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, PartialOrd, Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Percent(pub u16);
 
 impl Percent {

@@ -8,6 +8,8 @@ mod util_typs;
 
 use std::io::BufRead;
 
+use serde::{Serialize, Deserialize};
+
 use calendar::{
   cal_event::Event,
   task::{Task, Workload},
@@ -21,10 +23,11 @@ use crate::{args::*, util_typs::percent::Percent};
 /// Stores global variables for such interaction.
 ///
 /// [todo] Implement load from file.
+#[derive(Serialize, Deserialize)]
 struct TaggyEnv {
   tz: ZoneOffset,
   calendars: NameMap<Vec<Event>>,
-  prompt_stack: Vec<Prompt>,
+  // prompt_stack: Vec<Prompt>,
   todolist: NameMap<Task>,
 }
 
@@ -49,7 +52,7 @@ fn load_env() -> Result<TaggyEnv, String> {
   Ok(TaggyEnv {
     tz: ZoneOffset::utc(),
     calendars: NameMap::mk_empty(),
-    prompt_stack: vec![],
+    // prompt_stack: vec![],
     todolist: NameMap::mk_empty(),
   })
 }
@@ -112,15 +115,15 @@ fn handle_command_vec(
 ) -> Result<(), TimeError> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
 
-  if let Some(head) = tenv.prompt_stack.pop() {
-    println!("[taggytime] {} (y/n)", head.description);
-    match cmd[..] {
-      ["y"] => head.consume(true),
-      ["n"] => head.consume(false),
-      _ => println!("[taggytime] Please answer prompt with (y/n)."),
-    }
-    return Ok(());
-  }
+  // if let Some(head) = tenv.prompt_stack.pop() {
+  //   println!("[taggytime] {} (y/n)", head.description);
+  //   match cmd[..] {
+  //     ["y"] => head.consume(true),
+  //     ["n"] => head.consume(false),
+  //     _ => println!("[taggytime] Please answer prompt with (y/n)."),
+  //   }
+  //   return Ok(());
+  // }
 
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
