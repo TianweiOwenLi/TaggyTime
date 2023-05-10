@@ -6,7 +6,7 @@
 use crate::{
   const_params::{ICS_DEFAULT_TIME_IN_DAY, PARSE_DT_LITERAL_TZID},
   ics_parser::lexer,
-  time::{date::Date, MinInstant, MinInterval, timezone::ZoneOffset},
+  time::{date::Date, timezone::ZoneOffset, MinInstant, MinInterval},
 };
 
 use super::{
@@ -149,8 +149,8 @@ impl<'a> ICSParser<'a> {
       let head = self.token()?;
       ret.push_str(&head.cast_as_string());
 
-      // when an ics file string spans to next line, it seens to always start 
-      // with an extra space; this needs to be skipped. 
+      // when an ics file string spans to next line, it seens to always start
+      // with an extra space; this needs to be skipped.
       if let (Token::NEXTLINE, Token::SPACE) = (head, self.peek(0)?) {
         self.skip()?;
       }
@@ -160,8 +160,10 @@ impl<'a> ICSParser<'a> {
 
   // --------------------------- Main Functionality ---------------------------
 
-  pub fn parse(&mut self, calendar_tz: ZoneOffset) 
-  -> Result<ICalendar, ICSProcessError> {
+  pub fn parse(
+    &mut self,
+    calendar_tz: ZoneOffset,
+  ) -> Result<ICalendar, ICSProcessError> {
     let mut vevents = Vec::<Vevent>::new();
 
     self.munch(Token::BEGIN)?;
@@ -276,13 +278,19 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Parses the time associated with some `DTSTART`.
-  pub fn dtstart(&mut self, tz: ZoneOffset) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtstart(
+    &mut self,
+    tz: ZoneOffset,
+  ) -> Result<MinInstant, ICSProcessError> {
     self.munch(Token::DTSTART)?;
     self.dt_possible_timezone(tz)
   }
 
   /// Parses the time associated with some `DTEND`.
-  pub fn dtend(&mut self, tz: ZoneOffset) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtend(
+    &mut self,
+    tz: ZoneOffset,
+  ) -> Result<MinInstant, ICSProcessError> {
     self.munch(Token::DTEND)?;
     self.dt_possible_timezone(tz)
   }
@@ -291,8 +299,10 @@ impl<'a> ICSParser<'a> {
   ///
   /// ### Syntax
   /// `:[yyyymmdd]T[hhmmss]Z | ;TZID=..:[yyyymmdd]T[hhmmss]`
-  fn dt_possible_timezone(&mut self, default_tz: ZoneOffset) 
-  -> Result<MinInstant, ICSProcessError> {
+  fn dt_possible_timezone(
+    &mut self,
+    default_tz: ZoneOffset,
+  ) -> Result<MinInstant, ICSProcessError> {
     match self.token()? {
       // when timezone is specified
       Token::SEMICOLON => {
@@ -323,7 +333,10 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Parses recurrence rules.
-  fn rrules(&mut self, tz: ZoneOffset) -> Result<FreqAndRRules, ICSProcessError> {
+  fn rrules(
+    &mut self,
+    tz: ZoneOffset,
+  ) -> Result<FreqAndRRules, ICSProcessError> {
     self.munch(Token::RRULE)?;
     self.munch(Token::COLON)?;
 

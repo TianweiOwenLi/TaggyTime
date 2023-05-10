@@ -1,6 +1,6 @@
 use core::panic;
-use std::cmp::{min, max};
 use datetime::Instant;
+use std::cmp::{max, min};
 
 mod year;
 use year::{UnixYear, Year};
@@ -16,9 +16,13 @@ pub mod fact;
 
 pub mod timezone;
 
-use crate::{ics_parser::ICSProcessError, util_typs::{RefinementError, PercentError}, calendar::CalError};
+use crate::{
+  calendar::CalError,
+  ics_parser::ICSProcessError,
+  util_typs::{PercentError, RefinementError},
+};
 
-use self::{fact::*, timezone::ZoneOffset, year::CeYear, month::Month};
+use self::{fact::*, month::Month, timezone::ZoneOffset, year::CeYear};
 
 // these bounds prevent overflow during timezone adjustments.
 const MINUTE_UPPERBOUND: i64 = u32::MAX as i64 - timezone::UTC_UB as i64;
@@ -174,7 +178,10 @@ impl MinInstant {
       return Err(TimeError::MinInstantConstructionUnderflow(raw));
     };
 
-    Ok(Self { raw, offset: ZoneOffset::utc()})
+    Ok(Self {
+      raw,
+      offset: ZoneOffset::utc(),
+    })
   }
 
   /// Adjust by an input offset. This merely changes the timezone
@@ -221,9 +228,7 @@ impl MinInstant {
   /// Returns an error on u32 overflow.
   pub fn from_date(date: &Date) -> Result<Self, TimeError> {
     let yrs_min = date.yr.to_unix().num_min_since_epoch()?;
-    let mons_min = date
-      .mon
-      .num_min_since_new_year(&date.yr as &dyn Year);
+    let mons_min = date.mon.num_min_since_new_year(&date.yr as &dyn Year);
     let days_min = (date.day - 1) * MIN_IN_DAY; // 1-index to 0-index
     let hrs_min = date.hr * MIN_IN_HR;
     let min_min = date.min;
@@ -234,7 +239,7 @@ impl MinInstant {
     match ret_opt {
       Some(n) => Ok(MinInstant {
         raw: n,
-        offset:  date.tz,
+        offset: date.tz,
       }),
       None => Err(TimeError::DateToMiOverflow(
         date.yr.to_ce().raw(),
@@ -245,7 +250,10 @@ impl MinInstant {
   }
 
   /// Given a default timezone, parses a string as some `MinInstant`.
-  pub fn parse_from_str(args: &[&str], default_tz: ZoneOffset) -> Result<Self, TimeError> {
+  pub fn parse_from_str(
+    args: &[&str],
+    default_tz: ZoneOffset,
+  ) -> Result<Self, TimeError> {
     MinInstant::from_date(&Date::parse_from_str(args, default_tz)?)
   }
 
@@ -275,7 +283,6 @@ impl MinInstant {
   pub fn as_date_string(self) -> String {
     format!("{}", Date::from_min_instant(self))
   }
-
 }
 
 impl MinInterval {
@@ -287,13 +294,20 @@ impl MinInterval {
 
   /// Creates a `MinInterval` from now till the given `MinInstant`.
   pub fn from_now_till(end: MinInstant) -> MinInterval {
-    MinInterval { start: MinInstant::now(), end }
+    MinInterval {
+      start: MinInstant::now(),
+      end,
+    }
   }
 
   /// Computes the duration of overlap of two `MinInterval` in minutes.
   pub fn overlap_duration(&self, rhs: MinInterval) -> u32 {
     let (lb, ub) = (max(self.start, rhs.start), min(self.end, rhs.end));
-    if lb >= ub { 0 } else { ub.raw - lb.raw }
+    if lb >= ub {
+      0
+    } else {
+      ub.raw - lb.raw
+    }
   }
 
   /// Converts start and end to `Date` and prints accordingly
@@ -330,7 +344,9 @@ impl MinInterval {
       Some(until) => {
         while !dp.check(Date::from_min_instant(new_miv.start)) {
           new_miv = new_miv.advance(MIN_IN_DAY)?;
-          if new_miv.start > until { return Ok(None); }
+          if new_miv.start > until {
+            return Ok(None);
+          }
         }
       }
       None => {
@@ -343,8 +359,8 @@ impl MinInterval {
   }
 
   /// Advances the `MinInterval` until its starting time matches the
-  /// provided `DateProperty`, or if `start` exceeds the `until` mininstant. 
-  /// 
+  /// provided `DateProperty`, or if `start` exceeds the `until` mininstant.
+  ///
   /// [note] This function panics on overflow.
   pub fn advance_until_unwrap(
     &self,
@@ -357,7 +373,6 @@ impl MinInterval {
   pub fn num_min(&self) -> u32 {
     self.end.raw - self.start.raw
   }
-
 }
 
 impl std::fmt::Display for MinInstant {
@@ -378,7 +393,7 @@ impl std::fmt::Display for MinInterval {
 fn parse_u16(expr: &str) -> Result<u16, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
-    _ => Err(TimeError::NanErr(expr.to_string()))
+    _ => Err(TimeError::NanErr(expr.to_string())),
   }
 }
 
@@ -386,7 +401,7 @@ fn parse_u16(expr: &str) -> Result<u16, TimeError> {
 pub fn parse_u32(expr: &str) -> Result<u32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
-    _ => Err(TimeError::NanErr(expr.to_string()))
+    _ => Err(TimeError::NanErr(expr.to_string())),
   }
 }
 
@@ -394,49 +409,52 @@ pub fn parse_u32(expr: &str) -> Result<u32, TimeError> {
 pub fn parse_f32(expr: &str) -> Result<f32, TimeError> {
   match expr.parse() {
     Ok(n) => Ok(n),
-    _ => Err(TimeError::NafErr(expr.to_string()))
+    _ => Err(TimeError::NafErr(expr.to_string())),
   }
 }
 
 /// Parses some dynamically-ranged u32. Note that `lb` and `ub` are inclusive.
 fn parse_u32_bound(expr: &str, lb: u32, ub: u32) -> Result<u32, TimeError> {
   let n = parse_u32(expr)?;
-  if n >= lb && n <= ub { Ok(n) } else {Err(TimeError::NumOutOfBoundsErr(n))}
+  if n >= lb && n <= ub {
+    Ok(n)
+  } else {
+    Err(TimeError::NumOutOfBoundsErr(n))
+  }
 }
 
 /// Parses some str as year, month, and day.
-fn parse_ymd(expr: &str) 
--> Result<(CeYear, Month, u32), TimeError> {
+fn parse_ymd(expr: &str) -> Result<(CeYear, Month, u32), TimeError> {
   let args: Vec<&str> = expr.split("/").map(|s| s.trim()).collect();
   match args[..] {
     [y, m, d] => {
-      let y : CeYear = CeYear::new(parse_u16(y)?)?;
+      let y: CeYear = CeYear::new(parse_u16(y)?)?;
       let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
     }
     [m, d] => {
-      let y : CeYear = MinInstant::now().decomp_yr_min().0.to_ce();
+      let y: CeYear = MinInstant::now().decomp_yr_min().0.to_ce();
       let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
     }
-    _ => todo!()
+    _ => todo!(),
   }
 }
 
-/// Given some str, parses as a pair of hour and minute. If minute does not 
+/// Given some str, parses as a pair of hour and minute. If minute does not
 /// exist, defaults to zero. If fails to parse or out-of-bound, returns error.
 fn parse_hr_min(expr: &str) -> Result<(u32, u32), TimeError> {
   let (h, m) = match expr.split_once(':') {
     Some((hr_str, min_str)) => (parse_u32(hr_str)?, parse_u32(min_str)?),
-    None => (parse_u32(expr)?, 0) // no min field, only hours
+    None => (parse_u32(expr)?, 0), // no min field, only hours
   };
 
-  if h < HR_IN_DAY && m < MIN_IN_HR { 
-    Ok((h, m)) 
-  } else { 
-    Err(TimeError::TimeParseErr(expr.to_string())) 
+  if h < HR_IN_DAY && m < MIN_IN_HR {
+    Ok((h, m))
+  } else {
+    Err(TimeError::TimeParseErr(expr.to_string()))
   }
 }
 
@@ -502,8 +520,14 @@ mod test {
 
   #[test]
   fn mi_eq() {
-    let m1 = MinInstant { raw: 5000, offset: ZoneOffset::utc() };
-    let m2 = MinInstant { raw: 5060, offset: ZoneOffset::new(60).unwrap() };
+    let m1 = MinInstant {
+      raw: 5000,
+      offset: ZoneOffset::utc(),
+    };
+    let m2 = MinInstant {
+      raw: 5060,
+      offset: ZoneOffset::new(60).unwrap(),
+    };
     assert_eq!(m1, m2);
   }
 

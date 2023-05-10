@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use super::{TimeError, fact::MIN_IN_HR, parse_hr_min};
+use super::{fact::MIN_IN_HR, parse_hr_min, TimeError};
 
 pub const UTC_LB: i64 = -720;
 pub const UTC_UB: i64 = 840;
@@ -17,11 +17,10 @@ impl ZoneOffset {
   /// between -720 and +840 minutes).
   pub fn new(n: i64) -> Result<Self, TimeError> {
     // Valid UTC offsets must be between -12:00 and +14:00, inclusive.
-    if n < UTC_LB || n > UTC_UB {
-      Err(
-        "Timezone offset must be a value between -720min and +840min"
-          .to_string(),
-      )
+    if n < UTC_LB {
+      Err(TimeError::ZoneOffsetConstructionUnderflow(n))
+    } else if n > UTC_UB {
+      Err(TimeError::ZoneOffsetConstructionOverflow(n))
     } else {
       Ok(ZoneOffset(n))
     }
@@ -39,13 +38,13 @@ impl ZoneOffset {
 
 impl FromStr for ZoneOffset {
   type Err = TimeError;
-  fn from_str(s: &str) -> Result<Self, Self::Err> {
+  fn from_str(s: &str) -> Result<Self, TimeError> {
     let bad = Err(TimeError::TimeZoneParseErr(s.to_string()));
 
-    let positive = if s.starts_with('+') { 
-      true 
-    } else if s.starts_with('-') { 
-      false 
+    let positive = if s.starts_with('+') {
+      true
+    } else if s.starts_with('-') {
+      false
     } else {
       return bad;
     };
@@ -53,12 +52,11 @@ impl FromStr for ZoneOffset {
     let (hr_offset, min_offset) = parse_hr_min(&s[1..])?;
 
     let mut total_offset: i64 = i64::from(MIN_IN_HR * hr_offset + min_offset);
-    if ! positive { total_offset *= -1; }
-
-    match ZoneOffset::new(total_offset) {
-      Ok(z) => Ok(z),
-      _ => bad
+    if !positive {
+      total_offset *= -1;
     }
+
+    ZoneOffset::new(total_offset)
   }
 }
 

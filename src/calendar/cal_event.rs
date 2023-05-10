@@ -12,7 +12,6 @@ pub type OneOrMore = LowerBoundI64<1>;
 /// Occurrence skip interval, ie. happens every x (x >= 1) times.
 pub type Interval = OneOrMore;
 
-
 /// Recurrence pattern, ie. biweekly on TU, TH
 #[derive(Clone)]
 pub enum Pattern {
@@ -38,7 +37,7 @@ impl TryFrom<Option<FreqAndRRules>> for Pattern {
 
         Ok(Pattern::Many(dp, itv, term))
       }
-      None => Ok(Pattern::Once)
+      None => Ok(Pattern::Once),
     }
   }
 }
@@ -82,15 +81,19 @@ impl Recurrence {
     let event_miv = match &self.patt {
       Pattern::Once => return None,
       Pattern::Many(dp, _, Term::Count(n)) => {
-        if self.occurrence_count >= *n { return None; }
-        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
+        if self.occurrence_count >= *n {
+          return None;
+        }
+        tmr
+          .advance_until_unwrap(dp, None)
+          .expect("Unreachable: no until")
       }
       Pattern::Many(dp, _, Term::Until(term_mi)) => {
         tmr.advance_until_unwrap(dp, Some(*term_mi))?
       }
-      Pattern::Many(dp, _, Term::Never) => {
-        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
-      }
+      Pattern::Many(dp, _, Term::Never) => tmr
+        .advance_until_unwrap(dp, None)
+        .expect("Unreachable: no until"),
     };
     Some(Recurrence {
       event_miv,
@@ -102,12 +105,17 @@ impl Recurrence {
   /// Computes the number of minutes overlapped with some `MinInterval`.
   pub fn overlap(self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;
-    'a : for rec_miv in self {
+    'a: for rec_miv in self {
       // skip the non-interacting min-intervals.
-      if rec_miv.end <= miv.start { continue 'a; }
-      if rec_miv.start >= miv.end { break 'a; }
+      if rec_miv.end <= miv.start {
+        continue 'a;
+      }
+      if rec_miv.start >= miv.end {
+        break 'a;
+      }
 
-      ret = ret.checked_add(rec_miv.overlap_duration(miv))
+      ret = ret
+        .checked_add(rec_miv.overlap_duration(miv))
         .expect("Overflowed while computing recurrence and miv overlap");
     }
     ret
@@ -117,18 +125,17 @@ impl Recurrence {
 impl TryFrom<Vevent> for Recurrence {
   type Error = ICSProcessError;
 
-  /// Converts a parsed vector of rrules into a `Recurrence` instance. 
-  /// 
-  /// [warning] Only weekly - by weekday is implemented. 
+  /// Converts a parsed vector of rrules into a `Recurrence` instance.
+  ///
+  /// [warning] Only weekly - by weekday is implemented.
   fn try_from(value: Vevent) -> Result<Self, Self::Error> {
     Ok(Recurrence::new(value.miv, Pattern::try_from(value.repeat)?))
   }
 }
 
-
 /// An iterator for the `MinInterval` items in some recurrence.
 pub struct RecIter {
-  rec: Option<Recurrence>
+  rec: Option<Recurrence>,
 }
 
 impl Iterator for RecIter {
@@ -211,7 +218,11 @@ mod test {
     let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
     let dp = DateProperty::from(weeks);
 
-    let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
+    let p = Pattern::Many(
+      dp,
+      OneOrMore::new(1).unwrap(),
+      Term::Count(OneOrMore::new(12).unwrap()),
+    );
 
     let mut r = Recurrence::new(iv, p);
 
@@ -222,10 +233,12 @@ mod test {
         None => break,
       };
       last_string = r.event_miv.as_date_string();
-    };
+    }
 
     assert_eq!(
-      String::from("2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"), 
+      String::from(
+        "2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"
+      ),
       last_string
     );
   }
@@ -240,12 +253,16 @@ mod test {
     let weeks = vec![Weekday::MO, Weekday::WE, Weekday::FR];
     let dp = DateProperty::from(weeks);
 
-    let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Count(OneOrMore::new(12).unwrap()));
+    let p = Pattern::Many(
+      dp,
+      OneOrMore::new(1).unwrap(),
+      Term::Count(OneOrMore::new(12).unwrap()),
+    );
 
     let r = Recurrence {
       event_miv: iv,
       occurrence_count: OneOrMore::new(1).unwrap(),
-      patt: p
+      patt: p,
     };
 
     let mut it = r.into_iter();
@@ -257,10 +274,12 @@ mod test {
         None => break,
       };
       last_string = tmp.as_date_string();
-    };
+    }
 
     assert_eq!(
-      String::from("2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"), 
+      String::from(
+        "2023/Apr/14 05:42, tz=+00:00 - 2023/Apr/14 06:42, tz=+00:00"
+      ),
       last_string
     );
   }
@@ -271,7 +290,7 @@ mod test {
     let mi2 = mi.advance(MIN_IN_DAY * 5 - 720).unwrap(); // friday
     let miv = MinInterval::new(mi, mi2); // 2023/04/23 23:02 - 04/28 11:02
 
-    let cls_start = MinInstant::from_raw_utc(27900600).unwrap(); 
+    let cls_start = MinInstant::from_raw_utc(27900600).unwrap();
     let cls_end = cls_start.advance(120).unwrap();
     let cls = MinInterval::new(cls_start, cls_end); // 2023/01/18 10:00-12:00
     let dp = {
@@ -280,8 +299,7 @@ mod test {
     };
     let p = Pattern::Many(dp, OneOrMore::new(1).unwrap(), Term::Never);
     let cls_rec = Recurrence::new(cls, p);
-    
-    assert_eq!(302, cls_rec.overlap(miv));
 
+    assert_eq!(302, cls_rec.overlap(miv));
   }
 }

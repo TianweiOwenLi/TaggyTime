@@ -8,7 +8,7 @@ pub mod cal_event;
 pub mod task;
 
 #[derive(Debug)]
-pub enum CalError{
+pub enum CalError {
   KeyNotFound(String),
   DoubleInsert(String),
   NewnameUnavailable(String),
@@ -16,15 +16,17 @@ pub enum CalError{
 
 /// A wrapper around `HashMap<String, _>`.
 pub struct NameMap<T> {
-  contents: HashMap<String, T>
+  contents: HashMap<String, T>,
 }
 
 impl<T> NameMap<T> {
   pub fn mk_empty() -> Self {
-    NameMap { contents: HashMap::<String, T>::new() }
+    NameMap {
+      contents: HashMap::<String, T>::new(),
+    }
   }
 
-  /// Checks whether some item has already been loaded. 
+  /// Checks whether some item has already been loaded.
   pub fn contains(&self, key: &str) -> bool {
     self.contents.contains_key(key)
   }
@@ -38,14 +40,17 @@ impl<T> NameMap<T> {
     }
   }
 
-  /// Inserts WITHOUT checking pre-existence. 
+  /// Inserts WITHOUT checking pre-existence.
   pub fn force_insert(&mut self, key: &str, val: T) {
     self.contents.insert(key.to_string(), val);
   }
 
-  /// Renames some item. 
-  pub fn rename<'a>(&mut self, old_key: &'a str, new_key: &str) 
-  -> Result<(), CalError> {
+  /// Renames some item.
+  pub fn rename<'a>(
+    &mut self,
+    old_key: &'a str,
+    new_key: &str,
+  ) -> Result<(), CalError> {
     match self.contents.remove(old_key) {
       Some(v) => {
         if self.contains(new_key) {
@@ -54,7 +59,7 @@ impl<T> NameMap<T> {
         self.contents.insert(new_key.to_string(), v);
         Ok(())
       }
-      None => Err(CalError::KeyNotFound(new_key.to_string()))
+      None => Err(CalError::KeyNotFound(new_key.to_string())),
     }
   }
 
@@ -80,7 +85,9 @@ impl NameMap<Vec<Event>> {
     let mut ret: u32 = 0;
     for event_vec in self.contents.values() {
       for event in event_vec {
-        ret = ret.checked_add(event.1.clone().overlap(miv)).expect("Overflowed");
+        ret = ret
+          .checked_add(event.1.clone().overlap(miv))
+          .expect("Overflowed");
       }
     }
     ret

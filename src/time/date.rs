@@ -1,7 +1,7 @@
 //! Structure that represents calendar days.
 
 use crate::const_params::HANDLE_WKST;
-use crate::ics_parser::ics_syntax::{RRuleToks};
+use crate::ics_parser::ics_syntax::RRuleToks;
 use crate::ics_parser::lexer::Token;
 use crate::time::{month::Month, week::Weekday};
 
@@ -33,9 +33,8 @@ impl Date {
   /// Note that such a conversion takes into account the timezone offset of
   /// the provided MinInstant.
   pub fn from_min_instant(mi: MinInstant) -> Self {
-  
     let (curr_year, mut t) = mi.decomp_yr_min();
-    
+
     let mut curr_month = Month::Jan;
     loop {
       // strip month from t
@@ -120,7 +119,14 @@ impl Date {
           return bad;
         };
 
-        Ok(Date {yr, mon, day, hr, min, tz})
+        Ok(Date {
+          yr,
+          mon,
+          day,
+          hr,
+          min,
+          tz,
+        })
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
         ymd.to_string(),
@@ -145,10 +151,15 @@ impl Date {
   }
 
   /// Given a default timezone, parses a string as a date.
-  pub fn parse_from_str(args: &[&str], default_tz: ZoneOffset) -> Result<Self, TimeError> {
+  pub fn parse_from_str(
+    args: &[&str],
+    default_tz: ZoneOffset,
+  ) -> Result<Self, TimeError> {
     let bad = Err(TimeError::DateParsingErr(format!("{:?}", args)));
 
-    if args.len() > 3 || args.len() < 2 { return bad; } // too many items
+    if args.len() > 3 || args.len() < 2 {
+      return bad;
+    } // too many items
 
     let tz = match args.get(2) {
       Some(s) => s.parse()?,
@@ -159,13 +170,19 @@ impl Date {
       [ymd_str, time] => {
         let (yr, mon, day) = parse_ymd(ymd_str)?;
         let (hr, min) = parse_hr_min(time)?;
-        Ok(Date { yr, mon, day, hr, min, tz })
+        Ok(Date {
+          yr,
+          mon,
+          day,
+          hr,
+          min,
+          tz,
+        })
       }
-      _ => bad
+      _ => bad,
     }
   }
 }
-
 
 impl std::fmt::Display for Date {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -191,12 +208,11 @@ pub struct DateProperty {
 }
 
 impl Clone for DateProperty {
-
   /// Makes a clone while shallow-copying the filter function.
   fn clone(&self) -> Self {
-    DateProperty { 
+    DateProperty {
       filter_fn: Rc::clone(&self.filter_fn),
-      dbg_info: self.dbg_info.clone() 
+      dbg_info: self.dbg_info.clone(),
     }
   }
 }
@@ -207,9 +223,9 @@ impl DateProperty {
   }
 
   pub fn always() -> Self {
-    DateProperty { 
-      filter_fn: Rc::new(|_| true), 
-      dbg_info: String::from("[true]") 
+    DateProperty {
+      filter_fn: Rc::new(|_| true),
+      dbg_info: String::from("[true]"),
     }
   }
 }
@@ -226,7 +242,6 @@ impl<T: DatePropertyElt + 'static> From<Vec<T>> for DateProperty {
 }
 
 impl From<Vec<RRuleToks>> for DateProperty {
-  
   /// [todo] consider restriction constraints as per RFC 5545.
   fn from(value: Vec<RRuleToks>) -> Self {
     let mut dp = DateProperty::always();
@@ -247,8 +262,13 @@ impl From<Vec<RRuleToks>> for DateProperty {
             dp * DateProperty::from(v)
           };
         }
-        Token::BYHOUR | Token::BYMIN | Token::BYMONTH | Token::BYMONTHDAY 
-        | Token::BYSETPOS | Token::BYWEEKNO | Token::BYYEARDAY => {
+        Token::BYHOUR
+        | Token::BYMIN
+        | Token::BYMONTH
+        | Token::BYMONTHDAY
+        | Token::BYSETPOS
+        | Token::BYWEEKNO
+        | Token::BYYEARDAY => {
           unimplemented!()
         }
         Token::WKST => {
@@ -306,7 +326,8 @@ mod test {
   #[test]
   fn ics_string_to_date() {
     let (ymd, hms) = ("20220314", "211123");
-    let date1 = Date::from_ics_time_string(ymd, hms, ZoneOffset::utc()).unwrap();
+    let date1 =
+      Date::from_ics_time_string(ymd, hms, ZoneOffset::utc()).unwrap();
 
     let date2 = Date {
       yr: CeYear::new(2022).unwrap(),

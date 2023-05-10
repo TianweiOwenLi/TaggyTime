@@ -8,9 +8,13 @@ mod util_typs;
 
 use std::io::BufRead;
 
-use calendar::{NameMap, task::{Task, Workload}, cal_event::Event};
+use calendar::{
+  cal_event::Event,
+  task::{Task, Workload},
+  NameMap,
+};
 use const_params::DBG;
-use time::{timezone::ZoneOffset, TimeError, MinInstant};
+use time::{timezone::ZoneOffset, MinInstant, TimeError};
 
 use crate::{args::*, util_typs::percent::Percent};
 
@@ -27,14 +31,16 @@ struct TaggyEnv {
 /// A user-promptable lambda.
 struct Prompt {
   pub description: String,
-  pub lambda: Box<dyn FnOnce()>
+  pub lambda: Box<dyn FnOnce()>,
 }
 
 impl Prompt {
-  /// Given a user response of yes or no, consumes the prompt; executes it if 
+  /// Given a user response of yes or no, consumes the prompt; executes it if
   /// user choosed yes.
   fn consume(self, usr_choice: bool) {
-    if usr_choice { (self.lambda)() }
+    if usr_choice {
+      (self.lambda)()
+    }
   }
 }
 
@@ -53,12 +59,12 @@ fn store_env() -> Result<(), String> {
   Ok(())
 }
 
-/// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is 
-/// provided, the loaded calendar will be renamed accordingly. 
+/// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
+/// provided, the loaded calendar will be renamed accordingly.
 fn load_ics_to_tenv(
-  tenv: &mut TaggyEnv, 
-  filename: &str, 
-  newname_opt: Option<&str>
+  tenv: &mut TaggyEnv,
+  filename: &str,
+  newname_opt: Option<&str>,
 ) {
   if tenv.calendars.contains(filename) {
     println!("[taggytime] Calendar `{}` already exists! ", filename);
@@ -66,16 +72,24 @@ fn load_ics_to_tenv(
     let events = load_file::load_schedule_ics(filename, tenv.tz)
       .expect("[taggytime] Failed to .ics file");
     if DBG {
-      for event in &events { println!("{}", event); }
+      for event in &events {
+        println!("{}", event);
+      }
     }
     tenv.calendars.force_insert(filename, events);
 
     match newname_opt {
       Some(newname) => {
-        tenv.calendars.rename(filename, newname).expect("Just inserted");
-        println!("[taggytime] Successfully loaded `{}` as `{}`", filename, newname);
+        tenv
+          .calendars
+          .rename(filename, newname)
+          .expect("Just inserted");
+        println!(
+          "[taggytime] Successfully loaded `{}` as `{}`",
+          filename, newname
+        );
       }
-      None => println!("[taggytime] Successfully loaded `{}`", filename)
+      None => println!("[taggytime] Successfully loaded `{}`", filename),
     }
   }
 }
@@ -103,7 +117,7 @@ fn handle_command_vec(
     match cmd[..] {
       ["y"] => head.consume(true),
       ["n"] => head.consume(false),
-      _ => println!("[taggytime] Please answer prompt with (y/n).")
+      _ => println!("[taggytime] Please answer prompt with (y/n)."),
     }
     return Ok(());
   }
@@ -120,7 +134,7 @@ fn handle_command_vec(
     ["now"] => {
       let mut mi = time::MinInstant::now();
       mi.adjust_to_zone(tenv.tz);
-      println!("[taggytime] now is: {}",mi.as_date_string());
+      println!("[taggytime] now is: {}", mi.as_date_string());
       Ok(())
     }
     ["set", "tz", s] => {
@@ -167,7 +181,7 @@ fn handle_command_vec(
           task.set_progress(prog);
           println!("[taggytime] Progress set to {}", prog);
         }
-        None => println!("[taggytime] Task `{}` does not exist", name)
+        None => println!("[taggytime] Task `{}` does not exist", name),
       }
       Ok(())
     }
@@ -177,11 +191,11 @@ fn handle_command_vec(
         Some(task) => {
           println!("[taggytime] Impact = {}", tenv.calendars.impact(task))
         }
-        None => println!("[taggytime] Task `{}` does not exist", name)
+        None => println!("[taggytime] Task `{}` does not exist", name),
       }
       Ok(())
     }
-    _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd)))
+    _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd))),
   }
 }
 

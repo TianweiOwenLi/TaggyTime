@@ -26,7 +26,6 @@ pub enum Error {
 pub struct Percent(pub u16);
 
 impl Percent {
-
   /// Returns a `Percent` instance that represents 100% minus oneself. If
   /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
   pub fn complement(&self) -> Result<Self, Error> {
@@ -65,7 +64,7 @@ impl FromStr for Percent {
   fn from_str(s: &str) -> Result<Self, Self::Err> {
     let n = s.len();
     Ok(if s.ends_with("%") {
-      Percent::try_from(0.01 * parse_f32(&s[..(n-1)])?)?
+      Percent::try_from(0.01 * parse_f32(&s[..(n - 1)])?)?
     } else {
       Percent::try_from(parse_f32(s)?)?
     })

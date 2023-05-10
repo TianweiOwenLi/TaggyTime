@@ -3,8 +3,8 @@
 use std::str::FromStr;
 
 use crate::const_params::MAX_WORKLOAD;
-use crate::util_typs::percent::Percent;
 use crate::time::*;
+use crate::util_typs::percent::Percent;
 
 /// A wrapper around `u32`, which represents the number of minutes needed to
 /// complete some task. Can only be from 0 to 60,000 (inclusive).
@@ -12,7 +12,7 @@ use crate::time::*;
 pub struct Workload(u32);
 
 impl Workload {
-  /// Construct a `Workload` instance from some number of minutes. 
+  /// Construct a `Workload` instance from some number of minutes.
   /// Returns `Err` variant of out of bounds.
   pub fn from_num_min(num_min: u32) -> Result<Self, TimeError> {
     if num_min <= MAX_WORKLOAD {
@@ -75,10 +75,14 @@ pub struct Task {
 }
 
 impl Task {
-
   /// Constructs a new instance with zero completion.
   pub fn new(due: MinInstant, length: Workload) -> Self {
-    Task { due, length, completion: Percent(0), cached_impact: None }
+    Task {
+      due,
+      length,
+      completion: Percent(0),
+      cached_impact: None,
+    }
   }
 
   /// Computes the remaining workload of this `Todo` item, considering its
@@ -106,8 +110,8 @@ impl Task {
 impl std::fmt::Display for Task {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     write!(
-      f, 
-      "due {}\nload: {} min\nprogress: {}\ncache: {:?}", 
+      f,
+      "due {}\nload: {} min\nprogress: {}\ncache: {:?}",
       self.due.as_date_string(),
       self.length.0,
       self.completion,

@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
-use super::{fact::*, TimeError, parse_u32_bound};
 use super::year::{Year, YearLength};
+use super::{fact::*, parse_u32_bound, TimeError};
 
 use Month::*;
 const MONTH_LIST: [Month; 12] =
@@ -71,19 +71,19 @@ impl TryFrom<u32> for Month {
   /// Tries to convert a usize to corresponding month, starting with zero.
   fn try_from(value: u32) -> Result<Self, Self::Error> {
     match value {
-      0 => Ok(Jan), 
-      1 => Ok(Feb), 
-      2 => Ok(Mar), 
-      3 => Ok(Apr), 
-      4 => Ok(May), 
-      5 => Ok(Jun), 
-      6 => Ok(Jul), 
-      7 => Ok(Aug), 
-      8 => Ok(Sep), 
-      9 => Ok(Oct), 
-      10 => Ok(Nov), 
-      11 => Ok(Dec), 
-      _ => Err(TimeError::MonthBoundErr(value))
+      0 => Ok(Jan),
+      1 => Ok(Feb),
+      2 => Ok(Mar),
+      3 => Ok(Apr),
+      4 => Ok(May),
+      5 => Ok(Jun),
+      6 => Ok(Jul),
+      7 => Ok(Aug),
+      8 => Ok(Sep),
+      9 => Ok(Oct),
+      10 => Ok(Nov),
+      11 => Ok(Dec),
+      _ => Err(TimeError::MonthBoundErr(value)),
     }
   }
 }
@@ -94,9 +94,8 @@ impl FromStr for Month {
     let n = parse_u32_bound(s, 1, u32::MAX);
     match n {
       Ok(n) => Ok(Month::try_from(n - 1)?),
-      Err(_) => Err(TimeError::MonthParseErr(s.to_string()))
+      Err(_) => Err(TimeError::MonthParseErr(s.to_string())),
     }
-
   }
 }
 

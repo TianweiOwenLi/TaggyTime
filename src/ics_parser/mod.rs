@@ -1,6 +1,9 @@
 use std::fs::File;
 
-use crate::{time::{MinInstant, timezone::ZoneOffset, TimeError}, util_typs::RefinementError};
+use crate::{
+  time::{timezone::ZoneOffset, MinInstant, TimeError},
+  util_typs::RefinementError,
+};
 
 use self::{
   ics_syntax::{ICSParser, ICalendar},
@@ -72,8 +75,10 @@ impl From<RefinementError> for ICSProcessError {
 }
 
 /// Performs lexing plus parsing for the given `.ics` file.
-pub fn lex_and_parse(ics_filename: &str, default_tz: ZoneOffset) 
--> Result<ICalendar, ICSProcessError> {
+pub fn lex_and_parse(
+  ics_filename: &str,
+  default_tz: ZoneOffset,
+) -> Result<ICalendar, ICSProcessError> {
   let content = std::fs::read_to_string(ics_filename)
     .expect(format!("Cannot read from `{}`", ics_filename).as_str());
 
@@ -103,7 +108,7 @@ pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
 }
 
 pub fn test_parser(ics_filename: &str) -> Result<(), TimeError> {
-  let parse_result =lex_and_parse(ics_filename, ZoneOffset::new(-240)?)?;
+  let parse_result = lex_and_parse(ics_filename, ZoneOffset::new(-240)?)?;
 
   let mut out_file = File::create(format!("{}.parsed", ics_filename))
     .expect("Cannot open test parser file");

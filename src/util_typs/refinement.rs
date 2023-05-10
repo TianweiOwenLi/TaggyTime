@@ -1,8 +1,8 @@
-//! Refinement type wrappers for Rust primitives. 
+//! Refinement type wrappers for Rust primitives.
 
 use std::fmt::Display;
 
-use super::{RefinementError, RefineResult};
+use super::{RefineResult, RefinementError};
 
 pub const I64_MAX: i64 = i64::MAX;
 
@@ -36,17 +36,13 @@ impl<const MIN: i64, const MAX: i64> RangedI64<MIN, MAX> {
 
   /// Attempts to construct some ranged i64 using `n`. Returns underflow /
   /// overflow error if bounds check failed.
-  pub fn try_new<T: TryInto<i64> + PartialOrd + Display + Copy>(num: T) -> RefineResult<Self> {
+  pub fn try_new<T: TryInto<i64> + PartialOrd + Display + Copy>(
+    num: T,
+  ) -> RefineResult<Self> {
     let n_opt = num.try_into();
     match n_opt {
-      Ok(n) => {
-        Self::new(n)
-      }
-      Err(_) => {
-        Err(RefinementError::FailedConversionToI64(
-          format!("{}", num)
-        ))
-      }
+      Ok(n) => Self::new(n),
+      Err(_) => Err(RefinementError::FailedConversionToI64(format!("{}", num))),
     }
   }
 
