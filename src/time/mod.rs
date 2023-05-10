@@ -56,6 +56,8 @@ pub enum TimeError {
   ICSErr(ICSProcessError),
   CalErr(CalError),
   InvalidCommand(String),
+  SerdeJsonErr(serde_json::Error),
+  IoError(std::io::Error),
 }
 
 impl From<ICSProcessError> for TimeError {
@@ -79,6 +81,18 @@ impl From<RefinementError> for TimeError {
 impl From<PercentError> for TimeError {
   fn from(value: PercentError) -> Self {
     Self::PercentErr(value)
+  }
+}
+
+impl From<serde_json::Error> for TimeError {
+  fn from(value: serde_json::Error) -> Self {
+    Self::SerdeJsonErr(value)
+  }
+}
+
+impl From<std::io::Error> for TimeError {
+  fn from(value: std::io::Error) -> Self {
+    Self::IoError(value)
   }
 }
 

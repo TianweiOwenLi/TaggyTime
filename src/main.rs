@@ -6,7 +6,7 @@ mod load_file;
 mod time;
 mod util_typs;
 
-use std::io::BufRead;
+use std::{io::BufRead, path::Path};
 
 use serde::{Deserialize, Serialize};
 
@@ -31,18 +31,20 @@ struct TaggyEnv {
 }
 
 /// Loads the interactive environment.
-fn load_env() -> Result<TaggyEnv, String> {
+fn load_env<T: AsRef<Path>>(_x: T) -> Result<TaggyEnv, TimeError> {
+  // let content = std::fs::read_to_string(path)?;
+  // Ok(serde_json::from_str(&content)?)
   Ok(TaggyEnv {
     tz: ZoneOffset::utc(),
     calendars: NameMap::mk_empty(),
-    // prompt_stack: vec![],
     todolist: NameMap::mk_empty(),
   })
 }
 
 /// Stores the interactive environment.
-fn store_env() -> Result<(), String> {
-  Ok(())
+fn store_env<T: AsRef<Path>>(path: T, tenv: &TaggyEnv) -> Result<(), TimeError> {
+  let s = serde_json::to_string(tenv)?;
+  Ok(std::fs::write(path, s)?)
 }
 
 /// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
@@ -175,47 +177,54 @@ fn handle_command_vec(
   }
 }
 
+fn interactive_loop(tenv: &mut TaggyEnv) -> Result<(), TimeError> {
+  loop {
+    let mut buf = String::new();
+    let stdin_agent = std::io::stdin();
+
+    // read line
+    {
+      let mut stdin_handle = stdin_agent.lock();
+      stdin_handle.read_line(&mut buf)?;
+    }
+
+    // interpret
+    let v: Vec<String> =
+      buf.split(' ').map(|s| s.trim().to_string()).collect();
+    if let Err(e) = handle_command_vec(v, tenv) {
+      eprintln!("[taggytime] Command error: {:?}", e);
+    }
+  }
+}
+
 fn main() {
-  let mode = parse_args().unwrap_or_else(|e| {
+  let cli_info = parse_args().unwrap_or_else(|e| {
     eprintln!("Parse argument failed! \n{:?}", e);
     std::process::exit(1)
   });
 
-  let mut tenv = load_env().unwrap_or_else(|e| {
+  let mut tenv = load_env(&cli_info.taggyenv_path).unwrap_or_else(|e| {
     eprintln!("TaggyTime environment failed to load! \n{:?}", e);
     std::process::exit(1)
   });
 
-  let run_result = match mode {
-    Mode::Interactive => loop {
-      let mut buf = String::new();
-      let stdin_agent = std::io::stdin();
-
-      // read line
-      {
-        let mut stdin_handle = stdin_agent.lock();
-        if let Err(e) = stdin_handle.read_line(&mut buf) {
-          break Err(format!("Failed to read line: {}", e));
-        }
+  let run_result = match cli_info.mode {
+    Mode::Interactive => {
+      if let Err(e) = interactive_loop(&mut tenv) {
+        eprintln!("[taggytime] Interactive mode error: {:?}", e);
       }
-
-      // interpret
-      let v: Vec<String> =
-        buf.split(' ').map(|s| s.trim().to_string()).collect();
-      if let Err(e) = handle_command_vec(v, &mut tenv) {
-        eprintln!("[taggytime] Command error: {:?}", e)
-      }
-    },
+      store_env(&cli_info.taggyenv_path, &tenv)
+    }
     Mode::Cli(v) => {
       handle_command_vec(v, &mut tenv).unwrap_or_else(|e| {
         eprintln!("Command execution failed! \n{:?}", e);
         std::process::exit(1)
       });
-      store_env()
+      store_env(&cli_info.taggyenv_path, &tenv)
     }
   };
 
   if let Err(e) = run_result {
-    eprintln!("App encountered error: \n{}", e)
+    eprintln!("App encountered error: \n{:?}", e)
   }
 }

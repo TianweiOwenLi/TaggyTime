@@ -5,6 +5,12 @@ pub enum Mode {
   Cli(Vec<String>),
 }
 
+/// Stores information parsed from commandline args.
+pub struct CliInfo {
+  pub taggyenv_path: String,
+  pub mode: Mode,
+}
+
 pub struct CommandLineError(pub String);
 
 impl std::fmt::Debug for CommandLineError {
@@ -13,27 +19,35 @@ impl std::fmt::Debug for CommandLineError {
   }
 }
 
-pub fn parse_args() -> Result<Mode, CommandLineError> {
+pub fn parse_args() -> Result<CliInfo, CommandLineError> {
   let args: Vec<String> = env::args().collect();
 
   let n = args.len();
 
-  if n < 2 {
+  if n < 3 {
     return Err(CommandLineError("Not enough arguments".to_string()));
   }
 
-  let maybe_flag = args[1].as_str();
+  let flag = args[1].as_str();
+  let taggyenv_path = args[2].to_string();
 
-  match maybe_flag {
+  match flag {
     "-i" => {
       if n > 2 {
         Err(CommandLineError(
           "Redundant argument after interaction mode".to_string(),
         ))
       } else {
-        Ok(Mode::Interactive)
+        Ok(CliInfo { 
+          taggyenv_path,
+          mode: Mode::Interactive,
+        })
       }
     }
-    _ => Ok(Mode::Cli(args[1..].to_vec())),
+    "-c" => Ok(CliInfo { 
+      taggyenv_path,
+      mode: Mode::Cli(args[1..].to_vec()) 
+    }),
+    _ => panic!("Bad flag")
   }
 }
