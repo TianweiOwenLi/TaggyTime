@@ -135,24 +135,12 @@ fn handle_command_vec(
       println!("[taggytime] timezone set to {}", tenv.tz);
       Ok(NextInteraction::Prompt)
     }
-    ["load", filename] => {
-      if filename.ends_with(".ics") {
-        load_ics_to_tenv(tenv, filename, None);
-      } else {
-        println!("[taggytime] Invalid file extension: {}", filename);
-      }
-      Ok(NextInteraction::Prompt)
-    }
     ["load", filename, "as", newname] => {
       if filename.ends_with(".ics") {
         load_ics_to_tenv(tenv, filename, Some(newname));
       } else {
         println!("[taggytime] Invalid file extension: {}", filename);
       }
-      Ok(NextInteraction::Prompt)
-    }
-    ["rename", old_name, new_name] => {
-      tenv.calendars.rename(old_name, new_name)?;
       Ok(NextInteraction::Prompt)
     }
     ["remove", name] => {
@@ -192,9 +180,7 @@ fn handle_command_vec(
       tenv.calendars.filter_events(|e| ! e.ended());
       Ok(NextInteraction::Prompt)
     }
-    ["q"] | ["quit"] => {
-      Ok(NextInteraction::Quit)
-    }
+    ["q"] | ["quit"] => Ok(NextInteraction::Quit),
     _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd))),
   }
 }
@@ -211,18 +197,11 @@ fn interactive_loop(tenv: &mut TaggyEnv) -> Result<(), TimeError> {
     }
 
     // interpret
-    let v: Vec<String> =
-      buf.split(' ').map(|s| s.trim().to_string()).collect();
+    let v = buf.split(' ').map(|s| s.trim().to_string()).collect();
     match handle_command_vec(v, tenv) {
-      Ok(NextInteraction::Quit) => {
-        break Ok(());
-      }
-      Ok(NextInteraction::Prompt) => {
-        // do nothing
-      }
-      Err(e) => {
-        eprintln!("[taggytime] Command error: {:?}", e);
-      }
+      Ok(NextInteraction::Quit) => break Ok(()),
+      Ok(NextInteraction::Prompt) => (),
+      Err(e) => eprintln!("[taggytime] Command error: {:?}", e),
     }
   }
 }
