@@ -27,8 +27,14 @@ fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task)
 }
 
 /// Prints task impact for a given task, its name, and `TaggyEnv`.
-pub fn print_task_impact(name: &str, task: &Task, tenv: &TaggyEnv) {
-  println!("{:<25} {:<10}", name, tenv.calendars.impact(task))
+pub fn print_task_impact(name: &str, t: &Task, impact: Percent) {
+  println!(
+    "{:<20} {:<35} {:<10}    {:<10}", 
+    name, 
+    t.due.as_date_string(), 
+    t.completion,
+    impact
+  )
 }
 
 #[derive(Debug)]
@@ -68,7 +74,7 @@ pub enum TaggyCmd {
   Now,
 
   /// Shows current TaggyEnv timezone.
-  GetTz,
+  Tz,
 
   /// Sets TaggyEnv timezone.
   SetTz{
@@ -110,10 +116,7 @@ pub enum TaggyCmd {
   },
 
   /// Retrieves the impact of some or all tasks.
-  Impact{
-    /// Name of task.
-    task_name_opt: Option<String>, 
-  },
+  Impact,
 
   /// Truncates already-ended events.
   Truncate,
@@ -158,7 +161,7 @@ impl TaggyCmd {
         mi.adjust_to_zone(tenv.tz);
         println!("[taggytime] now is: {}", mi.as_date_string());
       }
-      GetTz => {
+      Tz => {
         println!("[taggytime] timezone is {}", tenv.tz);
       }
       SetTz { tz_expr } => {
@@ -194,31 +197,22 @@ impl TaggyCmd {
           None => println!("[taggytime] Task `{}` does not exist", task_name),
         }
       }
-      Impact { task_name_opt: None } => {
-        let mut taskname_impact_pairs = Vec::<(String, Percent)>::new();
+      Impact => {
+        let mut taskname_impact_pairs = Vec::<(&str, &Task, Percent)>::new();
         for (name, task) in tenv.todolist.iter() {     
           taskname_impact_pairs.push(
-            (name.clone(), tenv.calendars.impact(task))
+            (name, task, tenv.calendars.impact(task))
           );
         }
 
-        taskname_impact_pairs.sort_by(|(n1, l1), (n2, l2)| {
+        taskname_impact_pairs.sort_by(|(n1, _, l1), (n2, _, l2)| {
           l2.partial_cmp(l1).unwrap_or(n2.cmp(n1))
         });
 
-        for (name, load) in &taskname_impact_pairs {
-          println!("{:<25} {:<10}", name, load);
+        for (name, task, impact) in &taskname_impact_pairs {
+          print_task_impact(name, task, *impact)
         }
       }
-      Impact { task_name_opt: Some(task_name) } => {
-        match tenv.todolist.get_ref(task_name) {
-          Some(task) => {
-            print_task_impact(task_name, task, tenv);
-          }
-          None => println!("[taggytime] Task `{}` does not exist", task_name),
-        }
-      }
-      
     }
     Ok(())
   }
