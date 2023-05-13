@@ -6,6 +6,7 @@ mod load_file;
 mod time;
 mod util_typs;
 mod taggy_cmd;
+mod util;
 
 use std::{io::BufRead, path::Path};
 
@@ -85,7 +86,7 @@ fn handle_command_vec(
       println!("[taggytime] timezone set to {}", tenv.tz);
       Ok(NextInteraction::Prompt)
     }
-    ["load", filename, "as", newname] => {
+    ["load", ..] => {
       unimplemented!("Moved");
     }
     ["remove", name] => {
@@ -94,7 +95,7 @@ fn handle_command_vec(
       }
       Ok(NextInteraction::Prompt)
     }
-    ["add-todo", name, load, ..] => {
+    ["add-todo", ..] => {
       unimplemented!("Moved")
     }
     ["set-progress", name, progress] => {

@@ -1,8 +1,8 @@
-use std::fs::File;
+use std::{fs::File, path::Path};
 
 use crate::{
   time::{timezone::ZoneOffset, MinInstant, TimeError},
-  util_typs::RefinementError,
+  util_typs::RefinementError, util::path2string,
 };
 
 use self::{
@@ -77,24 +77,24 @@ impl From<RefinementError> for ICSProcessError {
 }
 
 /// Performs lexing plus parsing for the given `.ics` file.
-pub fn lex_and_parse(
-  ics_filename: &str,
+pub fn lex_and_parse<P: AsRef<Path>>(
+  path: P,
   default_tz: ZoneOffset,
 ) -> Result<ICalendar, ICSProcessError> {
-  let content = std::fs::read_to_string(ics_filename)
-    .expect(format!("Cannot read from `{}`", ics_filename).as_str());
+  let content = std::fs::read_to_string(&path)
+    .expect(format!("Cannot read from `{}`", path2string(&path)).as_str());
 
-  let lex = IcsLexer::new(ics_filename, &content);
+  let lex = IcsLexer::new(&path, &content);
   ICSParser::from_ics_lexer(lex).parse(default_tz)
 }
 
-pub fn test_lexer(ics_filename: &str) -> Result<(), ICSProcessError> {
-  let content = std::fs::read_to_string(ics_filename)
-    .expect(format!("Cannot read from `{}`", ics_filename).as_str());
+pub fn test_lexer<P: AsRef<Path>>(path: P) -> Result<(), ICSProcessError> {
+  let content = std::fs::read_to_string(&path)
+    .expect(format!("Cannot read from `{}`",  path2string(&path)).as_str());
 
-  let mut lex = IcsLexer::new(ics_filename, &content);
+  let mut lex = IcsLexer::new(&path, &content);
 
-  let mut out_file = File::create(format!("{}.tokens", ics_filename))
+  let mut out_file = File::create(format!("{}.tokens", path2string(&path)))
     .expect("Cannot open test lexer file");
 
   loop {

@@ -4,18 +4,18 @@ use std::path::{PathBuf, Path};
 
 use clap::Subcommand;
 
-use crate::{time::TimeError, TaggyEnv, load_file, calendar::task::Task};
+use crate::{time::TimeError, TaggyEnv, load_file, calendar::task::Task, util::path2string};
 
 /// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
 /// provided, the loaded calendar will be renamed accordingly.
 fn load_ics_to_tenv<P: AsRef<Path>>(
   tenv: &mut TaggyEnv,
-  file: P,
+  path: P,
   name: &str,
 ) -> Result<(), TimeError> {
-  let events = load_file::load_schedule_ics(file, tenv.tz)?;
+  let events = load_file::load_schedule_ics(&path, tenv.tz)?;
     tenv.calendars.unique_insert(name, events)?;
-    println!("[taggytime] Loaded `{}` as `{}`", file.as_ref().display(), name);
+    println!("[taggytime] Loaded `{}` as `{}`", path2string(&path), name);
     Ok(())
 }
 

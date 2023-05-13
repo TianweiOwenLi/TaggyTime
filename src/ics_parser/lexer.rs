@@ -1,7 +1,9 @@
 use std::iter::Peekable;
+use std::path::Path;
 use std::str::Chars;
 
 use crate::const_params::ICS_ASSUME_TRANSP_ALWAYS_AFTER_SUMMARY;
+use crate::util::path2string;
 
 use super::ICSProcessError;
 
@@ -116,22 +118,22 @@ impl Token {
 }
 
 pub struct IcsLexer<'a> {
-  name: &'a str,
+  name: String,
   stream: Peekable<Chars<'a>>,
 }
 
 impl<'a> IcsLexer<'a> {
   /// Creates an ics lexer from some string.
-  pub fn new(name: &'a str, content: &'a str) -> IcsLexer<'a> {
+  pub fn new<P: AsRef<Path>>(path: P, content: &'a str) -> IcsLexer<'a> {
     IcsLexer {
-      name,
+      name: path2string(path),
       stream: content.chars().peekable(),
     }
   }
 
   /// Gets the name of ics file
   pub fn get_name(&self) -> String {
-    self.name.to_string()
+    self.name.clone()
   }
 
   /// Advances the lexer and returns a particular token.
