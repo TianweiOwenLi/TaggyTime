@@ -34,7 +34,8 @@ impl<T> NameMap<T> {
     self.contents.contains_key(key)
   }
 
-  pub fn try_insert(&mut self, key: &str, val: T) -> Result<(), CalError> {
+  /// Attempts to insert some key-value pairs. Returns error on double-insert.
+  pub fn unique_insert(&mut self, key: &str, val: T) -> Result<(), CalError> {
     if self.contains(key) {
       Err(CalError::DoubleInsert(key.to_string()))
     } else {

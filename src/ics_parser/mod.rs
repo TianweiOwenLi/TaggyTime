@@ -19,6 +19,7 @@ pub mod peekbuf;
 #[allow(dead_code)]
 #[derive(Clone)]
 pub enum ICSProcessError {
+  NotIcsFile(String),
   EOF,
   NaN(Token),
   CannotCastTok(Token),
@@ -34,6 +35,7 @@ pub enum ICSProcessError {
 impl std::fmt::Display for ICSProcessError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
+      ICSProcessError::NotIcsFile(s) => write!(f, "`{}` is not an ics file", s),
       ICSProcessError::EOF => write!(f, "End of file error"),
       ICSProcessError::CannotCastTok(t) => {
         write!(f, "Cannot cast token `{}` to str", t)

@@ -11,6 +11,9 @@ pub fn load_schedule_ics(
   ics_filename: &str,
   default_tz: ZoneOffset,
 ) -> Result<Vec<Event>, ICSProcessError> {
+  if ! ics_filename.ends_with(".ics") {
+    return Err(ICSProcessError::NotIcsFile(ics_filename.to_string()));
+  } 
   let parse_result = lex_and_parse(ics_filename, default_tz)?;
   parse_result
     .content

@@ -67,34 +67,17 @@ fn store_empty_env<T: AsRef<Path>>(path: T) -> Result<(), TimeError> {
 fn load_ics_to_tenv(
   tenv: &mut TaggyEnv,
   filename: &str,
-  newname_opt: Option<&str>,
-) {
-  if tenv.calendars.contains(filename) {
-    println!("[taggytime] Calendar `{}` already exists! ", filename);
-  } else {
-    let events = load_file::load_schedule_ics(filename, tenv.tz)
-      .expect("[taggytime] Failed to .ics file");
+  newname: &str,
+) -> Result<(), TimeError> {
+  let events = load_file::load_schedule_ics(filename, tenv.tz)?;
     if DBG {
       for event in &events {
         println!("{}", event);
       }
     }
-    tenv.calendars.force_insert(filename, events);
-
-    match newname_opt {
-      Some(newname) => {
-        tenv
-          .calendars
-          .rename(filename, newname)
-          .expect("Just inserted");
-        println!(
-          "[taggytime] Successfully loaded `{}` as `{}`",
-          filename, newname
-        );
-      }
-      None => println!("[taggytime] Successfully loaded `{}`", filename),
-    }
-  }
+    tenv.calendars.unique_insert(newname, events)?;
+    println!("[taggytime] Loaded `{}` as `{}`", filename, newname);
+    Ok(())
 }
 
 fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) {
@@ -136,11 +119,7 @@ fn handle_command_vec(
       Ok(NextInteraction::Prompt)
     }
     ["load", filename, "as", newname] => {
-      if filename.ends_with(".ics") {
-        load_ics_to_tenv(tenv, filename, Some(newname));
-      } else {
-        println!("[taggytime] Invalid file extension: {}", filename);
-      }
+      load_ics_to_tenv(tenv, filename, newname)?;
       Ok(NextInteraction::Prompt)
     }
     ["remove", name] => {
