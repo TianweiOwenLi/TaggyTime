@@ -8,6 +8,7 @@ mod util_typs;
 
 use std::{io::BufRead, path::Path};
 
+use clap::Parser;
 use serde::{Deserialize, Serialize};
 
 use calendar::{
@@ -15,7 +16,6 @@ use calendar::{
   task::{Task, Workload},
   NameMap,
 };
-use const_params::DBG;
 use time::{timezone::ZoneOffset, MinInstant, TimeError};
 
 use crate::{args::*, util_typs::percent::Percent};
@@ -126,8 +126,7 @@ fn handle_command_vec(
       Ok(NextInteraction::Prompt)
     }
     ["set-progress", name, progress] => {
-      let task_opt = tenv.todolist.get_mut(name);
-      match task_opt {
+      match tenv.todolist.get_mut(name) {
         Some(task) => {
           let prog: Percent = progress.parse()?;
           task.set_progress(prog);
@@ -178,12 +177,9 @@ fn interactive_loop(tenv: &mut TaggyEnv) -> Result<(), TimeError> {
 }
 
 fn main() {
-  let cli_info = parse_args().unwrap_or_else(|e| {
-    eprintln!("Parse argument failed! \n{:?}", e);
-    std::process::exit(1)
-  });
+  let cli_info = CliInfo::parse();
 
-  let mut tenv = load_env(&cli_info.taggyenv_path).unwrap_or_else(|e| {
+  let mut tenv = load_env(&cli_info.envpath).unwrap_or_else(|e| {
     eprintln!("TaggyTime environment failed to load! \n{:?}", e);
     std::process::exit(1)
   });
@@ -193,17 +189,10 @@ fn main() {
       if let Err(e) = interactive_loop(&mut tenv) {
         eprintln!("[taggytime] Interactive mode error: {:?}", e);
       }
-      store_env(&cli_info.taggyenv_path, &tenv)
-    }
-    Mode::Cli(v) => {
-      handle_command_vec(v, &mut tenv).unwrap_or_else(|e| {
-        eprintln!("Command execution failed! \n{:?}", e);
-        std::process::exit(1)
-      });
-      store_env(&cli_info.taggyenv_path, &tenv)
+      store_env(&cli_info.envpath, &tenv)
     }
     Mode::Template => {
-      store_empty_env(&cli_info.taggyenv_path)
+      store_empty_env(&cli_info.envpath)
     }
   };
 
