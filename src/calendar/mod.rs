@@ -76,7 +76,7 @@ impl NameMap<Vec<Event>> {
 
   /// Givent the collection of events, compute the relative impact of a task.
   pub fn impact(&self, todo: &Task) -> Percent {
-    let miv = MinInterval::from_now_till(todo.due);
+    let miv = MinInterval::from_now_till(todo.due, todo.due.offset);
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);
     let available_time = total_time - occupied_time;

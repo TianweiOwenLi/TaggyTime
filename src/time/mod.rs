@@ -168,9 +168,8 @@ pub struct MinInterval {
 // TODO still contains magic number
 // TODO improve human interaction
 impl MinInstant {
-  /// Constructs a MinInstant using current system time. Sets to UTC zone
-  /// by default.
-  pub fn now() -> Self {
+  /// Constructs a MinInstant using current system time. Sets to given timezone.
+  pub fn now(tz: ZoneOffset) -> Self {
     let t: i64 = Instant::now().seconds() / SEC_IN_MIN;
 
     if t > MINUTE_UPPERBOUND {
@@ -180,10 +179,13 @@ impl MinInstant {
       panic!("datetime seconds negative")
     };
 
-    Self {
+    let mut ret = Self {
       raw: t as u32,
       offset: ZoneOffset::utc(),
-    }
+    };
+
+    ret.adjust_to_zone(tz);
+    ret
   }
 
   pub fn from_raw_utc(raw: u32) -> Result<Self, TimeError> {
@@ -309,9 +311,9 @@ impl MinInterval {
   }
 
   /// Creates a `MinInterval` from now till the given `MinInstant`.
-  pub fn from_now_till(end: MinInstant) -> MinInterval {
+  pub fn from_now_till(end: MinInstant, tz: ZoneOffset) -> MinInterval {
     MinInterval {
-      start: MinInstant::now(),
+      start: MinInstant::now(tz),
       end,
     }
   }
@@ -445,7 +447,7 @@ fn parse_u32_bound(expr: &str, lb: u32, ub: u32) -> Result<u32, TimeError> {
 }
 
 /// Parses some str as year, month, and day.
-fn parse_ymd(expr: &str) -> Result<(CeYear, Month, u32), TimeError> {
+fn parse_ymd(expr: &str, tz: ZoneOffset) -> Result<(CeYear, Month, u32), TimeError> {
   let args: Vec<&str> = expr.split("/").map(|s| s.trim()).collect();
   match args[..] {
     [y, m, d] => {
@@ -455,7 +457,7 @@ fn parse_ymd(expr: &str) -> Result<(CeYear, Month, u32), TimeError> {
       Ok((y, m, d))
     }
     [m, d] => {
-      let y: CeYear = MinInstant::now().decomp_yr_min().0.to_ce();
+      let y: CeYear = MinInstant::now(tz).decomp_yr_min().0.to_ce();
       let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
@@ -534,7 +536,7 @@ mod test {
       offset: ZoneOffset::utc(),
     };
 
-    let mi_now = MinInstant::now();
+    let mi_now = MinInstant::now(ZoneOffset::utc());
 
     assert!(mi < mi_now);
   }

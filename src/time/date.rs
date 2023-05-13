@@ -166,7 +166,7 @@ impl Date {
 
     match args[..2] {
       [ymd_str, time] => {
-        let (yr, mon, day) = parse_ymd(ymd_str)?;
+        let (yr, mon, day) = parse_ymd(ymd_str, default_tz)?;
         let (hr, min) = parse_hr_min(time)?;
         Ok(Date {
           yr,

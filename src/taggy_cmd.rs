@@ -29,7 +29,7 @@ fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task)
 /// Prints task impact for a given task, its name, and `TaggyEnv`.
 pub fn print_task_impact(name: &str, t: &Task, impact: Percent) {
   println!(
-    "{:<20} {:<35} {:<10}    {:<10}", 
+    "{:<20} {:<35} {:<10}          {:<10}", 
     name, 
     t.due.as_date_string(), 
     t.completion,
@@ -157,8 +157,7 @@ impl TaggyCmd {
 
       // time / timezone related operations
       Now => {
-        let mut mi = time::MinInstant::now();
-        mi.adjust_to_zone(tenv.tz);
+        let mi = time::MinInstant::now(tenv.tz);
         println!("[taggytime] now is: {}", mi.as_date_string());
       }
       Tz => {
@@ -208,6 +207,10 @@ impl TaggyCmd {
         taskname_impact_pairs.sort_by(|(n1, _, l1), (n2, _, l2)| {
           l2.partial_cmp(l1).unwrap_or(n2.cmp(n1))
         });
+
+        println!("\
+Task Name            Due                                 Completion  Impact
+-----------------------------------------------------------------------------");
 
         for (name, task, impact) in &taskname_impact_pairs {
           print_task_impact(name, task, *impact)

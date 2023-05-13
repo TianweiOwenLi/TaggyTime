@@ -4,6 +4,7 @@ use crate::ics_parser::ics_syntax::{FreqAndRRules, Vevent};
 use crate::ics_parser::ICSProcessError;
 use crate::time::date::Date;
 use crate::time::fact::MIN_IN_DAY;
+use crate::time::timezone::ZoneOffset;
 use crate::time::{date::DateProperty, MinInstant, MinInterval};
 use crate::util_typs::refinement::*;
 use serde::{Deserialize, Serialize};
@@ -124,14 +125,16 @@ impl Recurrence {
 
   /// Computes whether this recurrence has already ended.
   pub fn ended(&self) -> bool {
+    let tz = ZoneOffset::utc(); // any timezone works for mi comparison
+    
     match self.patt {
       Pattern::Once => {
-        self.event_miv.end < MinInstant::now()
+        self.event_miv.end < MinInstant::now(tz)
       }
       Pattern::Many(_, _, Term::Never) => false,
       _ => {
         for miv in self.clone() {
-          if miv.end >= MinInstant::now() {
+          if miv.end >= MinInstant::now(tz) {
             return false;
           }
         }
