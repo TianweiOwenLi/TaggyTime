@@ -2,6 +2,7 @@ use std::env;
 
 pub enum Mode {
   Interactive,
+  Template,
   Cli(Vec<String>),
 }
 
@@ -32,8 +33,9 @@ pub fn parse_args() -> Result<CliInfo, CommandLineError> {
   let taggyenv_path = args[2].to_string();
 
   match flag {
+    // Interactive mode
     "-i" => {
-      if n > 2 {
+      if n > 3 {
         Err(CommandLineError(
           "Redundant argument after interaction mode".to_string(),
         ))
@@ -44,10 +46,17 @@ pub fn parse_args() -> Result<CliInfo, CommandLineError> {
         })
       }
     }
+
+    // Cli mode
     "-c" => Ok(CliInfo { 
       taggyenv_path,
       mode: Mode::Cli(args[1..].to_vec()) 
     }),
+
+    // Create template
+    "-t" => Ok(CliInfo { taggyenv_path, mode: Mode::Template }),
+
+    // Bad flag
     _ => panic!("Bad flag")
   }
 }

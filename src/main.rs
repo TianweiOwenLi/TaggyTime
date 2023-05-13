@@ -20,6 +20,11 @@ use time::{timezone::ZoneOffset, MinInstant, TimeError};
 
 use crate::{args::*, util_typs::percent::Percent};
 
+enum NextInteraction {
+  Prompt,
+  Quit,
+}
+
 /// Stores global variables for such interaction.
 ///
 /// [todo] Implement load from file.
@@ -30,21 +35,31 @@ struct TaggyEnv {
   todolist: NameMap<Task>,
 }
 
+impl TaggyEnv {
+  fn new() -> Self {
+    TaggyEnv {
+      tz: ZoneOffset::utc(),
+      calendars: NameMap::mk_empty(),
+      todolist: NameMap::mk_empty(),
+    }
+  }
+}
+
 /// Loads the interactive environment.
-fn load_env<T: AsRef<Path>>(_x: T) -> Result<TaggyEnv, TimeError> {
-  // let content = std::fs::read_to_string(path)?;
-  // Ok(serde_json::from_str(&content)?)
-  Ok(TaggyEnv {
-    tz: ZoneOffset::utc(),
-    calendars: NameMap::mk_empty(),
-    todolist: NameMap::mk_empty(),
-  })
+fn load_env<T: AsRef<Path>>(path: T) -> Result<TaggyEnv, TimeError> {
+  let content = std::fs::read_to_string(path)?;
+  Ok(serde_json::from_str(&content)?)
 }
 
 /// Stores the interactive environment.
 fn store_env<T: AsRef<Path>>(path: T, tenv: &TaggyEnv) -> Result<(), TimeError> {
   let s = serde_json::to_string(tenv)?;
   Ok(std::fs::write(path, s)?)
+}
+
+/// Creates a new `json` file for a default (i.e. empty) environment.
+fn store_empty_env<T: AsRef<Path>>(path: T) -> Result<(), TimeError> {
+  store_env(path, &TaggyEnv::new())
 }
 
 /// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
@@ -97,28 +112,28 @@ fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) {
 fn handle_command_vec(
   cmd: Vec<String>,
   tenv: &mut TaggyEnv,
-) -> Result<(), TimeError> {
+) -> Result<NextInteraction, TimeError> {
   let cmd: Vec<&str> = cmd.iter().map(|s| s.as_str()).collect();
 
   match cmd[..] {
     ["test", "lexer", ics_filename] => {
       ics_parser::test_lexer(ics_filename)?;
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["test", "parser", ics_filename] => {
       ics_parser::test_parser(ics_filename)?;
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["now"] => {
       let mut mi = time::MinInstant::now();
       mi.adjust_to_zone(tenv.tz);
       println!("[taggytime] now is: {}", mi.as_date_string());
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["set", "tz", s] => {
       tenv.tz = s.parse()?;
       println!("[taggytime] timezone set to {}", tenv.tz);
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["load", filename] => {
       if filename.ends_with(".ics") {
@@ -126,7 +141,7 @@ fn handle_command_vec(
       } else {
         println!("[taggytime] Invalid file extension: {}", filename);
       }
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["load", filename, "as", newname] => {
       if filename.ends_with(".ics") {
@@ -134,22 +149,22 @@ fn handle_command_vec(
       } else {
         println!("[taggytime] Invalid file extension: {}", filename);
       }
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["rename", old_name, new_name] => {
       tenv.calendars.rename(old_name, new_name)?;
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["remove", name] => {
       tenv.calendars.remove(name);
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["add-todo", name, load, ..] => {
       let load: Workload = load.parse()?;
       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
       let todo = Task::new(due, load);
       load_todo_to_tenv(tenv, name, todo);
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["set-progress", name, progress] => {
       let task_opt = tenv.todolist.get_mut(name);
@@ -161,7 +176,7 @@ fn handle_command_vec(
         }
         None => println!("[taggytime] Task `{}` does not exist", name),
       }
-      Ok(())
+      Ok(NextInteraction::Prompt)
     }
     ["impact", name] => {
       let task_opt = tenv.todolist.get_ref(name);
@@ -171,7 +186,10 @@ fn handle_command_vec(
         }
         None => println!("[taggytime] Task `{}` does not exist", name),
       }
-      Ok(())
+      Ok(NextInteraction::Prompt)
+    }
+    ["q"] | ["quit"] => {
+      Ok(NextInteraction::Quit)
     }
     _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd))),
   }
@@ -191,8 +209,16 @@ fn interactive_loop(tenv: &mut TaggyEnv) -> Result<(), TimeError> {
     // interpret
     let v: Vec<String> =
       buf.split(' ').map(|s| s.trim().to_string()).collect();
-    if let Err(e) = handle_command_vec(v, tenv) {
-      eprintln!("[taggytime] Command error: {:?}", e);
+    match handle_command_vec(v, tenv) {
+      Ok(NextInteraction::Quit) => {
+        break Ok(());
+      }
+      Ok(NextInteraction::Prompt) => {
+        // do nothing
+      }
+      Err(e) => {
+        eprintln!("[taggytime] Command error: {:?}", e);
+      }
     }
   }
 }
@@ -221,6 +247,9 @@ fn main() {
         std::process::exit(1)
       });
       store_env(&cli_info.taggyenv_path, &tenv)
+    }
+    Mode::Template => {
+      store_empty_env(&cli_info.taggyenv_path)
     }
   };
 
