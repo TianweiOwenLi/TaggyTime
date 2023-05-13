@@ -22,7 +22,7 @@ fn load_ics_to_tenv<P: AsRef<Path>>(
 fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) 
 -> Result<(), TimeError>{
   tenv.todolist.unique_insert(name, todo)?;
-  println!("[taggytime] Successfully added task `{}`", name);
+  println!("[taggytime] Added task `{}`", name);
   Ok(())
 }
 
@@ -61,10 +61,10 @@ pub enum TaggyCmd {
   /// Shows current time.
   Now,
 
-  /// Shows current timezone.
+  /// Shows current TaggyEnv timezone.
   GetTz,
 
-  /// Sets Timezone.
+  /// Sets TaggyEnv timezone.
   SetTz{
     /// Timezone string expression, i.e. -4:00 means EDT.
     tz_expr: String,
@@ -78,14 +78,20 @@ pub enum TaggyCmd {
     /// Workload of task in minutes.
     load: u32,
 
-    /// Due in string expression.
-    due: String,
+    /// Due date in string expression.
+    duedate: String,
+
+    /// Due hour in string expression.
+    duehour: String,
+
+    /// Optional timezone specification. Defaults to TaggyEnv timezone.
+    tz_opt: Option<String>,
   },
 
   /// Removes some task.
   RmTask{
     /// Name of task.
-    task_name: String,
+    taskname: String,
   },
 
   /// Sets the progress of a certain task.
@@ -141,17 +147,18 @@ impl TaggyCmd {
       }
 
       // task / progress related operations
-      AddTask { task_name, load, due } => {
-        println!("{}", due);
-
-        let due_parts: Vec<&str> = due.split(' ').map(|s| s.trim()).collect();
+      AddTask { task_name, load, duedate, duehour: duehr, tz_opt } => {
+        let mut due_parts: Vec<&str> = vec![duedate, duehr];
+        if let Some(tz) = tz_opt {
+          due_parts.push(tz);
+        }
 
         let load: Workload = Workload::from_num_min(*load)?;
         let due = MinInstant::parse_from_str(&due_parts, tenv.tz)?;
         let todo = Task::new(due, load);
         load_todo_to_tenv(tenv, task_name, todo)?;
       }
-      RmTask { task_name } => {
+      RmTask { taskname: task_name } => {
         match tenv.todolist.remove(task_name) {
           Some(..) => println!("[taggytime] Removed task `{}`", task_name),
           None => println!("[taggytime] There is no task `{}`", task_name),
