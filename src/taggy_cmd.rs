@@ -4,7 +4,7 @@ use std::path::{PathBuf, Path};
 
 use clap::Subcommand;
 
-use crate::{time::TimeError, TaggyEnv, load_file, calendar::task::Task, util::path2string};
+use crate::{time::{TimeError, self}, TaggyEnv, load_file, calendar::task::Task, util::path2string};
 
 /// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
 /// provided, the loaded calendar will be renamed accordingly.
@@ -56,10 +56,10 @@ pub enum TaggyCmd {
   Now,
 
   /// Shows current timezone.
-  Tz,
+  GetTz,
 
   /// Sets Timezone.
-  TzSet{
+  SetTz{
     /// Timezone string expression, i.e. -4:00 means EDT.
     tz_expr: String,
   },
@@ -77,7 +77,10 @@ pub enum TaggyCmd {
 
     /// Due time in string expression. 
     duetime: String,
-  }
+  },
+
+  /// Truncates already-ended events.
+  Truncate,
 }
 // let load: Workload = load.parse()?;
 //       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
@@ -89,9 +92,34 @@ impl TaggyCmd {
     use TaggyCmd::*;
     // use TaggyCmdError::*;
     match self {
+      // calendar / events related operations
       CalLoad { path, name } => {
-        Ok(load_ics_to_tenv(tenv, path, name)?)
+        load_ics_to_tenv(tenv, path, name)?;
       }
+      CalRm { name } => {
+        if tenv.calendars.remove(name).is_none() {
+          println!("[taggytime] There is no calendar `{}` to remove", name);
+        }
+      }
+      Truncate => {
+        tenv.calendars.filter_events(|e| ! e.ended());
+      }
+
+      // time / timezone related operations
+      Now => {
+        let mut mi = time::MinInstant::now();
+        mi.adjust_to_zone(tenv.tz);
+        println!("[taggytime] now is: {}", mi.as_date_string());
+      }
+      GetTz => {
+        println!("[taggytime] timezone is {}", tenv.tz);
+      }
+      SetTz { tz_expr } => {
+        tenv.tz = tz_expr.parse()?;
+        println!("[taggytime] timezone set to {}", tenv.tz);
+      }
+      
     }
+    Ok(())
   }
 }

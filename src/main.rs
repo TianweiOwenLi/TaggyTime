@@ -75,29 +75,6 @@ fn handle_command_vec(
       ics_parser::test_parser(ics_filename)?;
       Ok(NextInteraction::Prompt)
     }
-    ["now"] => {
-      let mut mi = time::MinInstant::now();
-      mi.adjust_to_zone(tenv.tz);
-      println!("[taggytime] now is: {}", mi.as_date_string());
-      Ok(NextInteraction::Prompt)
-    }
-    ["set", "tz", s] => {
-      tenv.tz = s.parse()?;
-      println!("[taggytime] timezone set to {}", tenv.tz);
-      Ok(NextInteraction::Prompt)
-    }
-    ["load", ..] => {
-      unimplemented!("Moved");
-    }
-    ["remove", name] => {
-      if tenv.calendars.remove(name).is_none() {
-        println!("[taggytime] There is no calendar `{}` to remove", name);
-      }
-      Ok(NextInteraction::Prompt)
-    }
-    ["add-todo", ..] => {
-      unimplemented!("Moved")
-    }
     ["set-progress", name, progress] => {
       match tenv.todolist.get_mut(name) {
         Some(task) => {
@@ -119,12 +96,7 @@ fn handle_command_vec(
       }
       Ok(NextInteraction::Prompt)
     }
-    ["truncate"] => {
-      tenv.calendars.filter_events(|e| ! e.ended());
-      Ok(NextInteraction::Prompt)
-    }
-    ["q"] | ["quit"] => Ok(NextInteraction::Quit),
-    _ => Err(TimeError::InvalidCommand(format!("{:?}", cmd))),
+    _ => panic!("bad command")
   }
 }
 
