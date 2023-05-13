@@ -18,8 +18,6 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * GUI
 * Handling of `.ics` timezone
 * Cache datetime property computations [important]
-* Handle Date to MinInstant conversion timezone bias
-* DateProperty never true leads to next() not terminate
 * Implement interval and setpos handling
 * Optimize miv::advance_until() via elim. back-forth conversion.
 * Use DFA and / or their genfun for optimization?
@@ -27,9 +25,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Handle week starting day.
 * Use refinement typ for `ZoneOffset`
 * Calendar repetition interval chk
-* Iterator for `&Recurrence`
 * `MinInterval` bounds chk
-* Complete `todolist` skeleton.
 * Error-typ proper conversion.
 * Implement VTimeZone.
 * Organize util fns.

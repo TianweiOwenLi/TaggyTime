@@ -215,7 +215,6 @@ impl DatePropertyElt {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DateProperty {
   Always,
-  Never,
   Atomic(DatePropertyElt),
   Or(Vec<DateProperty>),
   And(Vec<DateProperty>),
@@ -226,7 +225,6 @@ impl DateProperty {
     use DateProperty::*;
     match self {
       Always => true,
-      Never => false,
       Atomic(dpe) => dpe.chk(d),
       Or(v) | And(v) => {
         let shortcut_value = if let Or(..) = self { true } else { false };
