@@ -5,18 +5,15 @@ mod ics_parser;
 mod load_file;
 mod time;
 mod util_typs;
+mod taggy_cmd;
 
 use std::{io::BufRead, path::Path};
 
 use clap::Parser;
 use serde::{Deserialize, Serialize};
 
-use calendar::{
-  cal_event::Event,
-  task::{Task, Workload},
-  NameMap,
-};
-use time::{timezone::ZoneOffset, MinInstant, TimeError};
+use calendar::{cal_event::Event, task::Task, NameMap};
+use time::{timezone::ZoneOffset, TimeError};
 
 use crate::{args::*, util_typs::percent::Percent};
 
@@ -62,26 +59,6 @@ fn store_empty_env<T: AsRef<Path>>(path: T) -> Result<(), TimeError> {
   store_env(path, &TaggyEnv::new())
 }
 
-/// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
-/// provided, the loaded calendar will be renamed accordingly.
-fn load_ics_to_tenv(
-  tenv: &mut TaggyEnv,
-  filename: &str,
-  newname: &str,
-) -> Result<(), TimeError> {
-  let events = load_file::load_schedule_ics(filename, tenv.tz)?;
-    tenv.calendars.unique_insert(newname, events)?;
-    println!("[taggytime] Loaded `{}` as `{}`", filename, newname);
-    Ok(())
-}
-
-fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) 
--> Result<(), TimeError>{
-  tenv.todolist.unique_insert(name, todo)?;
-  println!("[taggytime] Successfully added task `{}`", name);
-  Ok(())
-}
-
 fn handle_command_vec(
   cmd: Vec<String>,
   tenv: &mut TaggyEnv,
@@ -109,8 +86,7 @@ fn handle_command_vec(
       Ok(NextInteraction::Prompt)
     }
     ["load", filename, "as", newname] => {
-      load_ics_to_tenv(tenv, filename, newname)?;
-      Ok(NextInteraction::Prompt)
+      unimplemented!("Moved");
     }
     ["remove", name] => {
       if tenv.calendars.remove(name).is_none() {
@@ -119,11 +95,7 @@ fn handle_command_vec(
       Ok(NextInteraction::Prompt)
     }
     ["add-todo", name, load, ..] => {
-      let load: Workload = load.parse()?;
-      let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
-      let todo = Task::new(due, load);
-      load_todo_to_tenv(tenv, name, todo)?;
-      Ok(NextInteraction::Prompt)
+      unimplemented!("Moved")
     }
     ["set-progress", name, progress] => {
       match tenv.todolist.get_mut(name) {
