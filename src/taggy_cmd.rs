@@ -58,6 +58,12 @@ pub enum TaggyCmd {
     name: String,
   },
 
+  /// Shows current calendars
+  Cals,
+
+  /// Shows current events
+  Events,
+
   /// Shows current time.
   Now,
 
@@ -130,6 +136,20 @@ impl TaggyCmd {
       }
       Truncate => {
         tenv.calendars.filter_events(|e| ! e.ended());
+      }
+      Cals => {
+        println!("[taggytime] Existing calendars: \n-------------------------");
+        for (c, _) in tenv.calendars.iter() {
+          println!("{}", c);
+        }
+      }
+      Events => {
+        println!("[taggytime] Existing events: \n-------------------------\n");
+        for (_, v) in tenv.calendars.iter() {
+          for e in v {
+            println!("{}", e);
+          }
+        }
       }
 
       // time / timezone related operations

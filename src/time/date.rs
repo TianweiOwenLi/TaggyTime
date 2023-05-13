@@ -212,6 +212,14 @@ impl DatePropertyElt {
   }
 }
 
+impl std::fmt::Display for DatePropertyElt {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::Wd(wd) => write!(f, "{:?}", wd)
+    }
+  }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DateProperty {
   Always,
@@ -240,6 +248,29 @@ impl DateProperty {
 
   pub fn or_vec<T: Into<DatePropertyElt>>(v: Vec<T>) -> Self {
     Self::Or(v.into_iter().map(|x| Self::Atomic(x.into())).collect())
+  }
+}
+
+impl std::fmt::Display for DateProperty {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    use DateProperty::*;
+    match self {
+      Always => write!(f, "true"),
+      Atomic(dpe) => write!(f, "{}", dpe), 
+      Or(v) | And(v) => {
+        if v.is_empty() {
+          write!(f, "{:?}", self)?;
+          return Ok(());
+        }
+
+        let space_char = if let Or(..) = self { '∨' } else { '∧' };
+        write!(f, "(")?;
+        for i in 0..(v.len() - 1) {
+          write!(f, "{} {} ", v[i], space_char)?;
+        }
+        write!(f, "{})", v.last().expect("v is not empty"))
+      }
+    }
   }
 }
 

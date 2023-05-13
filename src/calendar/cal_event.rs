@@ -214,7 +214,7 @@ impl std::fmt::Display for Pattern {
     match self {
       Pattern::Once => write!(f, "No repeat"),
       Pattern::Many(dp, iv, t) => {
-        write!(f, "{:?}\nOccurs every {} times\n{}", dp, iv, t)
+        write!(f, "{}\nOccurs every {} times\n{}", dp, iv, t)
       }
     }
   }
