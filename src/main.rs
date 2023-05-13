@@ -188,6 +188,10 @@ fn handle_command_vec(
       }
       Ok(NextInteraction::Prompt)
     }
+    ["truncate"] => {
+      tenv.calendars.filter_events(|e| ! e.ended());
+      Ok(NextInteraction::Prompt)
+    }
     ["q"] | ["quit"] => {
       Ok(NextInteraction::Quit)
     }

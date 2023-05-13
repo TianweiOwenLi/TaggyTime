@@ -107,4 +107,11 @@ impl NameMap<Vec<Event>> {
     Percent::try_from((needed_time as f32) / (available_time as f32))
       .expect("impact overflowed")
   }
+
+  /// Performs filtration across events. 
+  pub fn filter_events<F: Fn(&Event) -> bool>(&mut self, f: F) {
+    for (_, v) in &mut self.contents {
+      v.retain(&f);
+    }
+  }
 }

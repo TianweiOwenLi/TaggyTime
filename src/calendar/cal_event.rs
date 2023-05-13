@@ -121,6 +121,25 @@ impl Recurrence {
     }
     ret
   }
+
+  /// Computes whether this recurrence has already ended.
+  pub fn ended(&self) -> bool {
+    match self.patt {
+      Pattern::Once => {
+        self.event_miv.end < MinInstant::now()
+      }
+      Pattern::Many(_, _, Term::Never) => false,
+      _ => {
+        for miv in self.clone() {
+          println!("miv, now: {}, {}", miv, MinInstant::now());
+          if miv.end >= MinInstant::now() {
+            return false;
+          }
+        }
+        true
+      }
+    }
+  }
 }
 
 impl TryFrom<Vevent> for Recurrence {
@@ -164,6 +183,13 @@ impl IntoIterator for Recurrence {
 /// A struct that pairs the summary of some event with its `Recurrence`.
 #[derive(Serialize, Deserialize)]
 pub struct Event(pub String, pub Recurrence);
+
+impl Event {
+  pub fn ended(&self) -> bool {
+    println!("Compute ended for {}", self.0);
+    self.1.ended()
+  }
+}
 
 impl TryFrom<Vevent> for Event {
   type Error = ICSProcessError;
