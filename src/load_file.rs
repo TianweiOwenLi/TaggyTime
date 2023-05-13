@@ -13,13 +13,20 @@ pub fn load_schedule_ics<P: AsRef<Path>>(
   path: P,
   default_tz: ZoneOffset,
 ) -> Result<Vec<Event>, ICSProcessError> {
-  if ! path.as_ref().ends_with(".ics") {
-    return Err(ICSProcessError::NotIcsFile(path2string(&path)));
-  } 
-  let parse_result = lex_and_parse(path, default_tz)?;
-  parse_result
-    .content
-    .into_iter()
-    .map(Event::try_from)
-    .collect()
+  let bad_extension = Err(ICSProcessError::NotIcsFile(path2string(&path)));
+  match path.as_ref().extension() {
+    Some(ext) => {
+      if ext != "ics" {
+        return bad_extension;
+      }
+
+      let parse_result = lex_and_parse(path, default_tz)?;
+      parse_result
+        .content
+        .into_iter()
+        .map(Event::try_from)
+        .collect()
+     }
+    None => bad_extension
+  }
 }
