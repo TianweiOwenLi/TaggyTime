@@ -31,6 +31,7 @@ pub fn print_task_impact(name: &str, task: &Task, tenv: &TaggyEnv) {
   println!("{:<25} {:<10}", name, tenv.calendars.impact(task))
 }
 
+#[derive(Debug)]
 pub enum TaggyCmdError {
   TimeErr(TimeError),
 }

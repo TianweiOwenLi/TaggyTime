@@ -2,7 +2,7 @@
 
 use std::str::FromStr;
 
-use crate::{const_params::MAX_WORKLOAD, TaggyEnv};
+use crate::const_params::MAX_WORKLOAD;
 use crate::time::*;
 use crate::util_typs::percent::Percent;
 

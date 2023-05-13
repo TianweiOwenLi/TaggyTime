@@ -23,11 +23,6 @@ pub struct NameMap<T> {
 }
 
 impl<T> NameMap<T> {
-  pub fn mk_empty() -> Self {
-    NameMap {
-      contents: HashMap::<String, T>::new(),
-    }
-  }
 
   /// Checks whether some item has already been loaded.
   pub fn contains(&self, key: &str) -> bool {
