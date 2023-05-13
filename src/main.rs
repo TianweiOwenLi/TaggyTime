@@ -144,7 +144,9 @@ fn handle_command_vec(
       Ok(NextInteraction::Prompt)
     }
     ["remove", name] => {
-      tenv.calendars.remove(name);
+      if tenv.calendars.remove(name).is_none() {
+        println!("[taggytime] There is no calendar `{}` to remove", name);
+      }
       Ok(NextInteraction::Prompt)
     }
     ["add-todo", name, load, ..] => {

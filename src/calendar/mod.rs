@@ -77,8 +77,8 @@ impl<T> NameMap<T> {
   }
 
   /// Removes some item.
-  pub fn remove(&mut self, key: &str) {
-    self.contents.remove(key);
+  pub fn remove(&mut self, key: &str) -> Option<T> {
+    self.contents.remove(key)
   }
 }
 
