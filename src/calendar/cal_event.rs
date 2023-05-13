@@ -131,7 +131,6 @@ impl Recurrence {
       Pattern::Many(_, _, Term::Never) => false,
       _ => {
         for miv in self.clone() {
-          println!("miv, now: {}, {}", miv, MinInstant::now());
           if miv.end >= MinInstant::now() {
             return false;
           }
@@ -186,7 +185,6 @@ pub struct Event(pub String, pub Recurrence);
 
 impl Event {
   pub fn ended(&self) -> bool {
-    println!("Compute ended for {}", self.0);
     self.1.ended()
   }
 }

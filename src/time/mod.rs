@@ -364,6 +364,11 @@ impl MinInterval {
             return Ok(None);
           }
         }
+
+        // catch the case where while loops was not entered
+        if new_miv.start > until {
+          return Ok(None);
+        }
       }
       None => {
         while !dp.check(Date::from_min_instant(new_miv.start)) {
