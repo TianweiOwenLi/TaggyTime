@@ -29,6 +29,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Error-typ proper conversion.
 * Implement VTimeZone.
 * Organize util fns.
+* Get rid of `MinInstant` offset to elim bugs
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

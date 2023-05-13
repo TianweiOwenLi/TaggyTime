@@ -221,6 +221,13 @@ impl MinInstant {
     }
   }
 
+  /// Normalizes to utc timezone.
+  pub fn normalize(self) -> MinInstant {
+    let mut ret = self;
+    ret.adjust_to_zone(ZoneOffset::utc());
+    ret
+  }
+
   /// Decomposes the `MinInstant` into whole year plus number of minutes.
   pub fn decomp_yr_min(&self) -> (UnixYear, u32) {
     let mut curr_yr = UnixYear::new(0).expect("year 1970 is valid");
@@ -311,16 +318,23 @@ impl MinInterval {
   }
 
   /// Creates a `MinInterval` from now till the given `MinInstant`.
-  pub fn from_now_till(end: MinInstant, tz: ZoneOffset) -> MinInterval {
+  pub fn from_now_till(end: MinInstant) -> MinInterval {
     MinInterval {
-      start: MinInstant::now(tz),
+      start: MinInstant::now(end.offset),
       end,
     }
   }
 
+  /// Normalizes to utc timezone.
+  pub fn normalize(self) -> MinInterval {
+    MinInterval { start: self.start.normalize(), end: self.end.normalize() }
+  }
+
   /// Computes the duration of overlap of two `MinInterval` in minutes.
   pub fn overlap_duration(&self, rhs: MinInterval) -> u32 {
-    let (lb, ub) = (max(self.start, rhs.start), min(self.end, rhs.end));
+    let (lhs, rhs) = (self.normalize(), rhs.normalize());
+
+    let (lb, ub) = (max(lhs.start, rhs.start), min(lhs.end, rhs.end));
     if lb >= ub {
       0
     } else {
@@ -394,7 +408,8 @@ impl MinInterval {
   }
 
   pub fn num_min(&self) -> u32 {
-    self.end.raw - self.start.raw
+    let miv = self.normalize();
+    miv.end.raw - miv.start.raw
   }
 }
 

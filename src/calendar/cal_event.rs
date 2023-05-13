@@ -107,7 +107,13 @@ impl Recurrence {
   /// Computes the number of minutes overlapped with some `MinInterval`.
   pub fn overlap(self, miv: MinInterval) -> u32 {
     let mut ret: u32 = 0;
+
+    let miv = miv.normalize();
+
     'a: for rec_miv in self {
+
+      let rec_miv = rec_miv.normalize();
+
       // skip the non-interacting min-intervals.
       if rec_miv.end <= miv.start {
         continue 'a;
@@ -126,7 +132,7 @@ impl Recurrence {
   /// Computes whether this recurrence has already ended.
   pub fn ended(&self) -> bool {
     let tz = ZoneOffset::utc(); // any timezone works for mi comparison
-    
+
     match self.patt {
       Pattern::Once => {
         self.event_miv.end < MinInstant::now(tz)
