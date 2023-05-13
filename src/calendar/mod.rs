@@ -44,29 +44,6 @@ impl<T> NameMap<T> {
     }
   }
 
-  /// Inserts WITHOUT checking pre-existence.
-  pub fn force_insert(&mut self, key: &str, val: T) {
-    self.contents.insert(key.to_string(), val);
-  }
-
-  /// Renames some item.
-  pub fn rename<'a>(
-    &mut self,
-    old_key: &'a str,
-    new_key: &str,
-  ) -> Result<(), CalError> {
-    match self.contents.remove(old_key) {
-      Some(v) => {
-        if self.contains(new_key) {
-          return Err(CalError::NewnameUnavailable(new_key.to_string()));
-        }
-        self.contents.insert(new_key.to_string(), v);
-        Ok(())
-      }
-      None => Err(CalError::KeyNotFound(new_key.to_string())),
-    }
-  }
-
   /// Gets immutable ref.
   pub fn get_ref(&self, key: &str) -> Option<&T> {
     self.contents.get(key)

@@ -70,26 +70,16 @@ fn load_ics_to_tenv(
   newname: &str,
 ) -> Result<(), TimeError> {
   let events = load_file::load_schedule_ics(filename, tenv.tz)?;
-    if DBG {
-      for event in &events {
-        println!("{}", event);
-      }
-    }
     tenv.calendars.unique_insert(newname, events)?;
     println!("[taggytime] Loaded `{}` as `{}`", filename, newname);
     Ok(())
 }
 
-fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) {
-  if tenv.todolist.contains(name) {
-    println!("[taggytime] Task `{}` already exists! ", name);
-  } else {
-    if DBG {
-      println!("{}", &todo);
-    }
-    tenv.todolist.force_insert(name, todo);
-    println!("[taggytime] Successfully added task `{}`", name);
-  }
+fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task) 
+-> Result<(), TimeError>{
+  tenv.todolist.unique_insert(name, todo)?;
+  println!("[taggytime] Successfully added task `{}`", name);
+  Ok(())
 }
 
 fn handle_command_vec(
@@ -132,7 +122,7 @@ fn handle_command_vec(
       let load: Workload = load.parse()?;
       let due = MinInstant::parse_from_str(&cmd[3..], tenv.tz)?;
       let todo = Task::new(due, load);
-      load_todo_to_tenv(tenv, name, todo);
+      load_todo_to_tenv(tenv, name, todo)?;
       Ok(NextInteraction::Prompt)
     }
     ["set-progress", name, progress] => {
