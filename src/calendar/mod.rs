@@ -58,6 +58,11 @@ impl<T> NameMap<T> {
   pub fn remove(&mut self, key: &str) -> Option<T> {
     self.contents.remove(key)
   }
+
+  /// Returns a reference iterator
+  pub fn iter(&self) -> std::collections::hash_map::Iter<String, T> {
+    self.contents.iter()
+  }
 }
 
 impl NameMap<Vec<Event>> {

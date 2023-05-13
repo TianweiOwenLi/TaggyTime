@@ -27,7 +27,7 @@ enum NextInteraction {
 ///
 /// [todo] Implement load from file.
 #[derive(Serialize, Deserialize)]
-struct TaggyEnv {
+pub struct TaggyEnv {
   tz: ZoneOffset,
   calendars: NameMap<Vec<Event>>,
   todolist: NameMap<Task>,
@@ -73,27 +73,6 @@ fn handle_command_vec(
     }
     ["test", "parser", ics_filename] => {
       ics_parser::test_parser(ics_filename)?;
-      Ok(NextInteraction::Prompt)
-    }
-    ["set-progress", name, progress] => {
-      match tenv.todolist.get_mut(name) {
-        Some(task) => {
-          let prog: Percent = progress.parse()?;
-          task.set_progress(prog);
-          println!("[taggytime] Progress set to {}", prog);
-        }
-        None => println!("[taggytime] Task `{}` does not exist", name),
-      }
-      Ok(NextInteraction::Prompt)
-    }
-    ["impact", name] => {
-      let task_opt = tenv.todolist.get_ref(name);
-      match task_opt {
-        Some(task) => {
-          println!("[taggytime] Impact = {}", tenv.calendars.impact(task))
-        }
-        None => println!("[taggytime] Task `{}` does not exist", name),
-      }
       Ok(NextInteraction::Prompt)
     }
     _ => panic!("bad command")
