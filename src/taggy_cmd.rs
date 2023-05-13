@@ -45,7 +45,7 @@ impl From<TimeError> for TaggyCmdError {
 #[derive(Subcommand)]
 pub enum TaggyCmd {
   /// Loads some .ics calendar and gives it a name.
-  CalLoad{
+  AddCal{
     /// Path to .ics file.
     path: PathBuf,
     /// Preferred name of calendar.
@@ -53,7 +53,7 @@ pub enum TaggyCmd {
   },
 
   /// Removes some .ics calendar.
-  CalRm{
+  RmCal{
     /// Name of calendar.
     name: String,
   },
@@ -82,6 +82,12 @@ pub enum TaggyCmd {
     due: String,
   },
 
+  /// Removes some task.
+  RmTask{
+    /// Name of task.
+    task_name: String,
+  },
+
   /// Sets the progress of a certain task.
   SetProgress{
     /// Name of task.
@@ -107,12 +113,13 @@ impl TaggyCmd {
     // use TaggyCmdError::*;
     match self {
       // calendar / events related operations
-      CalLoad { path, name } => {
+      AddCal { path, name } => {
         load_ics_to_tenv(tenv, path, name)?;
       }
-      CalRm { name } => {
-        if tenv.calendars.remove(name).is_none() {
-          println!("[taggytime] There is no calendar `{}` to remove", name);
+      RmCal { name } => {
+        match tenv.calendars.remove(name) {
+          Some(..) => println!("[taggytime] Removed calendar `{}`", name),
+          None => println!("[taggytime] There is no calendar `{}`", name),
         }
       }
       Truncate => {
@@ -135,12 +142,20 @@ impl TaggyCmd {
 
       // task / progress related operations
       AddTask { task_name, load, due } => {
+        println!("{}", due);
+
         let due_parts: Vec<&str> = due.split(' ').map(|s| s.trim()).collect();
 
         let load: Workload = Workload::from_num_min(*load)?;
         let due = MinInstant::parse_from_str(&due_parts, tenv.tz)?;
         let todo = Task::new(due, load);
         load_todo_to_tenv(tenv, task_name, todo)?;
+      }
+      RmTask { task_name } => {
+        match tenv.todolist.remove(task_name) {
+          Some(..) => println!("[taggytime] Removed task `{}`", task_name),
+          None => println!("[taggytime] There is no task `{}`", task_name),
+        }
       }
       SetProgress { task_name, percent_raw } => {
         match tenv.todolist.get_mut(task_name) {
