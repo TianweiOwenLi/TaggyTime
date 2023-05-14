@@ -6,12 +6,11 @@ use serde::{Deserialize, Serialize};
 
 use crate::time::{parse_f32, TimeError};
 
-use super::PercentError;
-
 #[derive(Debug)]
-pub enum Error {
+pub enum PercentError {
   ComplementOutOfBound(u16),
   ArithmeticOutOfBound(u16, String, u16),
+  PercentF32Overflow(f32),
 }
 
 /// A wrapper around u8, which represents a percentage (in integer), ranging
@@ -19,10 +18,10 @@ pub enum Error {
 ///
 /// # Example
 /// ```
-/// let p: Percent = Percent::from_u8(56);
-/// let q = Percent::from_u8(44);
+/// let p: Percent = Percent(56);
+/// let q = Percent(44);
 ///
-/// assert_eq!(p.one_minus(), q);
+/// assert_eq!(p.complement().unwrap(), q);
 /// ```
 #[derive(
   PartialEq, Eq, PartialOrd, Debug, Clone, Copy, Serialize, Deserialize,
@@ -32,10 +31,10 @@ pub struct Percent(pub u16);
 impl Percent {
   /// Returns a `Percent` instance that represents 100% minus oneself. If
   /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
-  pub fn complement(&self) -> Result<Self, Error> {
+  pub fn complement(&self) -> Result<Self, PercentError> {
     match self.0 {
       0..=100 => Ok(Percent(100 - self.0)),
-      _ => Err(Error::ComplementOutOfBound(self.0)),
+      _ => Err(PercentError::ComplementOutOfBound(self.0)),
     }
   }
 
@@ -75,14 +74,25 @@ impl FromStr for Percent {
   }
 }
 
+impl std::ops::Add for Percent {
+  type Output = Result<Percent, PercentError>;
+  fn add(self, rhs: Self) -> Self::Output {
+    let add_raw = self.0.checked_add(rhs.0);
+    match add_raw {
+      Some(n) => Ok(Percent(n)),
+      None => Err(PercentError::ArithmeticOutOfBound(self.0, "+".to_string(), rhs.0))
+    }
+  }
+}
+
 impl std::ops::Sub for Percent {
-  type Output = Result<Percent, Error>;
+  type Output = Result<Percent, PercentError>;
 
   fn sub(self, rhs: Self) -> Self::Output {
     if self.0 >= rhs.0 {
       Ok(Percent(self.0 - rhs.0))
     } else {
-      Err(Error::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
+      Err(PercentError::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
     }
   }
 }
@@ -93,7 +103,7 @@ impl std::fmt::Display for Percent {
   }
 }
 
-impl std::fmt::Display for Error {
+impl std::fmt::Display for PercentError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       Self::ComplementOutOfBound(n) => write!(
@@ -107,6 +117,7 @@ impl std::fmt::Display for Error {
         "Percent arithmetic out of bound: {} {} {}.",
         lhs, msg, rhs
       ),
+      Self::PercentF32Overflow(x) => write!(f, "Percent float overflow: {}", x),
     }
   }
 }

@@ -4,7 +4,7 @@ use std::path::{PathBuf, Path};
 
 use clap::Subcommand;
 
-use crate::{time::{TimeError, self, MinInstant}, TaggyEnv, load_file, calendar::task::{Task, Workload}, util::path2string, util_typs::percent::Percent};
+use crate::{time::{TimeError, self, MinInstant, timezone::ZoneOffset}, TaggyEnv, load_file, calendar::task::{Task, Workload}, util::path2string, util_typs::{percent::{Percent, self}}};
 
 /// Given some `.ics` file, loads it to some `TaggyEnv`. If an optional name is
 /// provided, the loaded calendar will be renamed accordingly.
@@ -27,12 +27,18 @@ fn load_todo_to_tenv(tenv: &mut TaggyEnv, name: &str, todo: Task)
 }
 
 /// Prints task impact for a given task, its name, and `TaggyEnv`.
-pub fn print_task_impact(name: &str, t: &Task, impact: Percent) {
+pub fn prettyprint_task(
+  name: &str, 
+  task: &Task, 
+  tz: ZoneOffset, 
+  impact: Percent
+) {
   println!(
-    "{:<20} {:<35} {:<10}          {:<10}", 
+    "{:<20} {:<20}  {:<8}      {:<10}        {:<10}", 
     name, 
-    t.due.as_date_string(), 
-    t.completion,
+    task.due.as_tz_date_string(tz),
+    task.length,
+    task.completion,
     impact
   )
 }
@@ -45,6 +51,12 @@ pub enum TaggyCmdError {
 impl From<TimeError> for TaggyCmdError {
   fn from(value: TimeError) -> Self {
     TaggyCmdError::TimeErr(value)
+  }
+}
+
+impl From<percent::PercentError> for TaggyCmdError {
+  fn from(value: percent::PercentError) -> Self {
+    TaggyCmdError::TimeErr(TimeError::PercentErr(value))
   }
 }
 
@@ -209,12 +221,18 @@ impl TaggyCmd {
         });
 
         println!("\
-Task Name            Due                                 Completion  Impact
------------------------------------------------------------------------------");
+Task Name            Due (tz={})       Workload   Progress  Impact
+-----------------------------------------------------------------------------",
+tenv.tz);
 
+        let mut percent_sum = Percent(0);
         for (name, task, impact) in &taskname_impact_pairs {
-          print_task_impact(name, task, *impact)
+          prettyprint_task(name, task, tenv.tz, *impact);
+          let bad = percent_sum + *impact;
+          percent_sum = (percent_sum + *impact)?;
         }
+
+        println!("\nSum of Impact: {}", percent_sum)
       }
     }
     Ok(())

@@ -19,7 +19,7 @@ pub mod timezone;
 use crate::{
   calendar::CalError,
   ics_parser::ICSProcessError,
-  util_typs::{PercentError, RefinementError},
+  util_typs::{RefinementError, percent::PercentError},
 };
 
 use self::{fact::*, month::Month, timezone::ZoneOffset, year::CeYear};
@@ -307,6 +307,13 @@ impl MinInstant {
   /// Converts to `Date` and prints accordingly
   pub fn as_date_string(self) -> String {
     format!("{}", Date::from_min_instant(self))
+  }
+
+  /// Prints as the date at given timezone
+  pub fn as_tz_date_string(self, tz: ZoneOffset) -> String {
+    let mut mi = self;
+    mi.adjust_to_zone(tz);    
+    format!("{}", Date::from_min_instant(mi).no_tz_string())
   }
 }
 

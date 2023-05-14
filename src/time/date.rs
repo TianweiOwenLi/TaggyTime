@@ -180,6 +180,18 @@ impl Date {
       _ => bad,
     }
   }
+
+  /// String representation of a date that hides its timezone.
+  pub fn no_tz_string(&self) -> String {
+    format!(
+      "{}/{:?}/{} {:02}:{:02}",
+      self.yr.raw(),
+      self.mon,
+      self.day,
+      self.hr,
+      self.min,
+    )
+  }
 }
 
 impl std::fmt::Display for Date {
