@@ -35,11 +35,7 @@ impl<'a> PeekBuffer<'a> {
       // so that get() will return Some(_).
       self.buf.push_back(self.lex.token());
     }
-    self
-      .buf
-      .get(n)
-      .expect("peekable should have kth element")
-      .as_ref()
+    self.buf.get(n).expect("peekable should have kth element").as_ref()
   }
 
   /// Gets the next token. This function always advances the lexer by one token.

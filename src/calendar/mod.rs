@@ -65,9 +65,8 @@ impl NameMap<Vec<Event>> {
     let mut ret: u32 = 0;
     for event_vec in self.contents.values() {
       for event in event_vec {
-        ret = ret
-          .checked_add(event.1.clone().overlap(miv))
-          .expect("Overflowed");
+        ret =
+          ret.checked_add(event.1.clone().overlap(miv)).expect("Overflowed");
       }
     }
     ret

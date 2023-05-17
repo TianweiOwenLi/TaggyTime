@@ -55,9 +55,8 @@ impl From<Date> for Weekday {
 
     while past_year_iter != value.yr {
       days_in_past_years += past_year_iter.days_in_year();
-      past_year_iter = past_year_iter
-        .next()
-        .expect("CeYear can never overflow before match");
+      past_year_iter =
+        past_year_iter.next().expect("CeYear can never overflow before match");
     }
 
     // -1 is to account for the fact that day_in_yr() starts from 1.

@@ -80,11 +80,9 @@ impl std::ops::Add for Percent {
     let add_raw = self.0.checked_add(rhs.0);
     match add_raw {
       Some(n) => Ok(Percent(n)),
-      None => Err(PercentError::ArithmeticOutOfBound(
-        self.0,
-        "+".to_string(),
-        rhs.0,
-      )),
+      None => {
+        Err(PercentError::ArithmeticOutOfBound(self.0, "+".to_string(), rhs.0))
+      }
     }
   }
 }
@@ -96,11 +94,7 @@ impl std::ops::Sub for Percent {
     if self.0 >= rhs.0 {
       Ok(Percent(self.0 - rhs.0))
     } else {
-      Err(PercentError::ArithmeticOutOfBound(
-        self.0,
-        "-".to_string(),
-        rhs.0,
-      ))
+      Err(PercentError::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
     }
   }
 }
@@ -120,11 +114,9 @@ impl std::fmt::Display for PercentError {
           complement of `{}`, which is an overflow variant of `Percent`.",
         n
       ),
-      Self::ArithmeticOutOfBound(lhs, msg, rhs) => write!(
-        f,
-        "Percent arithmetic out of bound: {} {} {}.",
-        lhs, msg, rhs
-      ),
+      Self::ArithmeticOutOfBound(lhs, msg, rhs) => {
+        write!(f, "Percent arithmetic out of bound: {} {} {}.", lhs, msg, rhs)
+      }
       Self::PercentF32Overflow(x) => write!(f, "Percent float overflow: {}", x),
     }
   }

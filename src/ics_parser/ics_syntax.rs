@@ -364,13 +364,7 @@ impl<'a> ICSParser<'a> {
           ready_to_rrule = true;
         }
         Token::NEXTLINE => {
-          break Ok(FreqAndRRules {
-            freq,
-            content,
-            count,
-            interval,
-            until,
-          });
+          break Ok(FreqAndRRules { freq, content, count, interval, until });
         }
         Token::INTERVAL => {
           self.skip()?;

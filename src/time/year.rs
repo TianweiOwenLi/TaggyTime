@@ -70,9 +70,8 @@ impl UnixYear {
   pub fn num_min_since_epoch(&self) -> Result<u32, TimeError> {
     match self.prev() {
       Some(prev_yr) => {
-        let maybe_overflow = prev_yr
-          .num_min_since_epoch()?
-          .checked_add(prev_yr.num_min());
+        let maybe_overflow =
+          prev_yr.num_min_since_epoch()?.checked_add(prev_yr.num_min());
         match maybe_overflow {
           Some(n) => Ok(n),
           None => Err(TimeError::YrToMiOverflow(self.to_ce().raw())),
@@ -172,18 +171,12 @@ mod test {
   fn comparsion() {
     assert!(UnixYear::new(2000).unwrap() < UnixYear::new(55555).unwrap());
     assert!(CeYear::new(6666).unwrap() > CeYear::new(2033).unwrap());
-    assert_eq!(
-      CeYear::new(1985).unwrap(),
-      UnixYear::new(15).unwrap().to_ce()
-    );
+    assert_eq!(CeYear::new(1985).unwrap(), UnixYear::new(15).unwrap().to_ce());
   }
 
   #[test]
   fn normal_leap() {
-    assert_eq!(
-      CeYear::new(2000).unwrap().get_year_length(),
-      YearLength::Leap
-    );
+    assert_eq!(CeYear::new(2000).unwrap().get_year_length(), YearLength::Leap);
     assert_eq!(
       UnixYear::new(130).unwrap().get_year_length(),
       YearLength::Common
@@ -192,9 +185,6 @@ mod test {
       CeYear::new(2001).unwrap().get_year_length(),
       YearLength::Common
     );
-    assert_eq!(
-      UnixYear::new(2).unwrap().get_year_length(),
-      YearLength::Leap
-    );
+    assert_eq!(UnixYear::new(2).unwrap().get_year_length(), YearLength::Leap);
   }
 }

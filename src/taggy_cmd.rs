@@ -206,23 +206,20 @@ impl TaggyCmd {
         let todo = Task::new(due, load);
         load_todo_to_tenv(tenv, task_name, todo)?;
       }
-      RmTask {
-        taskname: task_name,
-      } => match tenv.todolist.remove(task_name) {
+      RmTask { taskname: task_name } => match tenv.todolist.remove(task_name) {
         Some(..) => println!("[taggytime] Removed task `{}`", task_name),
         None => println!("[taggytime] There is no task `{}`", task_name),
       },
-      SetProgress {
-        task_name,
-        percent_raw,
-      } => match tenv.todolist.get_mut(task_name) {
-        Some(task) => {
-          let prog: Percent = Percent(*percent_raw);
-          task.set_progress(prog);
-          println!("[taggytime] Progress set to {}", prog);
+      SetProgress { task_name, percent_raw } => {
+        match tenv.todolist.get_mut(task_name) {
+          Some(task) => {
+            let prog: Percent = Percent(*percent_raw);
+            task.set_progress(prog);
+            println!("[taggytime] Progress set to {}", prog);
+          }
+          None => println!("[taggytime] Task `{}` does not exist", task_name),
         }
-        None => println!("[taggytime] Task `{}` does not exist", task_name),
-      },
+      }
       Impact => {
         let mut taskname_impact_pairs = Vec::<(&str, &Task, Percent)>::new();
         for (name, task) in tenv.todolist.iter() {

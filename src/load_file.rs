@@ -22,11 +22,7 @@ pub fn load_schedule_ics<P: AsRef<Path>>(
       }
 
       let parse_result = lex_and_parse(path, default_tz)?;
-      parse_result
-        .content
-        .into_iter()
-        .map(Event::try_from)
-        .collect()
+      parse_result.content.into_iter().map(Event::try_from).collect()
     }
     None => bad_extension,
   }

@@ -117,14 +117,7 @@ impl Date {
           return bad;
         };
 
-        Ok(Date {
-          yr,
-          mon,
-          day,
-          hr,
-          min,
-          tz,
-        })
+        Ok(Date { yr, mon, day, hr, min, tz })
       }
       _ => Err(ICSProcessError::ICSTimeMalformatted(
         ymd.to_string(),
@@ -168,14 +161,7 @@ impl Date {
       [ymd_str, time] => {
         let (yr, mon, day) = parse_ymd(ymd_str, default_tz)?;
         let (hr, min) = parse_hr_min(time)?;
-        Ok(Date {
-          yr,
-          mon,
-          day,
-          hr,
-          min,
-          tz,
-        })
+        Ok(Date { yr, mon, day, hr, min, tz })
       }
       _ => bad,
     }
@@ -295,11 +281,8 @@ impl From<Vec<RRuleToks>> for DateProperty {
     for rrt in value {
       match rrt.tag {
         Token::BYDAY => {
-          let v: Vec<Weekday> = rrt
-            .content
-            .iter()
-            .map(|s| Weekday::from(s.as_str()))
-            .collect();
+          let v: Vec<Weekday> =
+            rrt.content.iter().map(|s| Weekday::from(s.as_str())).collect();
           dp = if dp_is_always {
             dp_is_always = false;
             DateProperty::or_vec(v)
