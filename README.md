@@ -16,7 +16,6 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 
 * Time machine
 * GUI
-* Handling of `.ics` timezone
 * Cache datetime property computations [important]
 * Implement interval and setpos handling
 * Optimize miv::advance_until() via elim. back-forth conversion.
@@ -27,9 +26,10 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Calendar repetition interval chk
 * `MinInterval` bounds chk
 * Error-typ proper conversion.
-* Implement VTimeZone.
+* Implement VTimeZone / `ics` timezone.
 * Organize util fns.
 * Get rid of `MinInstant` offset to elim bugs
+* Proof-read all raw arithmetics.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.
