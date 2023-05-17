@@ -6,7 +6,6 @@ use crate::taggy_cmd::TaggyCmd;
 #[derive(Parser)]
 #[command(about = "TaggyTime: time management in one click")]
 pub struct CliInfo {
-
   /// Interactive mode
   #[arg(short, long)]
   pub interactive: bool,

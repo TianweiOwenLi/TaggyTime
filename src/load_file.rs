@@ -5,7 +5,8 @@ use std::path::Path;
 use crate::{
   calendar::cal_event::Event,
   ics_parser::{lex_and_parse, ICSProcessError},
-  time::timezone::ZoneOffset, util::path2string,
+  time::timezone::ZoneOffset,
+  util::path2string,
 };
 
 /// Loads the given `.ics` file according to the default timezone offset.
@@ -26,7 +27,7 @@ pub fn load_schedule_ics<P: AsRef<Path>>(
         .into_iter()
         .map(Event::try_from)
         .collect()
-     }
-    None => bad_extension
+    }
+    None => bad_extension,
   }
 }

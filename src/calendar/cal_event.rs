@@ -111,7 +111,6 @@ impl Recurrence {
     let miv = miv.normalize();
 
     'a: for rec_miv in self {
-
       let rec_miv = rec_miv.normalize();
 
       // skip the non-interacting min-intervals.
@@ -134,9 +133,7 @@ impl Recurrence {
     let tz = ZoneOffset::utc(); // any timezone works for mi comparison
 
     match self.patt {
-      Pattern::Once => {
-        self.event_miv.end < MinInstant::now(tz)
-      }
+      Pattern::Once => self.event_miv.end < MinInstant::now(tz),
       Pattern::Many(_, _, Term::Never) => false,
       _ => {
         for miv in self.clone() {

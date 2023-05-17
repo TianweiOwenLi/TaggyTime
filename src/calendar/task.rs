@@ -3,9 +3,9 @@
 use std::str::FromStr;
 
 use crate::time::fact::SEC_IN_MIN_U32;
-use crate::{const_params::MAX_WORKLOAD, time::fact::SEC_IN_MIN};
 use crate::time::*;
 use crate::util_typs::percent::Percent;
+use crate::{const_params::MAX_WORKLOAD, time::fact::SEC_IN_MIN};
 
 use serde::{Deserialize, Serialize};
 
@@ -109,11 +109,8 @@ impl Task {
   /// Sets progress to `tgt_progress`, which is automatically constrained down
   /// to <= 100.
   pub fn set_progress(&mut self, tgt_progress: Percent) {
-    self.completion = if tgt_progress.is_overflow() {
-      Percent(100)
-    } else {
-      tgt_progress
-    };
+    self.completion =
+      if tgt_progress.is_overflow() { Percent(100) } else { tgt_progress };
   }
 }
 

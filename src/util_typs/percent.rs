@@ -80,7 +80,11 @@ impl std::ops::Add for Percent {
     let add_raw = self.0.checked_add(rhs.0);
     match add_raw {
       Some(n) => Ok(Percent(n)),
-      None => Err(PercentError::ArithmeticOutOfBound(self.0, "+".to_string(), rhs.0))
+      None => Err(PercentError::ArithmeticOutOfBound(
+        self.0,
+        "+".to_string(),
+        rhs.0,
+      )),
     }
   }
 }
@@ -92,7 +96,11 @@ impl std::ops::Sub for Percent {
     if self.0 >= rhs.0 {
       Ok(Percent(self.0 - rhs.0))
     } else {
-      Err(PercentError::ArithmeticOutOfBound(self.0, "-".to_string(), rhs.0))
+      Err(PercentError::ArithmeticOutOfBound(
+        self.0,
+        "-".to_string(),
+        rhs.0,
+      ))
     }
   }
 }

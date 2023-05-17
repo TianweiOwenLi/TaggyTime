@@ -3,10 +3,10 @@ mod calendar;
 mod const_params;
 mod ics_parser;
 mod load_file;
-mod time;
-mod util_typs;
 mod taggy_cmd;
+mod time;
 mod util;
+mod util_typs;
 
 use clap::Parser;
 use const_params::TAGGYENV_PATH;

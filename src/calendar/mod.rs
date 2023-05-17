@@ -23,7 +23,6 @@ pub struct NameMap<T> {
 }
 
 impl<T> NameMap<T> {
-
   /// Checks whether some item has already been loaded.
   pub fn contains(&self, key: &str) -> bool {
     self.contents.contains_key(key)
@@ -86,7 +85,7 @@ impl NameMap<Vec<Event>> {
       .expect("impact overflowed")
   }
 
-  /// Performs filtration across events. 
+  /// Performs filtration across events.
   pub fn filter_events<F: Fn(&Event) -> bool>(&mut self, f: F) {
     for (_, v) in &mut self.contents {
       v.retain(&f);

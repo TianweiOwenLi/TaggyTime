@@ -227,7 +227,7 @@ impl DatePropertyElt {
 impl std::fmt::Display for DatePropertyElt {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::Wd(wd) => write!(f, "{:?}", wd)
+      Self::Wd(wd) => write!(f, "{:?}", wd),
     }
   }
 }
@@ -268,7 +268,7 @@ impl std::fmt::Display for DateProperty {
     use DateProperty::*;
     match self {
       Always => write!(f, "true"),
-      Atomic(dpe) => write!(f, "{}", dpe), 
+      Atomic(dpe) => write!(f, "{}", dpe),
       Or(v) | And(v) => {
         if v.is_empty() {
           write!(f, "{:?}", self)?;

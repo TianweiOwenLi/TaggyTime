@@ -19,7 +19,7 @@ pub mod timezone;
 use crate::{
   calendar::CalError,
   ics_parser::ICSProcessError,
-  util_typs::{RefinementError, percent::PercentError},
+  util_typs::{percent::PercentError, RefinementError},
 };
 
 use self::{fact::*, month::Month, timezone::ZoneOffset, year::CeYear};
@@ -312,7 +312,7 @@ impl MinInstant {
   /// Prints as the date at given timezone
   pub fn as_tz_date_string(self, tz: ZoneOffset) -> String {
     let mut mi = self;
-    mi.adjust_to_zone(tz);    
+    mi.adjust_to_zone(tz);
     format!("{}", Date::from_min_instant(mi).no_tz_string())
   }
 }
@@ -334,7 +334,10 @@ impl MinInterval {
 
   /// Normalizes to utc timezone.
   pub fn normalize(self) -> MinInterval {
-    MinInterval { start: self.start.normalize(), end: self.end.normalize() }
+    MinInterval {
+      start: self.start.normalize(),
+      end: self.end.normalize(),
+    }
   }
 
   /// Computes the duration of overlap of two `MinInterval` in minutes.
@@ -469,7 +472,10 @@ fn parse_u32_bound(expr: &str, lb: u32, ub: u32) -> Result<u32, TimeError> {
 }
 
 /// Parses some str as year, month, and day.
-fn parse_ymd(expr: &str, tz: ZoneOffset) -> Result<(CeYear, Month, u32), TimeError> {
+fn parse_ymd(
+  expr: &str,
+  tz: ZoneOffset,
+) -> Result<(CeYear, Month, u32), TimeError> {
   let args: Vec<&str> = expr.split("/").map(|s| s.trim()).collect();
   match args[..] {
     [y, m, d] => {

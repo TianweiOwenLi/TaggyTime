@@ -2,7 +2,8 @@ use std::{fs::File, path::Path};
 
 use crate::{
   time::{timezone::ZoneOffset, MinInstant, TimeError},
-  util_typs::RefinementError, util::path2string,
+  util::path2string,
+  util_typs::RefinementError,
 };
 
 use self::{
@@ -90,7 +91,7 @@ pub fn lex_and_parse<P: AsRef<Path>>(
 
 pub fn test_lexer<P: AsRef<Path>>(path: P) -> Result<(), ICSProcessError> {
   let content = std::fs::read_to_string(&path)
-    .expect(format!("Cannot read from `{}`",  path2string(&path)).as_str());
+    .expect(format!("Cannot read from `{}`", path2string(&path)).as_str());
 
   let mut lex = IcsLexer::new(&path, &content);
 
