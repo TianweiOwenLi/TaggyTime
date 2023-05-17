@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use super::{fact::MIN_IN_HR, parse_hr_min, TimeError};
+use super::{fact::MIN_IN_HR, time_parser::parse_hr_min, TimeError};
 
 use serde::{Deserialize, Serialize};
 

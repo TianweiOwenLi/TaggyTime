@@ -2,10 +2,11 @@
 
 use std::str::FromStr;
 
+use crate::const_params::MAX_WORKLOAD;
 use crate::time::fact::SEC_IN_MIN_U32;
+use crate::time::time_parser::parse_u32;
 use crate::time::*;
 use crate::util_typs::percent::Percent;
-use crate::{const_params::MAX_WORKLOAD, time::fact::SEC_IN_MIN};
 
 use serde::{Deserialize, Serialize};
 
@@ -50,7 +51,7 @@ impl Workload {
 impl FromStr for Workload {
   type Err = TimeError;
   fn from_str(s: &str) -> Result<Self, Self::Err> {
-    Workload::from_num_min(crate::time::parse_u32(s)?)
+    Workload::from_num_min(parse_u32(s)?)
   }
 }
 

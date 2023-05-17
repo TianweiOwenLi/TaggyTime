@@ -9,6 +9,8 @@ use crate::time::*;
 
 use std::fmt::Debug;
 
+use super::time_parser::{parse_hr_min, parse_ymd};
+
 /// A struct that represents some time instance in human-readable form. Namely,
 /// it has fields like year, month, day, hour, and minute.
 ///

@@ -4,7 +4,7 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::time::{parse_f32, TimeError};
+use crate::time::{time_parser::parse_f32, TimeError};
 
 #[derive(Debug)]
 pub enum PercentError {

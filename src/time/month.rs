@@ -1,7 +1,8 @@
 use std::str::FromStr;
 
+use super::time_parser::parse_u32_bound;
 use super::year::{Year, YearLength};
-use super::{fact::*, parse_u32_bound, TimeError};
+use super::{fact::*, TimeError};
 
 use Month::*;
 const MONTH_LIST: [Month; 12] =
