@@ -2,6 +2,8 @@
 
 use std::path::{Path, PathBuf};
 
+use crate::calendar::task::ExpirableImpact;
+
 use clap::Subcommand;
 
 use crate::{
@@ -41,7 +43,7 @@ pub fn prettyprint_task(
   name: &str,
   task: &Task,
   tz: ZoneOffset,
-  impact: Percent,
+  impact: &ExpirableImpact,
 ) {
   println!(
     "{:<20} {:<20}  {:<8}      {:<10}        {:<10}",
@@ -221,12 +223,12 @@ impl TaggyCmd {
         }
       }
       Impact => {
-        let mut taskname_impact_pairs = Vec::<(&str, &Task, Percent)>::new();
+        let mut tasks_impacts = Vec::<(&str, &Task, ExpirableImpact)>::new();
         for (name, task) in tenv.todolist.iter() {
-          taskname_impact_pairs.push((name, task, tenv.calendars.impact(task)));
+          tasks_impacts.push((name, task, tenv.calendars.impact(task)));
         }
 
-        taskname_impact_pairs.sort_by(|(n1, _, l1), (n2, _, l2)| {
+        tasks_impacts.sort_by(|(n1, _, l1), (n2, _, l2)| {
           l2.partial_cmp(l1).unwrap_or(n2.cmp(n1))
         });
 
@@ -238,12 +240,18 @@ Task Name            Due (tz={})       Workload   Progress  Impact
         );
 
         let mut percent_sum = Percent(0);
-        for (name, task, impact) in &taskname_impact_pairs {
-          prettyprint_task(name, task, tenv.tz, *impact);
-          percent_sum = (percent_sum + *impact)?;
+        let mut num_expired: usize = 0;
+        for (name, task, exp_impact) in &tasks_impacts {
+          prettyprint_task(name, task, tenv.tz, exp_impact);
+
+          // sum up statistics
+          match exp_impact {
+            ExpirableImpact::Current(p) => percent_sum = (percent_sum + *p)?,
+            ExpirableImpact::Expired => num_expired += 1,
+          }
         }
 
-        println!("\nSum of Impact: {}", percent_sum)
+        println!("\n∑ Impact:    {}\n# Expired:   {}", percent_sum, num_expired)
       }
     }
     Ok(())

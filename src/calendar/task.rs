@@ -2,11 +2,11 @@
 
 use std::str::FromStr;
 
-use crate::const_params::MAX_WORKLOAD;
 use crate::time::fact::SEC_IN_MIN_U32;
 use crate::time::time_parser::parse_u32;
 use crate::time::*;
 use crate::util_typs::percent::Percent;
+use crate::{const_params::MAX_WORKLOAD, util_typs::percent::PercentError};
 
 use serde::{Deserialize, Serialize};
 
@@ -62,13 +62,48 @@ impl std::fmt::Display for Workload {
   }
 }
 
-/// The impact of some task, which is either some percentage (measures the 
-/// percent of remaining time needed to complete such a task), or 
+/// The impact of some task, which is either some percentage (measures the
+/// percent of remaining time needed to complete such a task), or
 /// ``Expired'', if the task is deemed impossible to complete.
-#[derive(Debug, Serialize, Deserialize)]
-pub enum Impact {
+#[derive(Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum ExpirableImpact {
   Current(Percent),
   Expired,
+}
+
+impl From<f32> for ExpirableImpact {
+  fn from(value: f32) -> Self {
+    match Percent::try_from(value) {
+      Ok(p) => ExpirableImpact::Current(p),
+      Err(PercentError::PercentF32Overflow(_)) => ExpirableImpact::Expired,
+      Err(e) => unreachable!("`{}` never raised by Percent::try_from", e),
+    }
+  }
+}
+
+impl std::cmp::PartialOrd for ExpirableImpact {
+  /// Makes partial comparison between impacts, where ``Expired'' is treated
+  /// as infinite percent.
+  fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+    use std::cmp::Ordering::*;
+    use ExpirableImpact::*;
+    match (self, other) {
+      (Expired, Expired) => Some(Equal),
+      (Expired, _) => Some(Greater),
+      (_, Expired) => Some(Less),
+      (Current(pl), Current(pr)) => pl.partial_cmp(pr),
+    }
+  }
+}
+
+impl std::fmt::Display for ExpirableImpact {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    use ExpirableImpact::*;
+    match self {
+      Current(p) => write!(f, "{}", p),
+      Expired => write!(f, "Expired"),
+    }
+  }
 }
 
 /// A struct that represents some task to be done.
@@ -96,11 +131,7 @@ pub struct Task {
 impl Task {
   /// Constructs a new instance with zero completion.
   pub fn new(due: MinInstant, length: Workload) -> Self {
-    Task {
-      due,
-      length,
-      completion: Percent(0),
-    }
+    Task { due, length, completion: Percent(0) }
   }
 
   /// Computes the remaining workload of this `Todo` item, considering its
@@ -121,4 +152,3 @@ impl Task {
       if tgt_progress.is_overflow() { Percent(100) } else { tgt_progress };
   }
 }
-

@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
-use crate::{time::MinInterval, util_typs::percent::Percent};
+use crate::time::MinInterval;
 
-use self::{cal_event::Event, task::Task};
+use self::{
+  cal_event::Event,
+  task::{ExpirableImpact, Task},
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -38,11 +41,6 @@ impl<T> NameMap<T> {
     }
   }
 
-  /// Gets immutable ref.
-  pub fn get_ref(&self, key: &str) -> Option<&T> {
-    self.contents.get(key)
-  }
-
   /// Gets mutable ref.
   pub fn get_mut(&mut self, key: &str) -> Option<&mut T> {
     self.contents.get_mut(key)
@@ -73,15 +71,14 @@ impl NameMap<Vec<Event>> {
   }
 
   /// Givent the collection of events, compute the relative impact of a task.
-  pub fn impact(&self, todo: &Task) -> Percent {
+  pub fn impact(&self, todo: &Task) -> ExpirableImpact {
     let miv = MinInterval::from_now_till(todo.due);
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);
     let available_time = total_time - occupied_time;
     let needed_time = todo.get_remaining_workload().num_min();
 
-    Percent::try_from((needed_time as f32) / (available_time as f32))
-      .expect("impact overflowed")
+    ExpirableImpact::from((needed_time as f32) / (available_time as f32))
   }
 
   /// Performs filtration across events.
