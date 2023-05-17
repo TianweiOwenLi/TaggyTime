@@ -86,13 +86,13 @@ impl Recurrence {
         if self.occurrence_count >= *n {
           return None;
         }
-        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
+        tmr.advance_until(dp, None).expect("Unreachable: no until")
       }
       Pattern::Many(dp, _, Term::Until(term_mi)) => {
-        tmr.advance_until_unwrap(dp, Some(*term_mi))?
+        tmr.advance_until(dp, Some(*term_mi))?
       }
       Pattern::Many(dp, _, Term::Never) => {
-        tmr.advance_until_unwrap(dp, None).expect("Unreachable: no until")
+        tmr.advance_until(dp, None).expect("Unreachable: no until")
       }
     };
     Some(Recurrence {

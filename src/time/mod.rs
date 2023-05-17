@@ -351,41 +351,29 @@ impl MinInterval {
     &self,
     dp: &DateProperty,
     until_opt: Option<MinInstant>,
-  ) -> Result<Option<MinInterval>, TimeError> {
+  ) -> Option<MinInterval> {
     let mut new_miv = self.clone();
     match until_opt {
       Some(until) => {
         while !dp.check(Date::from_min_instant(new_miv.start)) {
-          new_miv = new_miv.advance(MIN_IN_DAY)?;
+          new_miv = new_miv.advance_unwrap(MIN_IN_DAY);
           if new_miv.start > until {
-            return Ok(None);
+            return None;
           }
         }
 
         // catch the case where while loops was not entered
         if new_miv.start > until {
-          return Ok(None);
+          return None;
         }
       }
       None => {
         while !dp.check(Date::from_min_instant(new_miv.start)) {
-          new_miv = new_miv.advance(MIN_IN_DAY)?;
+          new_miv = new_miv.advance_unwrap(MIN_IN_DAY);
         }
       }
     }
-    Ok(Some(new_miv))
-  }
-
-  /// Advances the `MinInterval` until its starting time matches the
-  /// provided `DateProperty`, or if `start` exceeds the `until` mininstant.
-  ///
-  /// [note] This function panics on overflow.
-  pub fn advance_until_unwrap(
-    &self,
-    dp: &DateProperty,
-    until_opt: Option<MinInstant>,
-  ) -> Option<MinInterval> {
-    self.advance_until(dp, until_opt).unwrap()
+    Some(new_miv)
   }
 
   /// Computes the number of minutes in the `MinInterval` instance. Returns `0`
