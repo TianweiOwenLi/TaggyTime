@@ -62,6 +62,15 @@ impl std::fmt::Display for Workload {
   }
 }
 
+/// The impact of some task, which is either some percentage (measures the 
+/// percent of remaining time needed to complete such a task), or 
+/// ``Expired'', if the task is deemed impossible to complete.
+#[derive(Debug, Serialize, Deserialize)]
+pub enum Impact {
+  Current(Percent),
+  Expired,
+}
+
 /// A struct that represents some task to be done.
 ///
 /// This struct contains the following fields:
@@ -82,7 +91,6 @@ pub struct Task {
   pub due: MinInstant,
   pub length: Workload,
   pub completion: Percent,
-  cached_impact: Option<Percent>,
 }
 
 impl Task {
@@ -92,7 +100,6 @@ impl Task {
       due,
       length,
       completion: Percent(0),
-      cached_impact: None,
     }
   }
 
@@ -115,15 +122,3 @@ impl Task {
   }
 }
 
-impl std::fmt::Display for Task {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(
-      f,
-      "due {}\nload: {} min\nprogress: {}\ncache: {:?}",
-      self.due.as_date_string(),
-      self.length.0,
-      self.completion,
-      self.cached_impact
-    )
-  }
-}
