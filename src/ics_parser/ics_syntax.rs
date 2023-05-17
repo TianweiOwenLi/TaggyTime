@@ -22,7 +22,7 @@ pub struct ICalendar {
 
 pub struct Vevent {
   pub repeat: Option<FreqAndRRules>, // corrsponds to `Pattern::Once | Many`.
-  pub miv: MinInterval,
+  pub dt_interval: (Date, Date),
   pub summary: String,
 }
 
@@ -52,7 +52,7 @@ pub struct FreqAndRRules {
   pub content: Vec<RRuleToks>,
   pub interval: usize,
   pub count: Option<usize>,
-  pub until: Option<MinInstant>,
+  pub until: Option<Date>,
 }
 
 pub struct ICSParser<'a> {
@@ -216,8 +216,8 @@ impl<'a> ICSParser<'a> {
     self.munch(Token::COLON)?;
     self.munch(Token::VEVENT)?;
 
-    let mut dtstart: Option<MinInstant> = None;
-    let mut dtend: Option<MinInstant> = None;
+    let mut dtstart: Option<Date> = None;
+    let mut dtend: Option<Date> = None;
     let mut summary = String::new();
     let mut recur: Option<FreqAndRRules> = None;
 
@@ -246,7 +246,7 @@ impl<'a> ICSParser<'a> {
               (Some(start), Some(end)) => {
                 return Ok(Vevent {
                   repeat: recur,
-                  miv: MinInterval::new(start, end),
+                  dt_interval: (start, end),
                   summary,
                 });
               }
@@ -278,19 +278,13 @@ impl<'a> ICSParser<'a> {
   }
 
   /// Parses the time associated with some `DTSTART`.
-  pub fn dtstart(
-    &mut self,
-    tz: ZoneOffset,
-  ) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtstart(&mut self, tz: ZoneOffset) -> Result<Date, ICSProcessError> {
     self.munch(Token::DTSTART)?;
     self.dt_possible_timezone(tz)
   }
 
   /// Parses the time associated with some `DTEND`.
-  pub fn dtend(
-    &mut self,
-    tz: ZoneOffset,
-  ) -> Result<MinInstant, ICSProcessError> {
+  pub fn dtend(&mut self, tz: ZoneOffset) -> Result<Date, ICSProcessError> {
     self.munch(Token::DTEND)?;
     self.dt_possible_timezone(tz)
   }
@@ -302,7 +296,7 @@ impl<'a> ICSParser<'a> {
   fn dt_possible_timezone(
     &mut self,
     default_tz: ZoneOffset,
-  ) -> Result<MinInstant, ICSProcessError> {
+  ) -> Result<Date, ICSProcessError> {
     match self.token()? {
       // when timezone is specified
       Token::SEMICOLON => {
@@ -353,7 +347,7 @@ impl<'a> ICSParser<'a> {
     let mut content = Vec::<RRuleToks>::new();
     let mut interval: usize = 1; // default
     let mut count: Option<usize> = None;
-    let mut until: Option<MinInstant> = None;
+    let mut until: Option<Date> = None;
 
     let mut ready_to_rrule: bool = true;
 
@@ -465,10 +459,10 @@ impl<'a> ICSParser<'a> {
     &mut self,
     zone_specified: bool,
     tz: ZoneOffset,
-  ) -> Result<MinInstant, ICSProcessError> {
+  ) -> Result<Date, ICSProcessError> {
     let ymd = self.number()?;
 
-    let dt = if self.peek(0)? == &Token::Other("T".to_string()) {
+    if self.peek(0)? == &Token::Other("T".to_string()) {
       self.skip()?;
       let hms = self.number()?;
 
@@ -478,17 +472,16 @@ impl<'a> ICSParser<'a> {
         self.munch(Token::Other("Z".to_string()))?;
       }
 
-      Date::from_ics_time_string(&ymd, &hms, tz)?
+      Date::from_ics_time_string(&ymd, &hms, tz)
     } else {
       // Handle the case where time of day is not specified.
       let hms = ICS_DEFAULT_TIME_IN_DAY;
-      Date::from_ics_time_string(&ymd, hms, tz)?
-    };
-
-    match MinInstant::from_date(&dt) {
-      Ok(mi) => Ok(mi),
-      _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
+      Date::from_ics_time_string(&ymd, hms, tz)
     }
+    // match MinInstant::from_date(&dt) {
+    //   Ok(mi) => Ok(mi),
+    //   _ => unreachable!("Well-formatted ICS can never overflow MinInstant"),
+    // }
   }
 }
 
@@ -508,8 +501,8 @@ impl std::fmt::Display for FreqAndRRules {
       write!(f, "  count={}\n", n)?;
     }
 
-    if let Some(mi) = self.until {
-      write!(f, "  until={}\n", Date::from_min_instant(mi))?;
+    if let Some(d) = self.until {
+      write!(f, "  until={}\n", d)?;
     }
 
     write!(f, "  rrules=[\n")?;
@@ -528,9 +521,10 @@ impl std::fmt::Display for Vevent {
     };
     write!(
       f,
-      "  {}\n  {}\n{}\n",
+      "  {}\n  ({} - {})\n{}\n",
       self.summary.trim(),
-      self.miv.as_date_string(),
+      self.dt_interval.0,
+      self.dt_interval.1,
       repeat_str
     )
   }

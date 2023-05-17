@@ -4,11 +4,13 @@ use super::time_parser::parse_u32_bound;
 use super::year::{Year, YearLength};
 use super::{fact::*, TimeError};
 
+use serde::{Deserialize, Serialize};
+
 use Month::*;
 const MONTH_LIST: [Month; 12] =
   [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct, Nov, Dec];
 
-#[derive(PartialEq, Eq, Debug, Clone, Copy)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum Month {
   Jan = 0,
   Feb,

@@ -11,11 +11,13 @@ use std::fmt::Debug;
 
 use super::time_parser::{parse_hr_min, parse_ymd};
 
+use serde::{Deserialize, Serialize};
+
 /// A struct that represents some time instance in human-readable form. Namely,
 /// it has fields like year, month, day, hour, and minute.
 ///
 /// Note that `Date` does not record any information about timezone.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Date {
   pub yr: CeYear,
   pub mon: Month,
@@ -32,8 +34,8 @@ impl Date {
   ///
   /// Note that such a conversion takes into account the timezone offset of
   /// the provided MinInstant.
-  pub fn from_min_instant(mi: MinInstant) -> Self {
-    let (curr_year, mut t) = mi.decomp_yr_min();
+  pub fn from_min_instant(mi: MinInstant, tz: ZoneOffset) -> Self {
+    let (curr_year, mut t) = mi.decomp_yr_min(tz);
 
     let mut curr_month = Month::Jan;
     loop {
@@ -52,7 +54,7 @@ impl Date {
       day: 1 + t / MIN_IN_DAY,
       hr: (t % MIN_IN_DAY) / MIN_IN_HR,
       min: t % MIN_IN_HR,
-      tz: mi.offset,
+      tz,
     }
   }
 

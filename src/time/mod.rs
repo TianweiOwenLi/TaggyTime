@@ -34,7 +34,7 @@ const MINUTE_LOWERBOUND: i64 = u32::MIN as i64 - timezone::UTC_LB as i64;
 
 #[derive(Debug)]
 pub enum TimeError {
-  MinInstantAdvanceOverflow(u32, ZoneOffset, u32),
+  MinInstantAdvanceOverflow(u32, u32),
   MinInstantConstructionOverflow(u32),
   MinInstantConstructionUnderflow(u32),
   ZoneOffsetConstructionUnderflow(i64),
@@ -117,7 +117,7 @@ pub fn u32_safe_sum(numbers: &[u32]) -> Option<u32> {
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct MinInstant {
   pub raw: u32,
-  pub offset: ZoneOffset,
+  // pub offset: ZoneOffset,
 }
 
 impl PartialEq for MinInstant {
@@ -125,13 +125,13 @@ impl PartialEq for MinInstant {
   ///
   /// [todo] Improve efficiency.
   fn eq(&self, other: &Self) -> bool {
-    let mut lhs = self.clone();
-    let mut rhs = other.clone();
+    // let mut lhs = self.clone();
+    // let mut rhs = other.clone();
 
-    lhs.adjust_to_zone(ZoneOffset::utc());
-    rhs.adjust_to_zone(ZoneOffset::utc());
+    // lhs.adjust_to_zone(ZoneOffset::utc());
+    // rhs.adjust_to_zone(ZoneOffset::utc());
 
-    lhs.raw == rhs.raw
+    self.raw == other.raw
   }
 }
 
@@ -139,13 +139,13 @@ impl Eq for MinInstant {}
 
 impl PartialOrd for MinInstant {
   fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-    let mut lhs = self.clone();
-    let mut rhs = other.clone();
+    // let mut lhs = self.clone();
+    // let mut rhs = other.clone();
 
-    lhs.adjust_to_zone(ZoneOffset::utc());
-    rhs.adjust_to_zone(ZoneOffset::utc());
+    // lhs.adjust_to_zone(ZoneOffset::utc());
+    // rhs.adjust_to_zone(ZoneOffset::utc());
 
-    Some(lhs.raw.cmp(&rhs.raw))
+    Some(self.raw.cmp(&other.raw))
   }
 }
 
@@ -169,7 +169,7 @@ pub struct MinInterval {
 // TODO improve human interaction
 impl MinInstant {
   /// Constructs a MinInstant using current system time. Sets to given timezone.
-  pub fn now(tz: ZoneOffset) -> Self {
+  pub fn now() -> Self {
     let t: i64 = Instant::now().seconds() / SEC_IN_MIN;
 
     if t > MINUTE_UPPERBOUND {
@@ -179,13 +179,13 @@ impl MinInstant {
       panic!("datetime seconds negative")
     };
 
-    let mut ret = Self { raw: t as u32, offset: ZoneOffset::utc() };
+    let mut ret = Self { raw: t as u32 };
 
-    ret.adjust_to_zone(tz);
+    // ret.adjust_to_zone(tz);
     ret
   }
 
-  pub fn from_raw_utc(raw: u32) -> Result<Self, TimeError> {
+  pub fn from_raw(raw: u32) -> Result<Self, TimeError> {
     if i64::from(raw) > MINUTE_UPPERBOUND {
       return Err(TimeError::MinInstantConstructionOverflow(raw));
     };
@@ -193,7 +193,7 @@ impl MinInstant {
       return Err(TimeError::MinInstantConstructionUnderflow(raw));
     };
 
-    Ok(Self { raw, offset: ZoneOffset::utc() })
+    Ok(Self { raw })
   }
 
   /// Adjust by an input offset. This merely changes the timezone
@@ -201,31 +201,45 @@ impl MinInstant {
   ///
   /// Note that overflows are not possible due to how the types `MinInstant`
   /// and `ZoneOffset` are constructed.
-  pub fn adjust_to_zone(&mut self, tgt_offset: ZoneOffset) {
-    let diff = tgt_offset.raw() - self.offset.raw();
+  // pub fn adjust_to_zone(&mut self, tgt_offset: ZoneOffset) {
+  //   let diff = tgt_offset.raw() - self.offset.raw();
 
-    // adjust timezone
-    self.offset = tgt_offset;
+  //   // adjust timezone
+  //   self.offset = tgt_offset;
 
-    // adjust time in the same amount as timezone
-    if diff >= 0 {
-      self.raw += diff as u32;
+  //   // adjust time in the same amount as timezone
+  //   if diff >= 0 {
+  //     self.raw += diff as u32;
+  //   } else {
+  //     self.raw -= (-diff) as u32;
+  //   }
+  // }
+
+  /// Normalizes to utc timezone.
+  // pub fn normalize(self) -> MinInstant {
+  //   let mut ret = self;
+  //   ret.adjust_to_zone(ZoneOffset::utc());
+  //   ret
+  // }
+
+  /// Given a timezone offset, adds it to `self.raw` and returns.
+  pub fn raw_plus_tz(&self, tz: ZoneOffset) -> u32 {
+    let tz_raw = tz.raw();
+    if tz_raw >= 0 {
+      self.raw.checked_add(tz_raw as u32).expect("mi+tz shall not overflow")
     } else {
-      self.raw -= (-diff) as u32;
+      // tz_raw is not supposed to equal i64::MIN, so minus is safe
+      self.raw.checked_sub((-tz_raw) as u32).expect("mi-tz shall not underflow")
     }
   }
 
-  /// Normalizes to utc timezone.
-  pub fn normalize(self) -> MinInstant {
-    let mut ret = self;
-    ret.adjust_to_zone(ZoneOffset::utc());
-    ret
-  }
+  /// Given a timezone offset, subtracts it from `self.raw` and returns.
 
-  /// Decomposes the `MinInstant` into whole year plus number of minutes.
-  pub fn decomp_yr_min(&self) -> (UnixYear, u32) {
+  /// Given a specified timezone, decomposes the `MinInstant` into whole year
+  /// plus number of excessive minutes.
+  pub fn decomp_yr_min(&self, tz: ZoneOffset) -> (UnixYear, u32) {
     let mut curr_yr = UnixYear::new(0).expect("year 1970 is valid");
-    let mut t = self.raw;
+    let mut t = self.raw_plus_tz(tz); // account for tz offset
 
     // strip year from t
     loop {
@@ -241,8 +255,7 @@ impl MinInstant {
     }
   }
 
-  /// Given a `Date`, converts it to corresponding `MinInstant` with UTC offset.
-  /// Returns an error on u32 overflow.
+  /// Given a `Date`, converts it to corresponding `MinInstant`.
   pub fn from_date(date: &Date) -> Result<Self, TimeError> {
     let yrs_min = date.yr.to_unix().num_min_since_epoch()?;
     let mons_min = date.mon.num_min_since_new_year(&date.yr as &dyn Year);
@@ -251,10 +264,20 @@ impl MinInstant {
     let min_min = date.min;
 
     let arr_to_safely_sum = &[yrs_min, mons_min, days_min, hrs_min, min_min];
-    let ret_opt = u32_safe_sum(arr_to_safely_sum);
+    let num_min_opt = u32_safe_sum(arr_to_safely_sum);
 
-    match ret_opt {
-      Some(n) => Ok(MinInstant { raw: n, offset: date.tz }),
+    match num_min_opt {
+      Some(num_min) => {
+        // Strip off the timezone components.
+        let tz_raw = date.tz.raw();
+        let mi_raw = if tz_raw >= 0 {
+          num_min.checked_sub(tz_raw as u32).expect("Date is below mi lb")
+        } else {
+          num_min.checked_add((-tz_raw) as u32).expect("Date is above mi ub")
+        };
+
+        Ok(MinInstant::from_raw(mi_raw)?)
+      }
       None => Err(TimeError::DateToMiOverflow(
         date.yr.to_ce().raw(),
         date.mon as u32,
@@ -274,28 +297,32 @@ impl MinInstant {
   /// Advances the `MinInstant` by given number of minutes. Checks bounds while
   /// advancing, and returns an error if overflows.
   pub fn advance(&self, num_min: u32) -> Result<MinInstant, TimeError> {
-    let added_raw = self.raw.checked_add(num_min);
-    if let Some(added_safe_raw) = added_raw {
-      let zoneoffset_redundancy = MINUTE_UPPERBOUND
-        .checked_add(self.offset.raw())
-        .expect("MI upperbound shall never overflow when added by zone offset");
-      if i64::from(added_safe_raw) <= zoneoffset_redundancy {
-        return Ok(MinInstant { raw: added_safe_raw, offset: self.offset });
-      }
+    // let added_raw = self.raw.checked_add(num_min);
+    // if let Some(added_safe_raw) = added_raw {
+    //   let zoneoffset_redundancy = MINUTE_UPPERBOUND
+    //     .checked_add(self.offset.raw())
+    //     .expect("MI upperbound shall never overflow when added by zone offset");
+    //   if i64::from(added_safe_raw) <= zoneoffset_redundancy {
+    //     return Ok(MinInstant { raw: added_safe_raw, offset: self.offset });
+    //   }
+    // }
+
+    match self.raw.checked_add(num_min) {
+      Some(added_safe_raw) => Ok(MinInstant::from_raw(added_safe_raw)?),
+      None => Err(TimeError::MinInstantAdvanceOverflow(self.raw, num_min)),
     }
-    Err(TimeError::MinInstantAdvanceOverflow(self.raw, self.offset, num_min))
   }
 
   /// Converts to `Date` and prints accordingly
-  pub fn as_date_string(self) -> String {
-    format!("{}", Date::from_min_instant(self))
+  pub fn as_date_string(self, tz: ZoneOffset) -> String {
+    format!("{}", Date::from_min_instant(self, tz))
   }
 
   /// Prints as the date at given timezone
   pub fn as_tz_date_string(self, tz: ZoneOffset) -> String {
-    let mut mi = self;
-    mi.adjust_to_zone(tz);
-    format!("{}", Date::from_min_instant(mi).no_tz_string())
+    // let mut mi = self;
+    // mi.adjust_to_zone(tz);
+    format!("{}", Date::from_min_instant(self, tz).no_tz_string())
   }
 }
 
@@ -306,29 +333,43 @@ impl MinInterval {
     MinInterval { start, end }
   }
 
+  pub fn from_dates(dates: &(Date, Date)) -> Result<MinInterval, TimeError> {
+    Ok(MinInterval {
+      start: MinInstant::from_date(&dates.0)?,
+      end: MinInstant::from_date(&dates.1)?,
+    })
+  }
+
+  pub fn to_dates(&self, tz: ZoneOffset) -> (Date, Date) {
+    (
+      Date::from_min_instant(self.start, tz),
+      Date::from_min_instant(self.end, tz),
+    )
+  }
+
   /// Creates a `MinInterval` from now till the given `MinInstant`.
   pub fn from_now_till(end: MinInstant) -> MinInterval {
-    MinInterval { start: MinInstant::now(end.offset), end }
+    MinInterval { start: MinInstant::now(), end }
   }
 
   /// Normalizes to utc timezone.
-  pub fn normalize(self) -> MinInterval {
-    MinInterval {
-      start: self.start.normalize(),
-      end: self.end.normalize(),
-    }
-  }
+  // pub fn normalize(self) -> MinInterval {
+  //   MinInterval {
+  //     start: self.start.normalize(),
+  //     end: self.end.normalize(),
+  //   }
+  // }
 
   /// Computes the duration of overlap of two `MinInterval` in minutes.
   pub fn overlap_duration(&self, rhs: MinInterval) -> u32 {
-    let (lhs, rhs) = (self.normalize(), rhs.normalize());
-    (lhs * rhs).num_min()
+    // let (lhs, rhs) = (self.normalize(), rhs.normalize());
+    (*self * rhs).num_min()
   }
 
   /// Converts start and end to `Date` and prints accordingly
-  pub fn as_date_string(&self) -> String {
-    let start_str = Date::from_min_instant(self.start);
-    let end_str = Date::from_min_instant(self.end);
+  pub fn as_date_string(&self, tz: ZoneOffset) -> String {
+    let start_str = Date::from_min_instant(self.start, tz);
+    let end_str = Date::from_min_instant(self.end, tz);
     format!("{} - {}", start_str, end_str)
   }
 
@@ -352,25 +393,28 @@ impl MinInterval {
   pub fn advance_until(
     &self,
     dp: &DateProperty,
-    until_opt: Option<MinInstant>,
+    tz: ZoneOffset,
+    until_opt: Option<Date>,
   ) -> Option<MinInterval> {
     let mut new_miv = self.clone();
     match until_opt {
-      Some(until) => {
-        while !dp.check(Date::from_min_instant(new_miv.start)) {
+      Some(until_date) => {
+        let until_mi = MinInstant::from_date(&until_date)
+          .expect("failed to convert date to mi");
+        while !dp.check(Date::from_min_instant(new_miv.start, tz)) {
           new_miv = new_miv.advance_unwrap(MIN_IN_DAY);
-          if new_miv.start > until {
+          if new_miv.start > until_mi {
             return None;
           }
         }
 
         // catch the case where while loops was not entered
-        if new_miv.start > until {
+        if new_miv.start > until_mi {
           return None;
         }
       }
       None => {
-        while !dp.check(Date::from_min_instant(new_miv.start)) {
+        while !dp.check(Date::from_min_instant(new_miv.start, tz)) {
           new_miv = new_miv.advance_unwrap(MIN_IN_DAY);
         }
       }
@@ -381,8 +425,8 @@ impl MinInterval {
   /// Computes the number of minutes in the `MinInterval` instance. Returns `0`
   /// if the interval is negative.
   pub fn num_min(&self) -> u32 {
-    let miv = self.normalize();
-    let (lb, ub) = (miv.start.raw, miv.end.raw);
+    // let miv = self.normalize();
+    let (lb, ub) = (self.start.raw, self.end.raw);
     let len = if lb >= ub { 0 } else { ub - lb };
     len
   }
@@ -420,10 +464,10 @@ mod test {
 
   #[test]
   fn instant_to_date() {
-    let mi = MinInstant { raw: 27905591, offset: ZoneOffset::utc() };
+    let mi = MinInstant { raw: 27905591 };
     assert_eq!(
       "2023/Jan/21 21:11, tz=+00:00",
-      format!("{}", Date::from_min_instant(mi))
+      format!("{}", Date::from_min_instant(mi, ZoneOffset::utc()))
     );
   }
 
@@ -434,18 +478,19 @@ mod test {
             // MinInstant has a user-input constructor.
   }
 
-  #[test]
-  fn set_offset_overflow() {
-    let mut mi = MinInstant { raw: 27905591, offset: ZoneOffset::utc() };
+  // #[test]
+  // fn set_offset_overflow() {
+  //   let mut mi = MinInstant { raw: 27905591 };
 
-    mi.adjust_to_zone(ZoneOffset::new(-300).unwrap());
-    assert_eq!(mi.raw, 27905591 - 300);
-  }
+  //   // mi.adjust_to_zone(ZoneOffset::new(-300).unwrap());
+  //   assert_eq!(mi.raw, 27905591 - 300);
+  // }
 
   #[test]
   fn mininstant_date_conversions() {
-    let mi = MinInstant { raw: 27905591, offset: ZoneOffset::utc() };
-    let mi2 = MinInstant::from_date(&Date::from_min_instant(mi)).unwrap();
+    let mi = MinInstant { raw: 27905591 };
+    let tz = ZoneOffset::new(480).unwrap();
+    let mi2 = MinInstant::from_date(&Date::from_min_instant(mi, tz)).unwrap();
     assert_eq!(mi, mi2);
   }
 
@@ -453,22 +498,22 @@ mod test {
   // Note that this test must occur at no earlier than 2023/Jan/21 21:11
   // in order to produce intended result.
   fn mininstant_order() {
-    let mi = MinInstant { raw: 27905591, offset: ZoneOffset::utc() };
+    let mi = MinInstant { raw: 27905591 };
 
-    let mi_now = MinInstant::now(ZoneOffset::utc());
+    let mi_now = MinInstant::now();
 
     assert!(mi < mi_now);
   }
 
-  #[test]
-  fn mi_eq() {
-    let m1 = MinInstant { raw: 5000, offset: ZoneOffset::utc() };
-    let m2 = MinInstant {
-      raw: 5060,
-      offset: ZoneOffset::new(60).unwrap(),
-    };
-    assert_eq!(m1, m2);
-  }
+  // #[test]
+  // fn mi_eq() {
+  //   let m1 = MinInstant { raw: 5000 };
+  //   let m2 = MinInstant {
+  //     raw: 5060,
+  //     offset: ZoneOffset::new(60).unwrap(),
+  //   };
+  //   assert_eq!(m1, m2);
+  // }
 
   #[test]
   /// This test guarantees that u32 parses work as intended even with
@@ -481,10 +526,10 @@ mod test {
   #[test]
   fn miv_overlap() {
     let offset = ZoneOffset::utc();
-    let t1 = MinInstant { raw: 23333, offset };
-    let t2 = MinInstant { raw: 23300, offset };
-    let t3 = MinInstant { raw: 5000, offset };
-    let t4 = MinInstant { raw: 40000, offset };
+    let t1 = MinInstant { raw: 23333 };
+    let t2 = MinInstant { raw: 23300 };
+    let t3 = MinInstant { raw: 5000 };
+    let t4 = MinInstant { raw: 40000 };
 
     let miv_1 = MinInterval::new(t1, t2);
     assert_eq!(0, miv_1.overlap_duration(miv_1));

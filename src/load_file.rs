@@ -22,7 +22,8 @@ pub fn load_schedule_ics<P: AsRef<Path>>(
       }
 
       let parse_result = lex_and_parse(path, default_tz)?;
-      parse_result.content.into_iter().map(Event::try_from).collect()
+      let ve2event = |x| Event::from_ve(x, default_tz);
+      parse_result.content.into_iter().map(ve2event).collect()
     }
     None => bad_extension,
   }

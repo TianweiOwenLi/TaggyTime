@@ -1,7 +1,7 @@
 use std::{fs::File, path::Path};
 
 use crate::{
-  time::{timezone::ZoneOffset, MinInstant, TimeError},
+  time::{date::Date, timezone::ZoneOffset, MinInstant, TimeError},
   util::path2string,
   util_typs::RefinementError,
 };
@@ -27,7 +27,7 @@ pub enum ICSProcessError {
   ICSTimeMalformatted(String, String),
   MalformedList(Token, Token),
   InvalidFreq(Token),
-  UntilAndCountBothAppear(usize, MinInstant),
+  UntilAndCountBothAppear(usize, Date),
   Refinement(RefinementError),
   Msg(&'static str),
   Other(String),

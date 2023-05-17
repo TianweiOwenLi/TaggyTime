@@ -1,5 +1,7 @@
 use super::{fact::*, TimeError};
 
+use serde::{Deserialize, Serialize};
+
 const UNIX_YEAR_MAX: u16 = u16::MAX - UNIX_EPOCH_YR_RAW;
 const CE_YEAR_MIN: u16 = u16::MIN + UNIX_EPOCH_YR_RAW;
 
@@ -52,7 +54,9 @@ impl std::fmt::Debug for &dyn Year {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct UnixYear(u16);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+  Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize,
+)]
 pub struct CeYear(u16);
 
 impl UnixYear {

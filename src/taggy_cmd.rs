@@ -179,8 +179,8 @@ impl TaggyCmd {
 
       // time / timezone related operations
       Now => {
-        let mi = time::MinInstant::now(tenv.tz);
-        println!("[taggytime] now is: {}", mi.as_date_string());
+        let mi = time::MinInstant::now();
+        println!("[taggytime] now is: {}", mi.as_date_string(tenv.tz));
       }
       Tz => {
         println!("[taggytime] timezone is {}", tenv.tz);

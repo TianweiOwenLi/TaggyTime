@@ -30,6 +30,8 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Organize util fns.
 * Get rid of `MinInstant` offset to elim bugs
 * Proof-read all raw arithmetics.
+* Large-integer-type to elim error?
+* Rebuild default taggyenv json file.
 
 ## Contact
 If there is any further questions, please contact the author at `tianwei2@andrew.cmu.edu`.

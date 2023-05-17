@@ -55,7 +55,7 @@ pub fn parse_ymd(
       Ok((y, m, d))
     }
     [m, d] => {
-      let y: CeYear = MinInstant::now(tz).decomp_yr_min().0.to_ce();
+      let y: CeYear = MinInstant::now().decomp_yr_min(tz).0.to_ce();
       let m: Month = m.parse()?;
       let d = parse_u32_bound(d, 1, m.num_days(&y))?;
       Ok((y, m, d))
