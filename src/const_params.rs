@@ -7,3 +7,6 @@ pub const MAX_WORKLOAD: u32 = 59_999;
 pub const HANDLE_WKST: bool = false;
 pub const PARSE_DT_LITERAL_TZID: bool = false;
 pub const TAGGYENV_RELATIVE_PATH: &str = ".local/taggytime/env.json";
+
+/// The impact threshold which renders a task undoable (i.e. expired).
+pub const TASK_IMPACT_EXPIRE_THRESHOLD: u16 = 300;

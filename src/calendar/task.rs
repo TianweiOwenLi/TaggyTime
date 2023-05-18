@@ -2,6 +2,7 @@
 
 use std::str::FromStr;
 
+use crate::const_params::TASK_IMPACT_EXPIRE_THRESHOLD;
 use crate::time::fact::SEC_IN_MIN_U32;
 use crate::time::time_parser::parse_u32;
 use crate::time::*;
@@ -69,9 +70,16 @@ impl From<f32> for ExpirableImpact {
   /// Performs conversion to `ExpirableImpact` from some `f32`. If the given
   /// float point number is out-of-bounds, returns the `Expired` variant.
   fn from(value: f32) -> Self {
+    use ExpirableImpact::*;
     match Percent::try_from(value) {
-      Ok(p) => ExpirableImpact::Current(p),
-      Err(PercentError::PercentF32Overflow(_)) => ExpirableImpact::Expired,
+      Ok(p) => {
+        if p.0 < TASK_IMPACT_EXPIRE_THRESHOLD {
+          Current(p)
+        } else {
+          Expired
+        }
+      }
+      Err(PercentError::PercentF32Overflow(_)) => Expired,
       Err(e) => unreachable!("`{}` never raised by Percent::try_from", e),
     }
   }
@@ -144,7 +152,6 @@ impl std::fmt::Display for ExpirableImpact {
       Current(p) => {
         let done_ratio: f32 = f32::from(p.complement().0) / 100.0;
         let remain_ratio: f32 = 1.0 - done_ratio;
-
 
         let green_ratio = f32::powf(done_ratio, 0.6);
         let red_ratio = f32::powf(remain_ratio, 0.6);

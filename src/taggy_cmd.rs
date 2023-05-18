@@ -252,7 +252,10 @@ Task Name         Due (tz={})     Workload       Progress        Impact
           }
         }
 
-        println!("\n∑ Impact:    {}\n# Expired:   {}\n", percent_sum, num_expired)
+        println!(
+          "\n∑ Impact:    {}\n# Expired:   {}\n",
+          percent_sum, num_expired
+        )
       }
     }
     Ok(())

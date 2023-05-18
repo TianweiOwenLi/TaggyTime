@@ -10,6 +10,6 @@ pub fn truncate(s: &str, maxlen: usize) -> String {
   if s.len() <= maxlen {
     s.to_string()
   } else {
-    format!("{}...", &s[0..maxlen-3])
+    format!("{}...", &s[0..maxlen - 3])
   }
 }

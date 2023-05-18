@@ -1,6 +1,6 @@
 //! a module encapsulating the `Percent` type.
 
-use std::{str::FromStr, cmp::min};
+use std::{cmp::min, str::FromStr};
 
 use serde::{Deserialize, Serialize};
 
@@ -106,7 +106,6 @@ impl std::fmt::Display for Percent {
 }
 
 impl Percent {
-
   /// Draw percent as progress bar
   pub fn draw_progress(&self) -> String {
     let raw = usize::from(min(100, self.0));
@@ -114,7 +113,7 @@ impl Percent {
     let none = 10 - full;
     let v_full = "■".repeat(full);
     let v_none = "□".repeat(none);
-    
+
     format!("{:>3}%  {}{}", raw, v_full, v_none)
   }
 }
