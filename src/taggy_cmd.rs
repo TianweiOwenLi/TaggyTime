@@ -235,7 +235,7 @@ impl TaggyCmd {
 
         println!(
           "\n\
-Task Name         Due (tz={})     Workload       Progress        Impact
+Task Name         Due (tz={})      Workload    Progress          Impact
 ----------------------------------------------------------------------------",
           tenv.tz
         );
