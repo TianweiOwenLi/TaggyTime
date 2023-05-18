@@ -133,7 +133,7 @@ impl Task {
 impl std::fmt::Display for Workload {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let (hr, min) = (self.0 / SEC_IN_MIN_U32, self.0 % SEC_IN_MIN_U32);
-    write!(f, "{:02}:{:02}", hr, min)
+    write!(f, "{:3}:{:02}", hr, min)
   }
 }
 
