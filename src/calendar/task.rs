@@ -8,6 +8,7 @@ use crate::time::*;
 use crate::util_typs::percent::Percent;
 use crate::{const_params::MAX_WORKLOAD, util_typs::percent::PercentError};
 
+use colored::Colorize;
 use serde::{Deserialize, Serialize};
 
 /// A wrapper around `u32`, which represents the number of minutes needed to
@@ -116,9 +117,7 @@ impl Task {
   /// Computes the remaining workload of this `Todo` item, considering its
   /// `length` and `completion` fields.
   pub fn get_remaining_workload(&self) -> Workload {
-    self.length.multiply_percent(
-      self.completion.complement().expect("progress complement overflowed"),
-    )
+    self.length.multiply_percent(self.completion.complement())
   }
 
   /// Sets progress to `tgt_progress`, which is automatically constrained down
@@ -142,8 +141,21 @@ impl std::fmt::Display for ExpirableImpact {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     use ExpirableImpact::*;
     match self {
-      Current(p) => write!(f, "{}", p),
-      Expired => write!(f, "Expired"),
+      Current(p) => {
+        let done_ratio: f32 = f32::from(p.complement().0) / 100.0;
+        let remain_ratio: f32 = 1.0 - done_ratio;
+
+
+        let green_ratio = f32::powf(done_ratio, 0.6);
+        let red_ratio = f32::powf(remain_ratio, 0.6);
+        let sum_ratio = red_ratio + green_ratio;
+
+        let r = (254.0 * red_ratio / sum_ratio).round() as u8;
+        let g = (254.0 * green_ratio / sum_ratio).round() as u8;
+
+        write!(f, "{}", p.to_string().truecolor(r, g, 0))
+      }
+      Expired => write!(f, "{}", "expired".red()),
     }
   }
 }

@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 use crate::calendar::task::ExpirableImpact;
 
 use clap::Subcommand;
+use colored::Colorize;
 
 use crate::{
   calendar::task::{Task, Workload},

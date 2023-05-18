@@ -30,11 +30,11 @@ pub struct Percent(pub u16);
 
 impl Percent {
   /// Returns a `Percent` instance that represents 100% minus oneself. If
-  /// `Self` is an `Overflow` variant, returns `ComplementOutOfBound` error.
-  pub fn complement(&self) -> Result<Self, PercentError> {
+  /// `Self` is an `Overflow` variant, returns zero percent.
+  pub fn complement(&self) -> Self {
     match self.0 {
-      0..=100 => Ok(Percent(100 - self.0)),
-      _ => Err(PercentError::ComplementOutOfBound(self.0)),
+      0..=100 => Percent(100 - self.0),
+      _ => Percent(0),
     }
   }
 
@@ -144,8 +144,8 @@ mod test {
 
   #[test]
   fn errors() {
-    assert!(Percent(100).complement().is_ok());
-    assert!(Percent(101).complement().is_err());
+    assert_eq!(Percent(95).complement(), Percent(5));
+    assert_eq!(Percent(103).complement(), Percent(0));
   }
 
   #[test]
