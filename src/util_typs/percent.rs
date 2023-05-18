@@ -111,8 +111,8 @@ impl Percent {
     let raw = usize::from(min(100, self.0));
     let full = raw / 10;
     let none = 10 - full;
-    let v_full = "■".repeat(full);
-    let v_none = "□".repeat(none);
+    let v_full = "▪".repeat(full);
+    let v_none = "▫".repeat(none);
 
     format!("{:>3}%  {}{}", raw, v_full, v_none)
   }
