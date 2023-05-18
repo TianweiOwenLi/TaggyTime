@@ -5,7 +5,6 @@ use std::path::{Path, PathBuf};
 use crate::{calendar::task::ExpirableImpact, util::truncate};
 
 use clap::Subcommand;
-use colored::Colorize;
 
 use crate::{
   calendar::task::{Task, Workload},
@@ -47,11 +46,12 @@ pub fn prettyprint_task(
   impact: &ExpirableImpact,
 ) {
   println!(
-    "{:<16}  {:<20}  {:<6}      {:<10}                  {:<10}",
+    "{:<16}  {:<20} {:<6}    {:<10}    {:<10}",
     truncate(name, 16),
     task.due.as_tz_date_string(tz),
     task.length,
-    task.completion,
+    // task.completion,
+    task.completion.draw_progress(),
     impact
   )
 }
@@ -235,8 +235,8 @@ impl TaggyCmd {
 
         println!(
           "\n\
-Task Name         Due (tz={})       Workload    Progress            Impact
------------------------------------------------------------------------------",
+Task Name         Due (tz={})     Workload       Progress        Impact
+----------------------------------------------------------------------------",
           tenv.tz
         );
 
