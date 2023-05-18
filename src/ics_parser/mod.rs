@@ -89,6 +89,7 @@ pub fn lex_and_parse<P: AsRef<Path>>(
   ICSParser::from_ics_lexer(lex).parse(default_tz)
 }
 
+#[allow(dead_code)]
 pub fn test_lexer<P: AsRef<Path>>(path: P) -> Result<(), ICSProcessError> {
   let content = std::fs::read_to_string(&path)
     .expect(format!("Cannot read from `{}`", path2string(&path)).as_str());
@@ -110,6 +111,7 @@ pub fn test_lexer<P: AsRef<Path>>(path: P) -> Result<(), ICSProcessError> {
   }
 }
 
+#[allow(dead_code)]
 pub fn test_parser(ics_filename: &str) -> Result<(), TimeError> {
   let parse_result = lex_and_parse(ics_filename, ZoneOffset::new(-240)?)?;
 
