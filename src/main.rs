@@ -34,15 +34,18 @@ fn load_env<P: AsRef<Path>>(path: P) -> Result<TaggyEnv, TimeError> {
 }
 
 /// Stores the interactive environment.
-fn store_env<P: AsRef<Path>>(path: P, tenv: &TaggyEnv) -> Result<(), TimeError> {
+fn store_env<P: AsRef<Path>>(
+  path: P,
+  tenv: &TaggyEnv,
+) -> Result<(), TimeError> {
   let s = serde_json::to_string(tenv)?;
   Ok(std::fs::write(path, s)?)
 }
 
 fn main() {
-  let mut tenv_abs_path = home::home_dir().expect("Cannot find home directory! ");
+  let mut tenv_abs_path =
+    home::home_dir().expect("Cannot find home directory! ");
   tenv_abs_path.push(TAGGYENV_RELATIVE_PATH);
-  println!("path: {}", tenv_abs_path.display());
 
   let cli_info = CliInfo::parse();
 

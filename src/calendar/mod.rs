@@ -14,9 +14,7 @@ pub mod task;
 
 #[derive(Debug)]
 pub enum CalError {
-  KeyNotFound(String),
   DoubleInsert(String),
-  NewnameUnavailable(String),
 }
 
 /// A wrapper around `HashMap<String, _>`.
@@ -75,7 +73,9 @@ impl NameMap<Vec<Event>> {
     let miv = MinInterval::from_now_till(todo.due);
     let total_time = miv.num_min();
     let occupied_time = self.overlap_miv(miv);
-    let available_time = total_time - occupied_time;
+    let available_time = total_time
+      .checked_sub(occupied_time)
+      .expect("Occupied time is more than total time");
     let needed_time = todo.get_remaining_workload().num_min();
 
     ExpirableImpact::from((needed_time as f32) / (available_time as f32))

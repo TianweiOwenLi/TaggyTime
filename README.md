@@ -23,7 +23,7 @@ Here is a list of non-core functionalities that shall be implemented in the futu
 * Implement Recurrence parse from non-weekly events. 
 * Handle week starting day.
 * Use refinement typ for `ZoneOffset`
-* Calendar repetition interval chk
+* Calendar event interval overlap chk
 * `MinInterval` bounds chk
 * Error-typ proper conversion.
 * Implement VTimeZone / `ics` timezone.

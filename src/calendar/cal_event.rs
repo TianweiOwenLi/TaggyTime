@@ -23,6 +23,12 @@ pub enum Pattern {
 
 impl TryFrom<Option<FreqAndRRules>> for Pattern {
   type Error = ICSProcessError;
+
+  /// Attempts to convert the ``FreqAndRRules'' item into some pattern. In
+  /// particular, it makes sure that the ``count'' and ``until'' termination
+  /// rules do not coexist.
+  ///
+  /// [warning] Only weekly - by weekday is implemented.
   fn try_from(value: Option<FreqAndRRules>) -> Result<Self, Self::Error> {
     match value {
       Some(frq) => {
@@ -44,8 +50,8 @@ impl TryFrom<Option<FreqAndRRules>> for Pattern {
   }
 }
 
-/// Recurrence event termination condition, which is either a number of
-/// occurrences, a "finished" time instance, or never.
+/// Recurrence event termination condition, which is either after a number
+///  of occurrences, after a "finished" time instance, or never.
 #[derive(Clone, Copy, Serialize, Deserialize)]
 pub enum Term {
   Count(OneOrMore),
@@ -64,10 +70,12 @@ pub struct Recurrence {
   /// Indicates that `event_miv` is the nth occurrence. Shall be initialized as 1.
   occurrence_count: OneOrMore,
 
+  /// Recurring pattern of some recurrence.
   patt: Pattern,
 }
 
 impl Recurrence {
+  /// Initializes a new recurrence.
   pub fn new(event_miv: MinInterval, patt: Pattern) -> Self {
     Self {
       event_miv,
@@ -95,9 +103,13 @@ impl Recurrence {
         tmr.advance_until(dp, None).expect("Unreachable: no until")
       }
     };
+
+    // increases the occurrence count.
+    let occurrence_count = self.occurrence_count.increment_unwrap();
+
     Some(Recurrence {
       event_miv,
-      occurrence_count: self.occurrence_count.increment_unwrap(),
+      occurrence_count,
       patt: self.patt,
     })
   }
@@ -149,8 +161,6 @@ impl TryFrom<Vevent> for Recurrence {
   type Error = ICSProcessError;
 
   /// Converts a parsed vector of rrules into a `Recurrence` instance.
-  ///
-  /// [warning] Only weekly - by weekday is implemented.
   fn try_from(value: Vevent) -> Result<Self, Self::Error> {
     Ok(Recurrence::new(value.miv, Pattern::try_from(value.repeat)?))
   }
@@ -188,6 +198,7 @@ impl IntoIterator for Recurrence {
 pub struct Event(pub String, pub Recurrence);
 
 impl Event {
+  /// Computes whether this event is already ended.
   pub fn ended(&self) -> bool {
     self.1.ended()
   }
@@ -200,6 +211,8 @@ impl TryFrom<Vevent> for Event {
     Ok(Event(value.summary.clone(), Recurrence::try_from(value)?))
   }
 }
+
+// ------------------------------- Displays -------------------------------
 
 impl std::fmt::Display for Event {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -233,6 +246,8 @@ impl std::fmt::Display for Term {
     }
   }
 }
+
+// --------------------------------- Testing ---------------------------------
 
 #[allow(dead_code, unused_imports)]
 mod test {

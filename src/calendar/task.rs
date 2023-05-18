@@ -55,13 +55,6 @@ impl FromStr for Workload {
   }
 }
 
-impl std::fmt::Display for Workload {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    let (hr, min) = (self.0 / SEC_IN_MIN_U32, self.0 % SEC_IN_MIN_U32);
-    write!(f, "{:02}:{:02}", hr, min)
-  }
-}
-
 /// The impact of some task, which is either some percentage (measures the
 /// percent of remaining time needed to complete such a task), or
 /// ``Expired'', if the task is deemed impossible to complete.
@@ -72,6 +65,8 @@ pub enum ExpirableImpact {
 }
 
 impl From<f32> for ExpirableImpact {
+  /// Performs conversion to `ExpirableImpact` from some `f32`. If the given
+  /// float point number is out-of-bounds, returns the `Expired` variant.
   fn from(value: f32) -> Self {
     match Percent::try_from(value) {
       Ok(p) => ExpirableImpact::Current(p),
@@ -96,29 +91,13 @@ impl std::cmp::PartialOrd for ExpirableImpact {
   }
 }
 
-impl std::fmt::Display for ExpirableImpact {
-  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    use ExpirableImpact::*;
-    match self {
-      Current(p) => write!(f, "{}", p),
-      Expired => write!(f, "Expired"),
-    }
-  }
-}
-
-/// A struct that represents some task to be done.
-///
-/// This struct contains the following fields:
+/// Some task to be done, with the following fields:
 ///
 /// `due`: the due date of such a task, represented as a `Recurrence`.
 ///
 /// `length`: number of minutes needed to complete such a task from scratch.
 ///
 /// `completion`: the progress of such a task, in percentage.
-///
-/// `cached_impact`: the ratio of completion time, relative to available time
-/// before deadline. Can only be updated with an external schedule. This shall
-/// be cached, and only refreshed if needed.
 ///
 /// [todo] Implement recurrences for todo
 #[derive(Debug, Serialize, Deserialize)]
@@ -138,10 +117,7 @@ impl Task {
   /// `length` and `completion` fields.
   pub fn get_remaining_workload(&self) -> Workload {
     self.length.multiply_percent(
-      self
-        .completion
-        .complement()
-        .expect("progress complement cannot overflow"),
+      self.completion.complement().expect("progress complement overflowed"),
     )
   }
 
@@ -150,5 +126,24 @@ impl Task {
   pub fn set_progress(&mut self, tgt_progress: Percent) {
     self.completion =
       if tgt_progress.is_overflow() { Percent(100) } else { tgt_progress };
+  }
+}
+
+// ----------------------------- Displays -----------------------------
+
+impl std::fmt::Display for Workload {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    let (hr, min) = (self.0 / SEC_IN_MIN_U32, self.0 % SEC_IN_MIN_U32);
+    write!(f, "{:02}:{:02}", hr, min)
+  }
+}
+
+impl std::fmt::Display for ExpirableImpact {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    use ExpirableImpact::*;
+    match self {
+      Current(p) => write!(f, "{}", p),
+      Expired => write!(f, "Expired"),
+    }
   }
 }
